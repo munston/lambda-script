@@ -21,6 +21,16 @@ lambda-script/
       test/
 ```
 
+## Diff Spring (Bidirectional Sync)
+
+Grok ↔ Local sync via structured patches.
+
+To send your local changes back:
+
+```bash
+bash scripts/diff_spring/generate-and-drop.sh "Your description here"
+```
+
 ## Build the compiler
 
 ```sh
