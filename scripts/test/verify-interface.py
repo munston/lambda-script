@@ -31,7 +31,7 @@ ALLOWED_GIT_PATTERNS = [
     "git push",
 ]
 
-EXPECTED_ROOT_BATS = ["pull.bat", "push.bat"]
+EXPECTED_ROOT_BATS = ["pull.bat", "push.bat", "sync-git.bat"]
 
 
 def fail(message: str) -> None:
@@ -56,10 +56,15 @@ def verify_root_bats() -> None:
         fail(f"top-level .bat files are {bats}, expected {EXPECTED_ROOT_BATS}")
     pull = read(ROOT / "pull.bat")
     push = read(ROOT / "push.bat")
+    sync = read(ROOT / "sync-git.bat")
     if r"scripts\git\pull-all.bat" not in pull:
         fail("pull.bat does not delegate to scripts\\git\\pull-all.bat")
     if r"scripts\git\push-all.bat" not in push:
         fail("push.bat does not delegate to scripts\\git\\push-all.bat")
+    if r"pull.bat" not in sync:
+        fail("sync-git.bat does not call pull.bat")
+    if r"scripts\test\verify-interface.py" not in sync:
+        fail("sync-git.bat does not run scripts\\test\\verify-interface.py")
 
 
 def parse_config() -> list[tuple[str, str, str, str, str]]:
@@ -103,7 +108,7 @@ def verify_target_scripts(targets: list[tuple[str, str, str, str, str]]) -> None
 
 
 def verify_git_safety() -> None:
-    batch_files = sorted((ROOT / "scripts").rglob("*.bat")) + [ROOT / "pull.bat", ROOT / "push.bat"]
+    batch_files = sorted((ROOT / "scripts").rglob("*.bat")) + [ROOT / name for name in EXPECTED_ROOT_BATS]
     for path in batch_files:
         text = read(path)
         lowered = f" {text.lower()} "
@@ -141,7 +146,7 @@ def main() -> None:
     verify_target_scripts(targets)
     verify_git_safety()
     verify_push_order()
-    print("OK two-bat interface verified")
+    print("OK three-bat interface verified")
     print("root bat files:", ", ".join(EXPECTED_ROOT_BATS))
     print("targets:", ", ".join(name for name, *_ in targets))
     print("safe git subset: status, fetch, pull --ff-only, add -A, diff --cached --quiet, commit -m, push HEAD:branch")
