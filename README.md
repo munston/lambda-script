@@ -23,13 +23,17 @@ lambda-script/
 
 ## Diff Spring (Bidirectional Sync)
 
-Grok ↔ Local sync via structured patches.
-
-To send your local changes back:
-
+**Generate patch from local changes:**
 ```bash
 bash scripts/diff_spring/generate-and-drop.sh "Your description here"
 ```
+
+**Interactive REPL for pasting Grok patches:**
+```bash
+bash scripts/diff_spring/patch-repl.sh
+```
+
+(Paste the full JSON → type `LS_JSON_END` on its own line)
 
 ## Build the compiler
 
