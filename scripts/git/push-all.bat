@@ -8,8 +8,7 @@ set "MESSAGE=%~1"
 set "SELECT=%~2"
 
 if "%MESSAGE%"=="" (
-  echo usage: push.bat "commit message" [target-name]
-  exit /b 2
+  set "MESSAGE=Update lambda-script"
 )
 
 if not exist "%CONFIG%" (
