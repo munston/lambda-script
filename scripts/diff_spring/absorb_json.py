@@ -34,7 +34,19 @@ def git_root() -> Path:
     )
     if proc.returncode != 0:
         raise DiffSpringError("not inside a git repository")
-    return Path(proc.stdout.strip())
+    raw = proc.stdout.strip()
+    try:
+        cygpath = subprocess.run(
+            ["cygpath", "-w", raw],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        if cygpath.returncode == 0 and cygpath.stdout.strip():
+            return Path(cygpath.stdout.strip())
+    except FileNotFoundError:
+        pass
+    return Path(raw)
 
 
 def spring_dirs(root: Path) -> tuple[Path, Path, Path]:
