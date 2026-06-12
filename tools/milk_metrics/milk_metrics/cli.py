@@ -7,6 +7,8 @@ import numpy as np
 from PIL import Image
 
 from .metrics import compute_metric
+from .proxies import proxy_dictionary
+from .registers import infer_registers
 from .render import (
     save_before_after,
     save_change_map,
@@ -21,9 +23,40 @@ from .restoration import search_conservative_restoration
 
 
 def read_image(path: Path) -> tuple[Image.Image, np.ndarray]:
+    """Read an image into both PIL and normalized numpy forms.
+
+    The CLI keeps both representations because the toolkit has two different
+    duties. PIL is convenient for saving human-visible outputs. Numpy is used
+    for the measured proxy layer. Keeping the conversion explicit prevents the
+    classifier from hiding preprocessing decisions.
+    """
     img = Image.open(path).convert("RGB")
     arr = np.asarray(img).astype(np.float32) / 255.0
     return img, arr
+
+
+def report_payload(mode: str, score: float, components: dict[str, float]) -> dict:
+    """Build the full methodological report payload.
+
+    Earlier versions wrote only raw component values. That was too thin for the
+    classification methodology because the register framework lives above the
+    pixel proxies. This payload therefore records three layers:
+
+    1. `components`: low-level numeric evidence.
+    2. `registers`: inferred milk/peach/coal/toy scores plus gate correction.
+    3. `proxy_dictionary`: comments explaining what each proxy is allowed to mean.
+
+    This makes the JSON report a portable context object rather than a flat
+    score dump.
+    """
+    registers = infer_registers(components)
+    return {
+        "mode": mode,
+        "score": score,
+        "components": components,
+        "registers": registers.as_dict(),
+        "proxy_dictionary": proxy_dictionary(),
+    }
 
 
 def run_analyze(args: argparse.Namespace) -> None:
@@ -31,12 +64,16 @@ def run_analyze(args: argparse.Namespace) -> None:
     out.mkdir(parents=True, exist_ok=True)
     img, arr = read_image(Path(args.image))
     result = compute_metric(arr, arr)
+
+    # Analysis mode is strictly raw-image scoring. It produces masks and reports
+    # without changing the image, so it is the preferred mode when comparing
+    # candidate references.
     img.save(out / "original.png")
     save_gray_mask(out / "positive_response_mask.png", result.positive_map)
     save_gray_mask(out / "penalty_mask.png", result.penalty_map)
     save_response_overlay(out / "response_overlay.png", img, result.positive_map, result.penalty_map)
     save_components_plot(out / "components.png", result.components)
-    save_report(out / "report.json", {"mode": "analyze", "score": result.score, "components": result.components})
+    save_report(out / "report.json", report_payload("analyze", result.score, result.components))
     print(f"score: {result.score:.6f}")
     print(out)
 
@@ -48,6 +85,11 @@ def run_restore(args: argparse.Namespace) -> None:
     base = compute_metric(arr, arr)
     run = search_conservative_restoration(arr, steps=args.steps, seed=args.seed)
     restored_img = to_image(run.restored)
+
+    # Restore mode is not allowed to improve the image by geometric invention.
+    # The search space is deliberately limited to conservative denoising-like
+    # operations. The report preserves both the original score and the restored
+    # score so the user can see whether the gain is mainly compression cleanup.
     img.save(out / "original.png")
     restored_img.save(out / "restored.png")
     save_before_after(out / "before_after.png", img, restored_img)
@@ -57,17 +99,18 @@ def run_restore(args: argparse.Namespace) -> None:
     save_response_overlay(out / "response_overlay.png", restored_img, run.result.positive_map, run.result.penalty_map)
     save_components_plot(out / "components.png", run.result.components)
     save_trace(out / "score_trace.png", run.history)
-    save_report(
-        out / "report.json",
+
+    payload = report_payload("restore", run.result.score, run.result.components)
+    payload.update(
         {
-            "mode": "restore",
             "initial_score": base.score,
             "final_score": run.result.score,
             "increase": run.result.score - base.score,
             "best_params": run.params.__dict__,
-            "components": run.result.components,
-        },
+            "method_note": "conservative restoration only; no geometric warp; score corrected by distortion and edge-loss penalties",
+        }
     )
+    save_report(out / "report.json", payload)
     print(f"initial_score: {base.score:.6f}")
     print(f"final_score:   {run.result.score:.6f}")
     print(f"increase:      {run.result.score - base.score:.6f}")
@@ -79,17 +122,20 @@ def run_penalty_mask(args: argparse.Namespace) -> None:
     out.mkdir(parents=True, exist_ok=True)
     img, arr = read_image(Path(args.image))
     result = compute_metric(arr, arr)
+
+    # Penalty mode exists for fast visual inspection. It should be interpreted
+    # as a proxy mask only. It does not identify a semantic class; it shows where
+    # the current rule set sees pressure against the framework.
     save_gray_mask(out / "penalty_mask.png", result.penalty_map)
     save_response_overlay(out / "penalty_overlay.png", img, np.zeros_like(result.penalty_map), result.penalty_map)
-    save_report(
-        out / "penalty_report.json",
+    payload = report_payload("penalty-mask", result.score, result.components)
+    payload.update(
         {
-            "mode": "penalty-mask",
-            "score": result.score,
             "red_signal_penalty": result.components.get("red_signal_penalty"),
             "public_context_penalty": result.components.get("public_context_penalty"),
-        },
+        }
     )
+    save_report(out / "penalty_report.json", payload)
     print(out)
 
 
