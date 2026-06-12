@@ -60,6 +60,24 @@ if errorlevel 1 (
     exit /b 1
 )
 
+call npm run glc -- emit ../examples/hello.ls --target py
+if errorlevel 1 (
+    popd
+    exit /b 1
+)
+
+call npm run glc -- parse ../examples/milk_metric.ls --json
+if errorlevel 1 (
+    popd
+    exit /b 1
+)
+
+call npm run glc -- emit ../examples/milk_metric.ls --target py
+if errorlevel 1 (
+    popd
+    exit /b 1
+)
+
 call npm run glc -- parse ../examples/ffi_cpp.ls --json
 if errorlevel 1 (
     popd
@@ -84,7 +102,24 @@ if errorlevel 1 (
     exit /b 1
 )
 
+call npm run glc -- emit ../examples/ffi_cpp.ls --target py
+if errorlevel 1 (
+    popd
+    exit /b 1
+)
+
 popd
+
+where python >nul 2>nul
+if not errorlevel 1 (
+    echo Running milk metric tool smoke command...
+    echo {"features":{"self_possession":1,"consent_signal":1,"surface_auditability":1,"whole_person_presence":1}} | python tools\milk_metric.py
+    if errorlevel 1 (
+        exit /b 1
+    )
+) else (
+    echo [WARNING] python not found. Skipping milk metric tool smoke command.
+)
 
 echo.
 echo ========================================
