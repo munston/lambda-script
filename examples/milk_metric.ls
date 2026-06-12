@@ -1,8 +1,6 @@
-module MilkMetric
+module ToolManifest
 
-milk_weight = 100
-coal_weight = 100
-peach_weight = 100
-toy_weight = 100
-core_threshold = 50
-tool_name = "milk_metric.py"
+tool_name = "tools/milk_metrics"
+external_tool = true
+codegen_target = false
+runtime_surface = false
