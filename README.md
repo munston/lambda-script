@@ -18,6 +18,8 @@ lambda-script/
       codegen/
       runtime/
     test/
+  tools/
+    milk_metrics/
 ```
 
 ## Getting Started
@@ -35,9 +37,13 @@ See `docs/INSTALL.md` for full instructions.
 
 LambdaScript code generation is deliberately limited to TypeScript and Haskell. Those are the supported backends, and backend work should preserve a clean correspondence between the TypeScript and Haskell forms.
 
-Python is deliberately unsupported as a code generation target. LambdaScript must not emit Python, register Python as a backend, integrate Python modules through FFI, or treat Python as a supported runtime surface. Python may appear only as external tooling or as legacy input to be parsed, translated from, migrated away from, or replaced by LambdaScript-owned forms.
+Python is deliberately unsupported as a code generation target. LambdaScript must not emit Python, register Python as a backend, or treat Python as a supported runtime surface. Python may appear only as external tooling or as legacy input to be parsed, translated from, migrated away from, or replaced by LambdaScript-owned forms.
 
 C++ is available only as a foreign runtime demonstration through explicit FFI examples; it is not a LambdaScript emission backend.
+
+## Image metric toolkit
+
+The image metric work lives under `tools/milk_metrics/` as a local external toolkit. It is not a LambdaScript backend or a supported runtime surface for LambdaScript modules.
 
 ## Diff Spring (Bidirectional Sync)
 
@@ -61,7 +67,7 @@ python scripts/diff_spring/patch-repl-gui.py
 python scripts/web/patch_chat.py
 ```
 
-> Launch from an MSYS2 shell where `ssh -T git@github.com` already succeeds. The Python commands above are repository support scripts only; they are not LambdaScript language support, a Python backend, or Python FFI integration.
+> Launch from an MSYS2 shell where `ssh -T git@github.com` already succeeds. The Python commands above are repository support scripts only; they are not LambdaScript language support or a Python backend.
 
 Open http://localhost:8765 in your browser. Paste JSON and submit.
 
