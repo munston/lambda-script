@@ -15,7 +15,9 @@ export function emitHaskell(program: Program): string {
 function emitExpression(expr: Expression): string {
   if (expr.kind === 'Identifier') return expr.name;
   if (expr.kind === 'Literal') {
-    return typeof expr.value === 'string' ? JSON.stringify(expr.value) : String(expr.value);
+    if (typeof expr.value === 'string') return JSON.stringify(expr.value);
+    if (typeof expr.value === 'boolean') return expr.value ? 'True' : 'False';
+    return String(expr.value);
   }
   return '{- unsupported -}';
 }

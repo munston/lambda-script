@@ -1,5 +1,6 @@
-module Hello
+module Main
 
-hello = "hello world"
 answer = 42
-say = print hello
+name = "lambda"
+flag = true
+copy = answer
