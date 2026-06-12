@@ -1,7 +1,15 @@
+#!/usr/bin/env python3
+"""
+LambdaScript repository interface verifier.
+
+This script enforces the safe root interface contract for the repository.
+"""
+
 from __future__ import annotations
 
-from pathlib import Path
 import re
+import sys
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -31,17 +39,13 @@ ALLOWED_GIT_PATTERNS = [
     "git push",
 ]
 
-EXPECTED_ROOT_BATS = ["pull.bat", "push.bat", "sync-git.bat"]
-
-
-def fail(message: str) -> None:
-    print(f"FAIL: {message}")
-    raise SystemExit(1)
-
-
-def config_path(root: Path, path_text: str) -> Path:
-    parts = [p for p in re.split(r"[\\/]+", path_text) if p and p != "."]
-    return root.joinpath(*parts) if parts else root
+EXPECTED_ROOT_BATS = [
+    "install.bat",
+    "pull.bat",
+    "push.bat",
+    "sync-git.bat",
+    "verify.bat",
+]
 
 
 def read(path: Path) -> str:
@@ -50,13 +54,22 @@ def read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def verify_root_bats() -> None:
+def fail(msg: str):
+    print(f"FAIL: {msg}")
+    sys.exit(1)
+
+
+def verify_root_bats():
     bats = sorted(p.name for p in ROOT.glob("*.bat"))
     if bats != EXPECTED_ROOT_BATS:
         fail(f"top-level .bat files are {bats}, expected {EXPECTED_ROOT_BATS}")
+
     pull = read(ROOT / "pull.bat")
     push = read(ROOT / "push.bat")
     sync = read(ROOT / "sync-git.bat")
+    install = read(ROOT / "install.bat")
+    verify = read(ROOT / "verify.bat")
+
     if r"scripts\git\pull-all.bat" not in pull:
         fail("pull.bat does not delegate to scripts\\git\\pull-all.bat")
     if r"scripts\git\push-all.bat" not in push:
@@ -65,6 +78,23 @@ def verify_root_bats() -> None:
         fail("sync-git.bat does not call pull.bat")
     if r"scripts\test\verify-interface.py" not in sync:
         fail("sync-git.bat does not run scripts\\test\\verify-interface.py")
+
+    if "npm install" not in install:
+        fail("install.bat does not install glc npm dependencies")
+    if "npm test" not in install:
+        fail("install.bat does not run glc tests")
+
+    if "npm run build" not in verify:
+        fail("verify.bat does not run glc build")
+    if "npm run glc" not in verify:
+        fail("verify.bat does not run glc CLI smoke commands")
+
+    print("OK lambda-script interface verified")
+
+
+def config_path(root: Path, path_text: str) -> Path:
+    parts = [p for p in re.split(r"[\\/]+", path_text) if p and p != "."]
+    return root.joinpath(*parts) if parts else root
 
 
 def parse_config() -> list[tuple[str, str, str, str, str]]:
@@ -146,7 +176,7 @@ def main() -> None:
     verify_target_scripts(targets)
     verify_git_safety()
     verify_push_order()
-    print("OK three-bat interface verified")
+    print("OK lambda-script interface verified")
     print("root bat files:", ", ".join(EXPECTED_ROOT_BATS))
     print("targets:", ", ".join(name for name, *_ in targets))
     print("safe git subset: status, fetch, pull --ff-only, add -A, diff --cached --quiet, commit -m, push HEAD:branch")

@@ -21,6 +21,17 @@ lambda-script/
       test/
 ```
 
+## Getting Started
+
+From the repository root:
+
+```bat
+install.bat
+verify.bat
+```
+
+See `docs/INSTALL.md` for full instructions.
+
 ## Diff Spring (Bidirectional Sync)
 
 **Generate patch from local changes:**

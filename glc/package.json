@@ -4,7 +4,7 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "npm exec -- tsc -p tsconfig.json",
     "test": "npm run build && node dist/test/smoke.js",
     "glc": "npm run build --silent && node dist/cli/main.js"
   },
