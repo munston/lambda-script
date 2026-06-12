@@ -46,24 +46,21 @@ function main() {
 
   // Negative FFI cases
   {
-    // Invalid FFI type
-    const badType = 'module Bad
-foreign cpp x : nope -> i32 = "x"';
+    const badType = `module Bad
+foreign cpp x : nope -> i32 = "x"`;
     const pr1 = parse(badType, 'bad.ls');
     assert.ok(pr1.diagnostics.length > 0, 'Invalid FFI type should produce diagnostics');
 
-    // Wrong argument count
-    const badArity = 'module Bad
+    const badArity = `module Bad
 foreign cpp add_i32 : i32 -> i32 -> i32 = "ls_add_i32"
-answer = add_i32(1)';
+answer = add_i32(1)`;
     const pr2 = parse(badArity, 'bad.ls');
     const c2 = checkProgram(pr2.program!);
     assert.ok(c2.diagnostics.length > 0, 'Wrong argument count should produce diagnostics');
 
-    // Wrong literal type
-    const badLiteral = 'module Bad
+    const badLiteral = `module Bad
 foreign cpp add_i32 : i32 -> i32 -> i32 = "ls_add_i32"
-answer = add_i32("bad", 2)';
+answer = add_i32("bad", 2)`;
     const pr3 = parse(badLiteral, 'bad.ls');
     const c3 = checkProgram(pr3.program!);
     assert.ok(c3.diagnostics.length > 0, 'Wrong literal type should produce diagnostics');
