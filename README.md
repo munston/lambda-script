@@ -33,6 +33,8 @@ bash scripts/diff_spring/generate-and-drop.sh "Your description here"
 bash scripts/diff_spring/patch-repl.sh
 ```
 
+✅ **REPL v14 is working** — Paste JSON and press Enter once.
+
 Paste the full JSON patch, then press **Enter once**. The REPL automatically detects when the JSON object is complete.
 
 ## Build the compiler
