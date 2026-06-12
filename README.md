@@ -10,18 +10,14 @@ Initial shape:
 lambda-script/
   examples/
     hello.ls
-    milk_metric.ls
   glc/
     src/
       cli/
-      ir/
+      core/
       parser/
-      emit/
-      backend/
-      protocol/
-      test/
-  tools/
-    milk_metric.py
+      codegen/
+      runtime/
+    test/
 ```
 
 ## Getting Started
@@ -34,6 +30,14 @@ verify.bat
 ```
 
 See `docs/INSTALL.md` for full instructions.
+
+## Compiler boundary
+
+LambdaScript code generation is deliberately limited to TypeScript and Haskell. Those are the supported backends, and backend work should preserve a clean correspondence between the TypeScript and Haskell forms.
+
+Python is deliberately unsupported as a code generation target. LambdaScript must not emit Python, register Python as a backend, integrate Python modules through FFI, or treat Python as a supported runtime surface. Python may appear only as external tooling or as legacy input to be parsed, translated from, migrated away from, or replaced by LambdaScript-owned forms.
+
+C++ is available only as a foreign runtime demonstration through explicit FFI examples; it is not a LambdaScript emission backend.
 
 ## Diff Spring (Bidirectional Sync)
 
@@ -57,7 +61,7 @@ python scripts/diff_spring/patch-repl-gui.py
 python scripts/web/patch_chat.py
 ```
 
-> Launch from an MSYS2 shell where `ssh -T git@github.com` already succeeds.
+> Launch from an MSYS2 shell where `ssh -T git@github.com` already succeeds. The Python commands above are repository support scripts only; they are not LambdaScript language support, a Python backend, or Python FFI integration.
 
 Open http://localhost:8765 in your browser. Paste JSON and submit.
 
@@ -74,19 +78,8 @@ npm run build
 
 ```sh
 cd glc
-npm run glc -- ../examples/hello.ls --target ts
-npm run glc -- ../examples/hello.ls --target hs
-npm run glc -- ../examples/hello.ls --target py
+npm run glc -- emit ../examples/hello.ls --target ts
+npm run glc -- emit ../examples/hello.ls --target hs
 ```
 
-## Python metric tool
-
-The dependency-free Python tool lives at `tools/milk_metric.py` and accepts a JSON payload from stdin or from a file path argument.
-
-```sh
-python tools/milk_metric.py payload.json
-```
-
-The companion LambdaScript manifest is `examples/milk_metric.ls`, which can be parsed or emitted to Python through `glc`.
-
-Current `glc` is a deliberately small bootstrap compiler. It parses modules, declarations, string/int literals, variables, simple calls, and C++ foreign imports, then emits TypeScript, Haskell, or Python text.
+Current `glc` is a deliberately small bootstrap compiler. It parses modules, declarations, string/int literals, variables, simple calls, and C++ foreign imports, then emits TypeScript or Haskell text. Python emission is excluded by design.
