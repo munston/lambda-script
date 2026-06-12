@@ -2,7 +2,6 @@ import { parse } from '../parser';
 import { checkProgram } from '../core/check';
 import { emitTypeScript } from '../codegen/typescript';
 import { emitHaskell } from '../codegen/haskell';
-import { emitPython } from '../codegen/python';
 import * as fs from 'fs';
 
 export function runLsc(args: string[]): number {
@@ -10,7 +9,9 @@ export function runLsc(args: string[]): number {
     console.log(`Usage:
   lsc parse <file.ls> [--json]
   lsc check <file.ls>
-  lsc emit <file.ls> --target ts|hs|py [--out <file>]
+  lsc emit <file.ls> --target ts|hs [--out <file>]
+
+Targets are TypeScript and Haskell only. Python emission is unsupported by design.
 `);
     return 1;
   }
@@ -73,8 +74,9 @@ export function runLsc(args: string[]): number {
       output = emitTypeScript(program);
     } else if (target === 'hs') {
       output = emitHaskell(program);
-    } else if (target === 'py') {
-      output = emitPython(program);
+    } else if (target === 'py' || target === 'python') {
+      console.error('Python emission is unsupported by design. glc emits TypeScript or Haskell only.');
+      return 1;
     } else {
       console.error(`Unknown target: ${target}`);
       return 1;
