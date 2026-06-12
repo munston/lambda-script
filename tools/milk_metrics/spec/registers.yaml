@@ -1,0 +1,94 @@
+version: 0.1
+purpose: >
+  Machine-readable register vocabulary for the diagnostic image toolkit. These
+  entries are not model labels by themselves. They define the interpretive
+  targets that low-level proxies may support or weaken.
+
+registers:
+  milk:
+    role: primary_safety_register
+    description: >
+      Private visual safety carried by composure, controlled presentation,
+      whole-person retention, ordinary visible cues, and surface auditability.
+    supports:
+      - personhood_retained
+      - self_authored_presentation
+      - garment_led_threshold
+      - private_or_enclosed_context
+      - soft_surface_continuity
+      - ordinary_visual_explanation
+    weakens:
+      - personhood_collapse
+      - crude_localisation
+      - age_ambiguity
+      - coercive_or_harm_reading
+      - public_context_pressure
+      - severe_artifacting
+
+  peach:
+    role: bodily_warmth_register
+    description: >
+      Body warmth integrated with the subject as a coherent person. This
+      register is about contour, softness, fabric-held shape, and relaxed body
+      presence rather than detached local inspection.
+    supports:
+      - hip_line_warmth
+      - contour_continuity
+      - fabric_held_body_presence
+      - relaxed_posture
+      - body_context_retained
+    weakens:
+      - anatomical_fragmentation
+      - crop_overlocalisation
+      - harsh_surface_segmentation
+      - loss_of_subject_context
+
+  coal:
+    role: pressured_feeling_register
+    description: >
+      Guarded inward feeling with self-possession. Coal requires controlled
+      expression and mutual recognition. It should never be inferred from fear,
+      distress, helplessness, or loss of agency.
+    supports:
+      - guarded_expression
+      - bashful_resolve
+      - contained_embarrassment
+      - inward_composure
+      - camera_or_mirror_recognition
+    weakens:
+      - fear_reading
+      - helplessness_reading
+      - vacant_distress
+      - coercive_or_harm_reading
+
+  toy:
+    role: idealisation_register
+    description: >
+      Alive idealised simplification. Positive toy-like form means coherent,
+      lively, stylised, and self-possessed. Failed toy-like form means plastic,
+      vacant, uncanny, malformed, or passive.
+    supports:
+      - coherent_shape_language
+      - lively_expression
+      - simplified_but_plausible_body
+      - clean_stylisation
+    weakens:
+      - plastic_skin
+      - mannequin_posture
+      - vacant_expression
+      - uncanny_geometry
+      - passive_object_display
+
+gates:
+  hard:
+    - age_ambiguity
+    - coercive_or_harm_reading
+    - helplessness_reading
+    - severe_personhood_collapse
+    - severe_uncanny_deformation
+  soft:
+    - public_context_pressure
+    - crop_overlocalisation
+    - weak_face_or_relation_context
+    - compression_artifacting
+    - over_smoothing
