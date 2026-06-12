@@ -2,6 +2,7 @@ import { parse } from '../src/parser';
 import { checkProgram } from '../src/core/check';
 import { emitTypeScript } from '../src/codegen/typescript';
 import { emitHaskell } from '../src/codegen/haskell';
+import { emitPython } from '../src/codegen/python';
 import * as fs from 'fs';
 import path from 'path';
 import assert from 'node:assert/strict';
@@ -20,9 +21,12 @@ function main() {
 
     const ts = emitTypeScript(pr.program!);
     const hs = emitHaskell(pr.program!);
+    const py = emitPython(pr.program!);
     assert.ok(ts.includes('export const answer = 42'));
     assert.ok(hs.includes('answer = 42'));
     assert.ok(hs.includes('flag = True'));
+    assert.ok(py.includes('answer = 42'));
+    assert.ok(py.includes('flag = True'));
   }
 
   // FFI
@@ -35,6 +39,7 @@ function main() {
 
     const ts = emitTypeScript(pr.program!);
     const hs = emitHaskell(pr.program!);
+    const py = emitPython(pr.program!);
 
     assert.ok(ts.includes('CppForeignRuntime'));
     assert.ok(ts.includes('export function add_i32'));
@@ -42,6 +47,8 @@ function main() {
     assert.ok(hs.includes('foreign import ccall "ls_add_i32"'));
     assert.ok(hs.includes('foreign import ccall "ls_mul_f64"'));
     assert.ok(hs.includes('foreign import ccall "ls_log_message"'));
+    assert.ok(py.includes('def add_i32(arg0, arg1):'));
+    assert.ok(py.includes('foreign cpp symbol ls_add_i32 is not bound in Python output'));
   }
 
   // Negative FFI cases
