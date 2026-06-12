@@ -7,6 +7,8 @@ import numpy as np
 from PIL import Image
 
 from .metrics import compute_metric
+from .proxies import proxy_dictionary
+from .registers import infer_registers
 from .render import (
     save_before_after,
     save_change_map,
@@ -26,6 +28,17 @@ def read_image(path: Path) -> tuple[Image.Image, np.ndarray]:
     return img, arr
 
 
+def report_payload(mode: str, score: float, components: dict[str, float]) -> dict:
+    registers = infer_registers(components)
+    return {
+        "mode": mode,
+        "score": score,
+        "components": components,
+        "registers": registers.as_dict(),
+        "proxy_dictionary": proxy_dictionary(),
+    }
+
+
 def run_analyze(args: argparse.Namespace) -> None:
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -36,7 +49,7 @@ def run_analyze(args: argparse.Namespace) -> None:
     save_gray_mask(out / "penalty_mask.png", result.penalty_map)
     save_response_overlay(out / "response_overlay.png", img, result.positive_map, result.penalty_map)
     save_components_plot(out / "components.png", result.components)
-    save_report(out / "report.json", {"mode": "analyze", "score": result.score, "components": result.components})
+    save_report(out / "report.json", report_payload("analyze", result.score, result.components))
     print(f"score: {result.score:.6f}")
     print(out)
 
@@ -57,17 +70,18 @@ def run_restore(args: argparse.Namespace) -> None:
     save_response_overlay(out / "response_overlay.png", restored_img, run.result.positive_map, run.result.penalty_map)
     save_components_plot(out / "components.png", run.result.components)
     save_trace(out / "score_trace.png", run.history)
-    save_report(
-        out / "report.json",
+
+    payload = report_payload("restore", run.result.score, run.result.components)
+    payload.update(
         {
-            "mode": "restore",
             "initial_score": base.score,
             "final_score": run.result.score,
             "increase": run.result.score - base.score,
             "best_params": run.params.__dict__,
-            "components": run.result.components,
-        },
+            "method_note": "conservative restoration only; no geometric warp; score corrected by distortion and edge-loss penalties",
+        }
     )
+    save_report(out / "report.json", payload)
     print(f"initial_score: {base.score:.6f}")
     print(f"final_score:   {run.result.score:.6f}")
     print(f"increase:      {run.result.score - base.score:.6f}")
@@ -81,15 +95,14 @@ def run_penalty_mask(args: argparse.Namespace) -> None:
     result = compute_metric(arr, arr)
     save_gray_mask(out / "penalty_mask.png", result.penalty_map)
     save_response_overlay(out / "penalty_overlay.png", img, np.zeros_like(result.penalty_map), result.penalty_map)
-    save_report(
-        out / "penalty_report.json",
+    payload = report_payload("penalty-mask", result.score, result.components)
+    payload.update(
         {
-            "mode": "penalty-mask",
-            "score": result.score,
             "chroma_penalty": result.components.get("chroma_penalty"),
             "environment_penalty": result.components.get("environment_penalty"),
-        },
+        }
     )
+    save_report(out / "penalty_report.json", payload)
     print(out)
 
 
