@@ -33,12 +33,17 @@ bash scripts/diff_spring/generate-and-drop.sh "Your description here"
 bash scripts/diff_spring/patch-repl.sh
 ```
 
-**GUI Wrapper (recommended):**
+**GUI Wrapper:**
 ```bash
 python scripts/diff_spring/patch-repl-gui.py
 ```
 
-This is a GUI frontend that uses your existing `absorb-and-ship.sh` for safety.
+**Local Web Interface (chat-style):**
+```bash
+python scripts/web/patch_chat.py
+```
+
+Open http://localhost:8765 in your browser. Paste JSON and submit.
 
 ## Build the compiler
 
