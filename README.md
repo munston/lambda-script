@@ -33,7 +33,7 @@ bash scripts/diff_spring/generate-and-drop.sh "Your description here"
 bash scripts/diff_spring/patch-repl.sh
 ```
 
-(Paste the full JSON → type `LS_JSON_END` on its own line)
+Paste the full JSON patch, then press **Enter once**. The REPL automatically detects when the JSON object is complete.
 
 ## Build the compiler
 
