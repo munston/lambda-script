@@ -1,4 +1,3 @@
-
 # local SSH keys
 key.keyfile
 key.keyfile.pub
@@ -10,3 +9,11 @@ id_ed25519
 id_ed25519.pub
 id_rsa
 id_rsa.pub
+
+# glc generated files
+glc/node_modules/
+glc/dist/
+glc/package-lock.json
+
+# native demo generated files
+native/cppffi/ffi_demo.exe
