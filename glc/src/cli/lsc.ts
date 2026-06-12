@@ -10,6 +10,8 @@ export function runLsc(args: string[]): number {
   lsc parse <file.ls> [--json]
   lsc check <file.ls>
   lsc emit <file.ls> --target ts|hs [--out <file>]
+
+Targets are TypeScript and Haskell only. Python emission is unsupported by design.
 `);
     return 1;
   }
@@ -72,6 +74,9 @@ export function runLsc(args: string[]): number {
       output = emitTypeScript(program);
     } else if (target === 'hs') {
       output = emitHaskell(program);
+    } else if (target === 'py' || target === 'python') {
+      console.error('Python emission is unsupported by design. glc emits TypeScript or Haskell only.');
+      return 1;
     } else {
       console.error(`Unknown target: ${target}`);
       return 1;
