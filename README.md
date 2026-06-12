@@ -10,6 +10,7 @@ Initial shape:
 lambda-script/
   examples/
     hello.ls
+    milk_metric.ls
   glc/
     src/
       cli/
@@ -19,6 +20,8 @@ lambda-script/
       backend/
       protocol/
       test/
+  tools/
+    milk_metric.py
 ```
 
 ## Getting Started
@@ -74,7 +77,16 @@ cd glc
 npm run glc -- ../examples/hello.ls --target ts
 npm run glc -- ../examples/hello.ls --target hs
 npm run glc -- ../examples/hello.ls --target py
-npm run glc -- ../examples/hello.ls --target cpp
 ```
 
-Current `glc` is a deliberately small bootstrap compiler. It parses modules, declarations, string/int literals, variables, and simple calls, then emits TypeScript, Haskell, Python, or C++ text.
+## Python metric tool
+
+The dependency-free Python tool lives at `tools/milk_metric.py` and accepts a JSON payload from stdin or from a file path argument.
+
+```sh
+python tools/milk_metric.py payload.json
+```
+
+The companion LambdaScript manifest is `examples/milk_metric.ls`, which can be parsed or emitted to Python through `glc`.
+
+Current `glc` is a deliberately small bootstrap compiler. It parses modules, declarations, string/int literals, variables, simple calls, and C++ foreign imports, then emits TypeScript, Haskell, or Python text.
