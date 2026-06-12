@@ -16,9 +16,17 @@ export interface Literal {
   span?: Span;
 }
 
+export interface CallExpression {
+  kind: 'CallExpression';
+  callee: Identifier;
+  arguments: Expression[];
+  span?: Span;
+}
+
 export type Expression =
   | Identifier
-  | Literal;
+  | Literal
+  | CallExpression;
 
 export interface Statement {
   kind: string;
@@ -30,3 +38,29 @@ export interface Declaration extends Statement {
   name: Identifier;
   value: Expression;
 }
+
+export type ForeignTarget = 'cpp';
+
+export type ForeignPrimitiveType =
+  | 'i32'
+  | 'f64'
+  | 'bool'
+  | 'string'
+  | 'void';
+
+export interface ForeignSignature {
+  params: ForeignPrimitiveType[];
+  result: ForeignPrimitiveType;
+}
+
+export interface ForeignImport extends Statement {
+  kind: 'ForeignImport';
+  target: ForeignTarget;
+  name: Identifier;
+  symbol: string;
+  signature: ForeignSignature;
+}
+
+export type TopLevel =
+  | Declaration
+  | ForeignImport;

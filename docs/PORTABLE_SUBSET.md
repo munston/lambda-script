@@ -1,29 +1,14 @@
-# Portable Subset (v0)
+# Portable Subset (v0 + FFI)
 
 ## Current Syntax
 
 ```ls
 module Name
 
-answer = 42
-name = "lambda"
-flag = true
-copy = answer
+foreign cpp add_i32 : i32 -> i32 -> i32 = "ls_add_i32"
+answer = add_i32(40, 2)
 ```
 
-**Supported:**
-- `module Name`
-- `name = <number>`
-- `name = "text"`
-- `name = true` / `name = false`
-- `copy = name` (identifier reference)
+**Supported:** Modules, declarations, literals, identifiers, calls, `foreign cpp` declarations.
 
-**Not yet supported:**
-- Function calls
-- Function definitions
-- Records
-- Tagged unions
-- Pattern matching
-
-**Out of scope for v0:**
-- Mutation, effects, classes, inheritance, async, exceptions
+**Not yet supported:** User functions, records, tagged unions, pattern matching.
