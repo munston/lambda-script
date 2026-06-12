@@ -1,9 +1,10 @@
 import { EndpointKind, BridgeEndpoint } from './endpoint';
+import { Program } from '../core/program';
 
 export interface BridgeMessage {
   from: EndpointKind;
   to: EndpointKind;
-  payload: unknown;
+  payload: Program | unknown; // Source endpoint can carry Program
   // Future: id, timestamp, correlationId, etc.
 }
 
