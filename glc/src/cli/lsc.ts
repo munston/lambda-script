@@ -2,7 +2,6 @@ import { parse } from '../parser';
 import { checkProgram } from '../core/check';
 import { emitTypeScript } from '../codegen/typescript';
 import { emitHaskell } from '../codegen/haskell';
-import { Program } from '../core/program';
 import * as fs from 'fs';
 
 export function runLsc(args: string[]): number {
@@ -24,14 +23,15 @@ export function runLsc(args: string[]): number {
   }
 
   const source = fs.readFileSync(file, 'utf8');
-  let program: Program;
+  const parseResult = parse(source, file);
 
-  try {
-    program = parse(source, file);
-  } catch (e: any) {
-    console.error('Parse error:', e.message || e);
+  if (parseResult.diagnostics.length > 0) {
+    console.error('Parse errors:');
+    parseResult.diagnostics.forEach(d => console.error(`  ${d.message}`));
     return 1;
   }
+
+  const program = parseResult.program!;
 
   if (command === 'parse') {
     if (args.includes('--json')) {
@@ -43,10 +43,10 @@ export function runLsc(args: string[]): number {
   }
 
   if (command === 'check') {
-    const result = checkProgram(program);
-    if (result.diagnostics.length > 0) {
-      console.error('Diagnostics found:');
-      console.error(result.diagnostics);
+    const checkResult = checkProgram(program);
+    if (checkResult.diagnostics.length > 0) {
+      console.error('Check diagnostics:');
+      checkResult.diagnostics.forEach(d => console.error(`  ${d.message}`));
       return 1;
     }
     console.log('OK: no diagnostics');
@@ -54,6 +54,13 @@ export function runLsc(args: string[]): number {
   }
 
   if (command === 'emit') {
+    const checkResult = checkProgram(program);
+    if (checkResult.diagnostics.length > 0) {
+      console.error('Check diagnostics:');
+      checkResult.diagnostics.forEach(d => console.error(`  ${d.message}`));
+      return 1;
+    }
+
     const targetIdx = args.indexOf('--target');
     const target = targetIdx !== -1 ? args[targetIdx + 1] : 'ts';
 

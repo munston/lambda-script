@@ -1,9 +1,29 @@
-# Portable Subset
+# Portable Subset (v0)
 
-LambdaScript aims for a small, stable, portable core IR.
+## Current Syntax
 
-**Currently supported:** Modules, Declarations, Identifiers, Literals.
+```ls
+module Name
 
-**Planned:** Function calls, simple functions, records, tagged unions.
+answer = 42
+name = "lambda"
+flag = true
+copy = answer
+```
 
-**Out of scope for now:** Mutation, effects, async, classes, exceptions.
+**Supported:**
+- `module Name`
+- `name = <number>`
+- `name = "text"`
+- `name = true` / `name = false`
+- `copy = name` (identifier reference)
+
+**Not yet supported:**
+- Function calls
+- Function definitions
+- Records
+- Tagged unions
+- Pattern matching
+
+**Out of scope for v0:**
+- Mutation, effects, classes, inheritance, async, exceptions
