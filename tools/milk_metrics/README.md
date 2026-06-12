@@ -46,12 +46,12 @@ The search is deliberately constrained. It uses median filtering, partial Gaussi
 python -m milk_metrics.cli penalty-mask path/to/image.png --out runs/example
 ```
 
-The penalty mask is a crude diagnostic proxy. It marks high-saturation red/pink/magenta signal in lower-central image zones and public-context proxies where enabled by the metric. It is not a semantic detector.
+The penalty mask is a crude diagnostic proxy. It marks high-chroma warm or magenta signal and public-context proxies where enabled by the metric. It is not a semantic detector.
 
 ## Metric intent
 
-The provisional score rewards smooth unstrained skin or midriff surface, compression cleanliness, private-room or soft substrate cues, garment/skin boundary structure, whole-person or upper-body context proxies, and edge preservation under restoration.
+The provisional score rewards smooth surface regions, compression cleanliness, private-room or soft substrate cues, garment-boundary structure, whole-person or upper-region context proxies, and edge preservation under restoration.
 
-The provisional score penalizes distortion introduced by processing, edge loss from over-smoothing, public-context proxy signal, and high-saturation lower-central red/pink/magenta proxy signal.
+The provisional score penalizes distortion introduced by processing, edge loss from over-smoothing, public-context proxy signal, and high-chroma proxy signal.
 
 The code is intentionally inspectable and rule-based. It should be treated as a research scaffold, not a trained classifier.
