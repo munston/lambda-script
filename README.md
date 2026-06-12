@@ -28,14 +28,17 @@ lambda-script/
 bash scripts/diff_spring/generate-and-drop.sh "Your description here"
 ```
 
-**Interactive REPL for pasting Grok patches:**
+**Interactive REPL (terminal):**
 ```bash
 bash scripts/diff_spring/patch-repl.sh
 ```
 
-✅ **REPL v14 is working** — Paste JSON and press Enter once.
+**GUI Wrapper (recommended):**
+```bash
+python scripts/diff_spring/patch-repl-gui.py
+```
 
-Paste the full JSON patch, then press **Enter once**. The REPL automatically detects when the JSON object is complete.
+This is a GUI frontend that uses your existing `absorb-and-ship.sh` for safety.
 
 ## Build the compiler
 
