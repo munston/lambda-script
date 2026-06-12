@@ -3,7 +3,7 @@
 Local branch race dashboard for LambdaScript.
 
 Uses only the Python standard library. It reads the local Git repository and
-shows the visible agent branches against origin/main.
+shows visible agent branches against origin/main.
 
 Launch from the repository root with:
     python scripts/web/branch_dashboard.py
@@ -18,11 +18,9 @@ import json
 import os
 import subprocess
 import sys
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
-from typing import Iterable
 
 PORT = 8766
 PRIMARY_BRANCH = "origin/main"
@@ -69,15 +67,19 @@ def ref_exists(ref: str, root: Path) -> bool:
 
 
 def short_sha(ref: str, root: Path) -> str:
-    return git_text(["rev-parse", "--short", ref], root, default="")
+    return git_text(["rev-parse", "--short", ref], root)
 
 
 def full_sha(ref: str, root: Path) -> str:
-    return git_text(["rev-parse", ref], root, default="")
+    return git_text(["rev-parse", ref], root)
 
 
 def tree_hash(ref: str, root: Path) -> str:
-    return git_text(["rev-parse", f"{ref}^{{tree}}"], root, default="")
+    return git_text(["rev-parse", f"{ref}^{{tree}}"], root)
+
+
+def merge_base(ref: str, root: Path) -> str:
+    return git_text(["merge-base", PRIMARY_BRANCH, ref], root)
 
 
 def list_remote_branches(root: Path) -> list[str]:
@@ -86,10 +88,7 @@ def list_remote_branches(root: Path) -> list[str]:
     for raw in text.splitlines():
         if not raw or raw == "origin/HEAD" or raw == "origin/main":
             continue
-        if raw.startswith("origin/"):
-            name = raw[len("origin/"):]
-        else:
-            name = raw
+        name = raw[len("origin/"):] if raw.startswith("origin/") else raw
         if name in PINNED_BRANCHES or name.startswith(BRANCH_PREFIXES):
             names.add(name)
     for name in PINNED_BRANCHES:
@@ -102,7 +101,7 @@ def ahead_behind(ref: str, root: Path) -> tuple[int, int]:
     text = git_text(["rev-list", "--left-right", "--count", f"{PRIMARY_BRANCH}...{ref}"], root)
     parts = text.split()
     if len(parts) != 2:
-        return (0, 0)
+        return 0, 0
     behind = int(parts[0])
     ahead = int(parts[1])
     return ahead, behind
@@ -120,10 +119,7 @@ def changed_files(ref: str, root: Path) -> list[dict[str, str]]:
 
 def working_tree_state(root: Path) -> dict[str, object]:
     text = git_text(["status", "--porcelain=v1"], root)
-    return {
-        "clean": text == "",
-        "entries": text.splitlines(),
-    }
+    return {"clean": text == "", "entries": text.splitlines()}
 
 
 def classify_branch(ahead: int, behind: int) -> str:
@@ -150,6 +146,7 @@ def collect_status(root: Path) -> dict[str, object]:
         files = changed_files(ref, root)
         for item in files:
             touched.setdefault(item["path"], []).append(name)
+        base = merge_base(ref, root)
         branches.append({
             "name": name,
             "ref": ref,
@@ -158,12 +155,13 @@ def collect_status(root: Path) -> dict[str, object]:
             "state": classify_branch(ahead, behind),
             "head": short_sha(ref, root),
             "head_full": full_sha(ref, root),
-            "merge_base": short_sha(f"$(git merge-base {PRIMARY_BRANCH} {ref})", root),
+            "merge_base": base[:12] if base else "",
+            "merge_base_full": base,
             "tree": tree_hash(ref, root),
             "files": files,
         })
     collisions = [
-        {"path": path, "branches": sorted(names)}
+        {"path": path, "branches": sorted(set(names))}
         for path, names in touched.items()
         if len(set(names)) > 1
     ]
@@ -205,12 +203,11 @@ th { background: #eee; }
 .badge { display: inline-block; padding: 2px 6px; margin: 1px; border-radius: 999px; background: #eee; font-size: 12px; }
 .panel { background: white; border: 1px solid #ddd; padding: 12px; margin-top: 16px; }
 .small { color: #555; font-size: 13px; }
-pre { white-space: pre-wrap; background: #fff; border: 1px solid #ddd; padding: 12px; }
 </style>
 </head>
 <body>
 <h1>LambdaScript Branch Race Dashboard</h1>
-<p class="small">Read-only dashboard for agent branches against <code>origin/main</code>. Use Refresh to reread local Git state; use Fetch to update remote refs first.</p>
+<p class="small">Read-only dashboard for visible agent branches against <code>origin/main</code>. Use Refresh to reread local Git state; use Fetch to update remote refs first.</p>
 <button onclick="loadStatus(false)">Refresh</button>
 <button onclick="loadStatus(true)">Fetch origin then refresh</button>
 <div id="summary" class="panel">Loading...</div>
@@ -242,7 +239,7 @@ function render(data) {
     <div><b>main tree:</b> <code>${esc(data.main.tree)}</code></div>
     <div><b>branches:</b> ${data.branches.length}; <b>ready-base:</b> ${ready}; <b>stale:</b> ${stale}; <b>working tree:</b> ${clean}</div>
     <div class="small">Generated: ${esc(data.generated_at)}</div>`;
-  let rows = data.branches.map(b => {
+  const rows = data.branches.map(b => {
     const files = b.files.slice(0, 12).map(f => `<span class="badge">${esc(f.status)} ${esc(f.path)}</span>`).join(' ');
     const more = b.files.length > 12 ? `<span class="badge">+${b.files.length - 12} more</span>` : '';
     return `<tr>
@@ -251,15 +248,16 @@ function render(data) {
       <td>${b.ahead}</td>
       <td>${b.behind}</td>
       <td><code>${esc(b.head)}</code></td>
+      <td><code>${esc(b.merge_base)}</code></td>
       <td><code>${esc(b.tree)}</code></td>
       <td>${files} ${more}</td>
     </tr>`;
   }).join('');
   document.getElementById('branches').innerHTML = `<table>
-    <thead><tr><th>Branch</th><th>State</th><th>Ahead</th><th>Behind</th><th>Head</th><th>Tree</th><th>Files changed versus main</th></tr></thead>
-    <tbody>${rows || '<tr><td colspan="7">No agent branches found.</td></tr>'}</tbody>
+    <thead><tr><th>Branch</th><th>State</th><th>Ahead</th><th>Behind</th><th>Head</th><th>Merge base</th><th>Tree</th><th>Files changed versus main</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="8">No agent branches found.</td></tr>'}</tbody>
   </table>`;
-  let collisionRows = data.collisions.map(c => `<tr><td><code>${esc(c.path)}</code></td><td>${c.branches.map(b => `<span class="badge">${esc(b)}</span>`).join(' ')}</td></tr>`).join('');
+  const collisionRows = data.collisions.map(c => `<tr><td><code>${esc(c.path)}</code></td><td>${c.branches.map(b => `<span class="badge">${esc(b)}</span>`).join(' ')}</td></tr>`).join('');
   document.getElementById('collisions').innerHTML = `<div class="panel"><h3>Potential file collisions</h3><table>
     <thead><tr><th>Path</th><th>Branches</th></tr></thead>
     <tbody>${collisionRows || '<tr><td colspan="2">No overlapping changed paths among visible branches.</td></tr>'}</tbody>
