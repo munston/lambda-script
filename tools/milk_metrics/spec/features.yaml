@@ -1,0 +1,74 @@
+version: 0.1
+purpose: >
+  Low-level proxy vocabulary. A proxy is visible evidence, not a final judgement.
+  Register inference should combine proxies with gate logic and human-readable
+  explanation.
+
+proxy_groups:
+  surface:
+    smooth_surface_continuity:
+      supports: [milk, peach]
+      measured_by: [local_variance, high_frequency_energy]
+      risk: smoothing_can_create_false_improvement
+    compression_cleanliness:
+      supports: [milk, toy]
+      measured_by: [jpeg_boundary_score, laplacian_energy]
+      risk: removal_of_detail_can_reduce_edge_preservation
+
+  relation:
+    face_context_proxy:
+      supports: [milk, coal]
+      measured_by: [skin_like_upper_region, composition_position]
+      risk: weak_proxy_for_actual_expression
+    whole_body_context:
+      supports: [milk, peach, toy]
+      measured_by: [crop_ratio, torso_continuity, limb_context]
+      risk: close_crops_need_separate_context
+
+  garment:
+    garment_threshold_structure:
+      supports: [milk, peach]
+      measured_by: [skin_boundary_gradient, fabric_boundary_continuity]
+      risk: very_local_boundary_focus_can_reduce_personhood
+    garment_colour_structure:
+      supports: [milk, toy]
+      measured_by: [colour_regions, fabric_regions]
+      risk: colour_is_not_context_by_itself
+
+  context:
+    private_context_proxy:
+      supports: [milk, coal]
+      measured_by: [soft_background, low_public_signal, enclosed_palette]
+      risk: outdoor_context_can_still_be_private_when_secluded
+    public_context_pressure:
+      weakens: [milk, coal]
+      measured_by: [street_depth, sidewalk_like_regions]
+      risk: crude_pixel_rules_need_human_review
+
+  register_specific:
+    peach_contour_proxy:
+      supports: [peach]
+      measured_by: [hip_line_continuity, fabric_held_contour, body_region_continuity]
+      risk: contour_without_personhood_becomes_fragmentary
+    coal_expression_proxy:
+      supports: [coal]
+      measured_by: [face_presence, gaze_context, posture_compression]
+      risk: do_not_infer_coal_from_fear_or_distress
+    toy_coherence_proxy:
+      supports: [toy]
+      measured_by: [shape_coherence, symmetry_stability, artifact_absence]
+      risk: polish_can_hide_plastic_vacancy
+
+penalty_proxies:
+  red_signal_proxy:
+    description: >
+      A crude lower-central high-saturation red/pink/magenta signal. It is a
+      diagnostic penalty proxy, not a semantic detector.
+  distortion_penalty:
+    description: >
+      Measures deviation from the raw input after restoration. It prevents the
+      optimisation loop from creating a better score by changing the image.
+  edge_loss:
+    description: >
+      Measures structural loss after smoothing. It prevents compression cleanup
+      from becoming blur.
