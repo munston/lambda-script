@@ -43,6 +43,8 @@ python scripts/diff_spring/patch-repl-gui.py
 python scripts/web/patch_chat.py
 ```
 
+> Launch from an MSYS2 shell where `ssh -T git@github.com` already succeeds.
+
 Open http://localhost:8765 in your browser. Paste JSON and submit.
 
 ## Build the compiler
