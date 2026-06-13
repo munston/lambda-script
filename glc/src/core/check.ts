@@ -74,5 +74,12 @@ function checkExpression(expr: Expression, scope: Scope, diagnostics: Diagnostic
     checkExpression(expr.condition, scope, diagnostics);
     checkExpression(expr.thenBranch, scope, diagnostics);
     checkExpression(expr.elseBranch, scope, diagnostics);
+    return;
+  }
+  if (expr.kind === 'LetExpression') {
+    checkExpression(expr.value, scope, diagnostics);
+    const innerLocals = new Set(scope.locals);
+    innerLocals.add(expr.name.name);
+    checkExpression(expr.body, { topLevel: scope.topLevel, locals: innerLocals, signatures: scope.signatures }, diagnostics);
   }
 }
