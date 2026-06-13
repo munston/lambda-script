@@ -55,6 +55,11 @@ function main() {
       tsIncludes: ['export function add_i32', "symbol: 'ls_add_i32'", 'export function answer(runtime: CppForeignRuntime)'],
       hsIncludes: ['foreign import ccall "ls_add_i32" add_i32', 'answer :: IO Int', 'scaled :: IO Double'],
     },
+    {
+      file: 'examples/core/core1_functions.ls',
+      tsIncludes: ['export function add(x: number, y: number): number', 'export function max_i32(x: number, y: number): number', 'return ((n <= 1) ? 1 : (n * fact((n - 1))))'],
+      hsIncludes: ['add :: Int -> Int -> Int', 'max_i32 :: Int -> Int -> Int', 'fact n = (if (n <= 1) then 1 else (n * fact (n - 1)))'],
+    },
   ];
   for (const fixture of fixtures) checkFixture(fixture);
   console.log('Smoke test passed');
