@@ -66,6 +66,10 @@ function mapHaskellType(t: string): string {
   return '()';
 }
 
+function parenIfNeeded(s: string): string {
+  return s.startsWith('(') && s.endsWith(')') ? s : `(${s})`;
+}
+
 function emitHaskellExpr(e: any): string {
   if (e.kind === 'Literal') {
     if (typeof e.value === 'boolean') return e.value ? 'True' : 'False';
@@ -77,7 +81,7 @@ function emitHaskellExpr(e: any): string {
     const args = e.arguments.map((arg: any) => {
       const emitted = emitHaskellExpr(arg);
       if (arg.kind === 'Literal' || arg.kind === 'Identifier') return emitted;
-      return `(${emitted})`;
+      return parenIfNeeded(emitted);
     }).join(' ');
     return args.length > 0 ? `${e.callee.name} ${args}` : e.callee.name;
   }
