@@ -45,6 +45,11 @@ function checkFails(name: string, source: string, expected: string) {
   assert.ok(c.diagnostics.some(d => d.message.includes(expected)), `${name} should report ${expected}, got ${c.diagnostics.map(d => d.message).join('; ')}`);
 }
 
+function parseFails(name: string, source: string, expected: string) {
+  const pr = parse(source, `${name}.ls`);
+  assert.ok(pr.diagnostics.some(d => d.message.includes(expected)), `${name} should report ${expected}, got ${pr.diagnostics.map(d => d.message).join('; ')}`);
+}
+
 function main() {
   const fixtures: FixtureExpectation[] = [
     {
@@ -87,6 +92,8 @@ function main() {
   checkFails('if-branch-type', `module Bad\n\nf : i32 -> i32\nf x = if x < 1 then 1 else false\n`, 'If branches have different types: i32 and bool');
   checkFails('return-type', `module Bad\n\nf : i32 -> i32\nf x = false\n`, 'Function f returns bool, expected i32');
   checkFails('binary-type', `module Bad\n\nf : bool -> bool\nf x = x + true\n`, 'Operator + expects numeric operands');
+  parseFails('dangling-signature', `module Bad\n\nf : i32 -> i32\n`, 'Dangling type signature for f');
+  parseFails('duplicate-signature', `module Bad\n\nf : i32 -> i32\nf : i32 -> i32\nf x = x\n`, 'Duplicate type signature for f');
   console.log('Smoke test passed');
 }
 
