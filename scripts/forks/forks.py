@@ -494,7 +494,7 @@ def make_patch(root: Path, agent: str) -> dict[str, Any]:
     if not base:
         raise RuntimeError(f"cannot find merge-base between {MAIN_REF} and {ref}")
     files = changed_files(root, ref)
-    patch_text = git_text(["diff", "--binary", base, ref], root)
+    patch_text = git(["diff", "--binary", base, ref], root).stdout
     ahead, behind = ahead_behind(root, ref)
     base_snapshot = compact_snapshot(root, base)
     source_snapshot = compact_snapshot(root, ref)
@@ -583,7 +583,7 @@ def cmd_stage(args: argparse.Namespace) -> int:
     git(["worktree", "add", "--detach", str(work), MAIN_REF], root)
     patch_text = patch.get("patch", "")
     if patch_text.strip():
-        apply_proc = git(["apply", "--3way", "--whitespace=nowarn", "-"], work, check=False, input_text=patch_text)
+        apply_proc = git(["apply", "--3way", "--ignore-space-change", "--whitespace=nowarn", "-"], work, check=False, input_text=patch_text)
         if apply_proc.returncode != 0:
             raise RuntimeError(format_process_error(["git", "apply", "--3way", "-"], apply_proc))
         git(["add", "-A"], work)
