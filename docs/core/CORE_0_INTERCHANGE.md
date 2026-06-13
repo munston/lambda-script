@@ -76,6 +76,88 @@ Python emission is rejected
 
 The TypeScript and Haskell outputs need not be textually identical, because they use different runtime conventions. They must represent the same LambdaScript declarations, literals, calls, and C++ FFI surface.
 
+## Current implemented feature matrix
+
+This matrix records what Eddy's lane may enforce directly today. It is intentionally practical rather than aspirational.
+
+```text
+feature: module declaration
+status: core0
+syntax: module Name
+AST form: Module
+checker rule: module is accepted when parser creates a module container
+TypeScript emission: module comment plus emitted declarations
+Haskell emission: module comment plus emitted declarations
+fixtures: examples/hello.ls, examples/core/core0_values.ls, examples/core/core0_ffi.ls
+Python-destruction relevance: recovered Python files need a LambdaScript module container
+owner: Eddy
+```
+
+```text
+feature: literal value declaration
+status: core0
+syntax: name = 42 | 3.5 | true | false | "text"
+AST form: Declaration containing Literal
+checker rule: accepted by current checker
+TypeScript emission: export const name = literal
+Haskell emission: name = literal, with booleans emitted as True or False
+fixtures: examples/hello.ls, examples/core/core0_values.ls
+Python-destruction relevance: module-level Python constants can map here when the value is primitive
+owner: Eddy
+```
+
+```text
+feature: identifier alias declaration
+status: core0
+syntax: copy = answer
+AST form: Declaration containing Identifier
+checker rule: currently light; examples should reference simple previous declarations
+TypeScript emission: export const copy = answer
+Haskell emission: copy = answer
+fixtures: examples/core/core0_values.ls
+Python-destruction relevance: simple aliases can map here when name resolution is unambiguous
+owner: Eddy
+```
+
+```text
+feature: call declaration
+status: core0
+syntax: answer = add_i32(40, 2)
+AST form: Declaration containing CallExpression
+checker rule: currently light; Core-0 fixtures should use named callees and positional primitive arguments
+TypeScript emission: exported runtime-passing function for C++ calls
+Haskell emission: IO binding for foreign call results
+fixtures: examples/core/core0_ffi.ls
+Python-destruction relevance: direct calls to known functions can map here when effects are explicit
+owner: Eddy
+```
+
+```text
+feature: C++ foreign import
+status: core0
+syntax: foreign cpp local : i32 -> i32 = "symbol"
+AST form: ForeignImport
+checker rule: signature uses the accepted primitive FFI set and void appears only as result
+TypeScript emission: runtime call wrapper using CppForeignRuntime
+Haskell emission: foreign import ccall declaration
+fixtures: examples/core/core0_ffi.ls
+Python-destruction relevance: Python fragments routed to C++ should expose explicit foreign symbols here
+owner: Eddy
+```
+
+```text
+feature: Python emission rejection
+status: core0
+syntax: lsc emit file.ls --target py|python
+AST form: none
+checker rule: CLI rejects unsupported Python target
+TypeScript emission: none
+Haskell emission: none
+fixtures: glc/test/smoke.ts
+Python-destruction relevance: preserves the boundary that Python is legacy input/tooling only, not a backend
+owner: Eddy
+```
+
 ## Current asymmetries to remove
 
 The present emitters are useful but not yet a proof of robust interchange.
