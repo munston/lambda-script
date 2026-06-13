@@ -2,7 +2,8 @@
 """Replayable submission objects for forks.
 
 This module is intentionally separate from branch sync. It captures pending work
-into .forks/submissions and replays that saved patch onto current main.
+into .forks/submissions and replays that saved patch onto current main. Agent
+lanes can then be kept aligned with main without destroying the captured work.
 """
 
 from __future__ import annotations
@@ -17,6 +18,7 @@ from typing import Any
 import forks
 
 SUBMISSION_DIR = "submissions"
+SUBMISSION_FORMAT = "LS_FORK_SUBMISSION_V1"
 
 
 def submission_path(root: Path, agent: str) -> Path:
@@ -53,7 +55,7 @@ def compatible_patch(data: dict[str, Any]) -> dict[str, Any]:
         "changed_files": data["changed_files"],
         "patch": data["patch"],
         "created_at": data["created_at"],
-        "submission_source": "LS_FORK_SUBMISSION_V1",
+        "submission_source": SUBMISSION_FORMAT,
     }
 
 
@@ -67,7 +69,7 @@ def load_submission(root: Path, agent: str) -> dict[str, Any]:
     if not path.exists():
         raise RuntimeError(f"missing submission: {path}; run forks capture {agent}")
     data = forks.read_json(path)
-    if data.get("format") != "LS_FORK_SUBMISSION_V1":
+    if data.get("format") != SUBMISSION_FORMAT:
         raise RuntimeError(f"invalid submission format: {path}")
     if data.get("patch_sha256") != forks.sha256_text(data.get("patch", "")):
         raise RuntimeError("submission patch hash mismatch")
@@ -89,12 +91,13 @@ def make_submission(root: Path, agent: str, source_ref: str | None) -> dict[str,
     source_snapshot = forks.compact_snapshot(root, ref)
     current_main = forks.compact_snapshot(root, forks.MAIN_REF)
     return {
-        "format": "LS_FORK_SUBMISSION_V1",
+        "format": SUBMISSION_FORMAT,
         "agent": forks.normalize_agent(agent),
         "agent_branch": forks.agent_branch(agent),
         "source_ref": ref,
-        "base_snapshot": base_snapshot,
         "source_snapshot": source_snapshot,
+        "source_commit": source_snapshot["commit"],
+        "base_snapshot": base_snapshot,
         "current_main_snapshot_at_capture": current_main,
         "base_main_commit": base_snapshot["commit"],
         "base_main_tree": base_snapshot["tree"],
@@ -103,6 +106,7 @@ def make_submission(root: Path, agent: str, source_ref: str | None) -> dict[str,
         "patch_sha256": forks.sha256_text(patch_text),
         "ahead": ahead,
         "behind": behind,
+        "state_at_capture": forks.classify(ahead, behind),
         "changed_files": files,
         "patch": patch_text,
         "created_at": forks.now_iso(),
@@ -118,7 +122,7 @@ def cmd_capture(args: argparse.Namespace) -> int:
         raise RuntimeError("refusing submission touching forbidden paths: " + ", ".join(blocked))
     write_submission(root, args.agent, data)
     print(f"wrote {submission_path(root, args.agent)}")
-    print(f"agent={data['agent']} source={data['source_ref']} ahead={data['ahead']} behind={data['behind']} files={len(data['changed_files'])}")
+    print(f"agent={data['agent']} source={data['source_ref']} state={data['state_at_capture']} files={len(data['changed_files'])}")
     return 0
 
 
@@ -128,11 +132,23 @@ def cmd_status(args: argparse.Namespace) -> int:
     data = load_submission(root, args.agent)
     forks.fetch_main(root)
     current = forks.compact_snapshot(root, forks.MAIN_REF)
+    patch_path = forks.patch_path(root, args.agent)
+    candidate_path = forks.candidate_path(root, args.agent)
+    receipt_path = forks.receipt_path(root, args.agent)
+    branch = forks.agent_branch(args.agent)
+    branch_state: dict[str, Any] = {"exists": forks.ref_exists(root, branch)}
+    if branch_state["exists"]:
+        ahead, behind = forks.ahead_behind(root, branch)
+        branch_state.update({"ahead": ahead, "behind": behind, "state": forks.classify(ahead, behind), "head": forks.short_commit(root, branch)})
     result = {
         "agent": data["agent"],
         "source_ref": data["source_ref"],
         "source_commit": data["source_snapshot"]["commit"],
         "base_matches_current_main": forks.snapshots_match(data["base_snapshot"], current),
+        "patch_file": str(patch_path),
+        "candidate_file_exists": candidate_path.exists(),
+        "receipt_file_exists": receipt_path.exists(),
+        "agent_branch": branch_state,
         "files": data["changed_files"],
     }
     print(json.dumps(result, indent=2, sort_keys=True))
@@ -152,6 +168,57 @@ def cmd_replay(args: argparse.Namespace) -> int:
     return run_forks(root, cmd)
 
 
+def cmd_verify(args: argparse.Namespace) -> int:
+    root = forks.repo_root()
+    ensure_dirs(root)
+    cmd = ["verify", args.agent]
+    if args.command:
+        cmd.extend(["--command", args.command])
+    if args.allow_forbidden:
+        cmd.append("--allow-forbidden")
+    return run_forks(root, cmd)
+
+
+def cmd_submit(args: argparse.Namespace) -> int:
+    root = forks.repo_root()
+    ensure_dirs(root)
+    cmd = ["submit", args.agent]
+    if args.backend:
+        cmd.extend(["--backend", args.backend])
+    if args.dry_run:
+        cmd.append("--dry-run")
+    return run_forks(root, cmd)
+
+
+def cmd_ship_plan(args: argparse.Namespace) -> int:
+    root = forks.repo_root()
+    ensure_dirs(root)
+    cmd = ["ship-plan", args.agent]
+    if args.output:
+        cmd.extend(["--output", args.output])
+    return run_forks(root, cmd)
+
+
+def cmd_sync_lane(args: argparse.Namespace) -> int:
+    root = forks.repo_root()
+    ensure_dirs(root)
+    data = load_submission(root, args.agent)
+    forks.fetch_main(root)
+    branch = forks.ensure_local_agent_branch(root, args.agent)
+    current = forks.commit(root, branch)
+    captured = data.get("source_commit") or data.get("source_snapshot", {}).get("commit")
+    if current != captured:
+        raise RuntimeError(f"refusing to sync {branch}; branch head changed since submission capture")
+    if not args.yes:
+        raise RuntimeError("refusing to sync captured lane without --yes")
+    if forks.current_branch(root) == branch:
+        forks.git(["reset", "--hard", forks.MAIN_REF], root)
+    else:
+        forks.git(["branch", "-f", branch, forks.MAIN_REF], root)
+    print(f"{branch}: synced to {forks.short_commit(root, forks.MAIN_REF)}; submission preserved at {submission_path(root, args.agent)}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="forks submission")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -168,6 +235,24 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--rebase-stale", action="store_true")
     p.add_argument("--allow-forbidden", action="store_true")
     p.set_defaults(func=cmd_replay)
+    p = sub.add_parser("verify")
+    p.add_argument("agent")
+    p.add_argument("--command")
+    p.add_argument("--allow-forbidden", action="store_true")
+    p.set_defaults(func=cmd_verify)
+    p = sub.add_parser("submit")
+    p.add_argument("agent")
+    p.add_argument("--backend", choices=("ref", "contents"), default="ref")
+    p.add_argument("--dry-run", action="store_true")
+    p.set_defaults(func=cmd_submit)
+    p = sub.add_parser("ship-plan")
+    p.add_argument("agent")
+    p.add_argument("--output")
+    p.set_defaults(func=cmd_ship_plan)
+    p = sub.add_parser("sync-lane")
+    p.add_argument("agent")
+    p.add_argument("--yes", action="store_true")
+    p.set_defaults(func=cmd_sync_lane)
     return parser
 
 
