@@ -23,10 +23,28 @@ export interface CallExpression {
   span?: Span;
 }
 
+export interface BinaryExpression {
+  kind: 'BinaryExpression';
+  operator: string;
+  left: Expression;
+  right: Expression;
+  span?: Span;
+}
+
+export interface IfExpression {
+  kind: 'IfExpression';
+  condition: Expression;
+  thenBranch: Expression;
+  elseBranch: Expression;
+  span?: Span;
+}
+
 export type Expression =
   | Identifier
   | Literal
-  | CallExpression;
+  | CallExpression
+  | BinaryExpression
+  | IfExpression;
 
 export interface Statement {
   kind: string;
@@ -53,6 +71,19 @@ export interface ForeignSignature {
   result: ForeignPrimitiveType;
 }
 
+export interface FunctionSignature {
+  params: ForeignPrimitiveType[];
+  result: ForeignPrimitiveType;
+}
+
+export interface FunctionDeclaration extends Statement {
+  kind: 'FunctionDeclaration';
+  name: Identifier;
+  params: Identifier[];
+  signature: FunctionSignature;
+  body: Expression;
+}
+
 export interface ForeignImport extends Statement {
   kind: 'ForeignImport';
   target: ForeignTarget;
@@ -63,4 +94,5 @@ export interface ForeignImport extends Statement {
 
 export type TopLevel =
   | Declaration
+  | FunctionDeclaration
   | ForeignImport;
