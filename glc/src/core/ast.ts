@@ -39,12 +39,21 @@ export interface IfExpression {
   span?: Span;
 }
 
+export interface LetExpression {
+  kind: 'LetExpression';
+  name: Identifier;
+  value: Expression;
+  body: Expression;
+  span?: Span;
+}
+
 export type Expression =
   | Identifier
   | Literal
   | CallExpression
   | BinaryExpression
-  | IfExpression;
+  | IfExpression
+  | LetExpression;
 
 export interface Statement {
   kind: string;
