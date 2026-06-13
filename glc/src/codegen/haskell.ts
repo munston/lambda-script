@@ -83,5 +83,6 @@ function emitHaskellExpr(e: any): string {
   }
   if (e.kind === 'BinaryExpression') return `(${emitHaskellExpr(e.left)} ${e.operator} ${emitHaskellExpr(e.right)})`;
   if (e.kind === 'IfExpression') return `(if ${emitHaskellExpr(e.condition)} then ${emitHaskellExpr(e.thenBranch)} else ${emitHaskellExpr(e.elseBranch)})`;
+  if (e.kind === 'LetExpression') return `(let ${e.name.name} = ${emitHaskellExpr(e.value)} in ${emitHaskellExpr(e.body)})`;
   return '/* unsupported */';
 }
