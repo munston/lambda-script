@@ -48,7 +48,7 @@ export function checkProgram(program: Program): { diagnostics: Diagnostic[] } {
           localTypes.set(param.name, fn.signature.params[i]);
         }
         const bodyType = inferExpression(fn.body, { topLevel: names, locals: localTypes, signatures, values }, diagnostics);
-        if (bodyType && bodyType !== fn.signature.result) diagnostics.push({ message: `Function ${fn.name.name} returns ${bodyType}, expected ${fn.signature.result}` });
+        if (bodyType && !typeCompatible(bodyType, fn.signature.result)) diagnostics.push({ message: `Function ${fn.name.name} returns ${bodyType}, expected ${fn.signature.result}` });
       }
       if (item.kind === 'Declaration') {
         const t = inferExpression(item.value, { topLevel: names, locals: new Map<string, TypeName>(), signatures, values }, diagnostics);
@@ -86,7 +86,7 @@ function inferExpression(expr: Expression, scope: Scope, diagnostics: Diagnostic
       for (let i = 0; i < call.arguments.length; i++) {
         const actual = inferExpression(call.arguments[i], scope, diagnostics);
         const expected = signature.params[i];
-        if (actual && expected && actual !== expected) diagnostics.push({ message: `Argument ${i + 1} for ${callee} has type ${actual}, expected ${expected}` });
+        if (actual && expected && !typeCompatible(actual, expected)) diagnostics.push({ message: `Argument ${i + 1} for ${callee} has type ${actual}, expected ${expected}` });
       }
       return signature.result;
     }
@@ -103,8 +103,9 @@ function inferExpression(expr: Expression, scope: Scope, diagnostics: Diagnostic
     const thenType = inferExpression(expr.thenBranch, scope, diagnostics);
     const elseType = inferExpression(expr.elseBranch, scope, diagnostics);
     if (condition && condition !== 'bool') diagnostics.push({ message: `If condition has type ${condition}, expected bool` });
-    if (thenType && elseType && thenType !== elseType) diagnostics.push({ message: `If branches have different types: ${thenType} and ${elseType}` });
-    return thenType === elseType ? thenType : undefined;
+    if (thenType && elseType && !typeCompatible(thenType, elseType) && !typeCompatible(elseType, thenType)) diagnostics.push({ message: `If branches have different types: ${thenType} and ${elseType}` });
+    if (thenType && elseType) return thenType === 'f64' || elseType === 'f64' ? 'f64' : thenType;
+    return undefined;
   }
   if (expr.kind === 'LetExpression') {
     const valueType = inferExpression(expr.value, scope, diagnostics);
@@ -129,11 +130,15 @@ function inferBinaryType(op: string, left: TypeName | undefined, right: TypeName
     return 'bool';
   }
   if (['==', '!='].includes(op)) {
-    if (left !== right) diagnostics.push({ message: `Operator ${op} expects matching operands, got ${left} and ${right}` });
+    if (!typeCompatible(left, right) && !typeCompatible(right, left)) diagnostics.push({ message: `Operator ${op} expects matching operands, got ${left} and ${right}` });
     return 'bool';
   }
   diagnostics.push({ message: `Unknown binary operator: ${op}` });
   return undefined;
+}
+
+function typeCompatible(actual: TypeName, expected: TypeName): boolean {
+  return actual === expected || (actual === 'i32' && expected === 'f64');
 }
 
 function isNumeric(t: TypeName): boolean {
