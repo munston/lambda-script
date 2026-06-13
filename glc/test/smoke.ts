@@ -60,6 +60,11 @@ function main() {
       tsIncludes: ['export function add(x: number, y: number): number', 'export function max_i32(x: number, y: number): number', 'return ((n <= 1) ? 1 : (n * fact((n - 1))))'],
       hsIncludes: ['add :: Int -> Int -> Int', 'max_i32 :: Int -> Int -> Int', 'fact n = (if (n <= 1) then 1 else (n * fact (n - 1)))'],
     },
+    {
+      file: 'examples/core/core1_let.ls',
+      tsIncludes: ['export function square_plus(x: number, y: number): number', 'const xx = (x * x); return (xx + y)', 'const below = (x < floor); return (below ? floor : x)'],
+      hsIncludes: ['square_plus :: Int -> Int -> Int', 'square_plus x y = (let xx = (x * x) in (xx + y))', 'clamp_min floor x = (let below = (x < floor) in (if below then floor else x))'],
+    },
   ];
   for (const fixture of fixtures) checkFixture(fixture);
   console.log('Smoke test passed');
