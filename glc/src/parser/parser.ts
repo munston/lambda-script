@@ -184,6 +184,11 @@ function parseExpression(text: string, span: Span): Expression | undefined {
   return undefined;
 }
 
+function flushPendingSignatures(moduleName: string, pending: Map<string, FunctionSignature>, diagnostics: Diagnostic[]): void {
+  for (const name of pending.keys()) diagnostics.push({ message: `Dangling type signature for ${name} in module ${moduleName}` });
+  pending.clear();
+}
+
 export function parse(source: string, filename = 'input.ls'): ParseResult {
   const lines = source.split(/\r?\n/);
   let currentModule: Module | null = null;
@@ -198,7 +203,10 @@ export function parse(source: string, filename = 'input.ls'): ParseResult {
 
     const moduleMatch = line.match(/^module\s+([A-Za-z_][A-Za-z0-9_]*)$/);
     if (moduleMatch) {
-      if (currentModule) modules.push(currentModule);
+      if (currentModule) {
+        flushPendingSignatures(currentModule.name, pendingSignatures, diagnostics);
+        modules.push(currentModule);
+      }
       currentModule = { kind: 'Module', name: moduleMatch[1], declarations: [] };
       pendingSignatures.clear();
       continue;
@@ -209,6 +217,10 @@ export function parse(source: string, filename = 'input.ls'): ParseResult {
       const signature = parseSignature(typeSigMatch[2].trim());
       if (!signature) {
         diagnostics.push({ message: `Invalid type signature at line ${i+1}` });
+        continue;
+      }
+      if (pendingSignatures.has(typeSigMatch[1])) {
+        diagnostics.push({ message: `Duplicate type signature for ${typeSigMatch[1]} at line ${i+1}` });
         continue;
       }
       pendingSignatures.set(typeSigMatch[1], signature);
@@ -248,12 +260,14 @@ export function parse(source: string, filename = 'input.ls'): ParseResult {
       }
       if (signature.params.length !== params.length) {
         diagnostics.push({ message: `Parameter count does not match signature for ${name} at line ${i+1}` });
+        pendingSignatures.delete(name);
         continue;
       }
       const span: Span = { file: filename, start: i, end: i };
       const body = parseExpression(line.slice(eqIdx + 1).trim(), span);
       if (!body) {
         diagnostics.push({ message: `Invalid function body at line ${i+1}` });
+        pendingSignatures.delete(name);
         continue;
       }
       currentModule.declarations.push({
@@ -290,7 +304,10 @@ export function parse(source: string, filename = 'input.ls'): ParseResult {
     diagnostics.push({ message: `Invalid line at ${i+1}: ${rawLine.trim()}` });
   }
 
-  if (currentModule) modules.push(currentModule);
+  if (currentModule) {
+    flushPendingSignatures(currentModule.name, pendingSignatures, diagnostics);
+    modules.push(currentModule);
+  }
 
   return {
     program: diagnostics.length === 0 ? { kind: 'Program', modules } : undefined,
