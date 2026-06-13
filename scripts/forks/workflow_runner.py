@@ -5,6 +5,12 @@ Config-driven workflow runner for `forks`.
 This is repository Git orchestration tooling. Workflow files define abstract
 operations, not raw shell scripts. The runner maps those operations onto guarded
 Git actions so common agent workflows can be invoked with one short command.
+
+The important safety distinction is:
+
+- main is advanced only by an ordinary non-force push from a verified candidate.
+- agent lanes may be rebased and updated with --force-with-lease to preserve work
+  after main moves.
 """
 
 from __future__ import annotations
@@ -42,12 +48,33 @@ BUILTIN_WORKFLOWS: dict[str, dict[str, Any]] = {
             {"op": "status"},
         ],
     },
+    "carry-agent": {
+        "name": "carry-agent",
+        "parameters": ["agent"],
+        "steps": [
+            {"op": "fetch_origin"},
+            {"op": "assert_no_tracked_changes", "allow_untracked": True},
+            {"op": "carry_agent", "agent": "$agent"},
+            {"op": "status"},
+        ],
+    },
+    "carry-lanes": {
+        "name": "carry-lanes",
+        "parameters": [],
+        "steps": [
+            {"op": "fetch_origin"},
+            {"op": "assert_no_tracked_changes", "allow_untracked": True},
+            {"op": "carry_lanes", "agents": ["ed", "edd", "eddy", "guy"]},
+            {"op": "status"},
+        ],
+    },
     "verify-agent": {
         "name": "verify-agent",
         "parameters": ["agent"],
         "steps": [
             {"op": "fetch_origin"},
             {"op": "assert_no_tracked_changes", "allow_untracked": True},
+            {"op": "carry_agent", "agent": "$agent"},
             {"op": "require_agent_ahead_only", "agent": "$agent"},
             {"op": "stage_candidate_direct", "agent": "$agent"},
             {"op": "verify_candidate", "agent": "$agent", "command": "verify.bat"},
@@ -60,11 +87,12 @@ BUILTIN_WORKFLOWS: dict[str, dict[str, Any]] = {
         "steps": [
             {"op": "fetch_origin"},
             {"op": "assert_no_tracked_changes", "allow_untracked": True},
+            {"op": "carry_agent", "agent": "$agent"},
             {"op": "require_agent_ahead_only", "agent": "$agent"},
             {"op": "stage_candidate_direct", "agent": "$agent"},
             {"op": "verify_candidate", "agent": "$agent", "command": "verify.bat"},
             {"op": "push_main_fast_forward", "agent": "$agent"},
-            {"op": "sync_lanes", "agents": ["ed", "edd", "eddy", "guy"]},
+            {"op": "carry_lanes", "agents": ["ed", "edd", "eddy", "guy"]},
             {"op": "status"},
         ],
     },
@@ -90,12 +118,7 @@ def git_text(args: list[str], root: Path, default: str = "") -> str:
 
 
 def format_process_error(args: list[str], proc: subprocess.CompletedProcess[str]) -> str:
-    return (
-        f"command failed: {' '.join(args)}\n"
-        f"exit: {proc.returncode}\n"
-        f"stdout:\n{proc.stdout}\n"
-        f"stderr:\n{proc.stderr}"
-    )
+    return f"command failed: {' '.join(args)}\nexit: {proc.returncode}\nstdout:\n{proc.stdout}\nstderr:\n{proc.stderr}"
 
 
 def repo_root() -> Path:
@@ -125,18 +148,12 @@ def agent_branch(agent: str) -> str:
     return f"agents/{normalize_agent(agent)}"
 
 
+def remote_agent_branch(agent: str) -> str:
+    return f"origin/{agent_branch(agent)}"
+
+
 def ref_exists(root: Path, ref: str) -> bool:
     return git(["rev-parse", "--verify", "--quiet", ref], root, check=False).returncode == 0
-
-
-def best_agent_ref(root: Path, agent: str) -> str:
-    branch = agent_branch(agent)
-    if ref_exists(root, branch):
-        return branch
-    remote = f"origin/{branch}"
-    if ref_exists(root, remote):
-        return remote
-    raise RuntimeError(f"missing agent branch: {branch}")
 
 
 def current_branch(root: Path) -> str:
@@ -162,13 +179,11 @@ def tree_hash(root: Path, ref: str) -> str:
 
 
 def ahead_behind(root: Path, ref: str, base: str = MAIN_REF) -> tuple[int, int]:
-    text = git_text(["rev-list", "--left-right", "--count", f"{base}...{ref}"], root)
+    text = git_text(["rev-list", "--left-right", "--count", f"{base}...{ref}"] , root)
     parts = text.split()
     if len(parts) != 2:
         return 0, 0
-    behind = int(parts[0])
-    ahead = int(parts[1])
-    return ahead, behind
+    return int(parts[1]), int(parts[0])
 
 
 def classify(ahead: int, behind: int) -> str:
@@ -182,11 +197,7 @@ def classify(ahead: int, behind: int) -> str:
 
 
 def compact_snapshot(root: Path, ref: str) -> dict[str, Any]:
-    return {
-        "ref": ref,
-        "commit": commit(root, ref),
-        "tree": tree_hash(root, ref),
-    }
+    return {"ref": ref, "commit": commit(root, ref), "tree": tree_hash(root, ref)}
 
 
 def ensure_dirs(root: Path) -> None:
@@ -205,6 +216,28 @@ def assert_no_tracked_changes(root: Path, allow_untracked: bool = True) -> None:
     text = git_text(["status", "--porcelain=v1", mode], root)
     if text:
         raise RuntimeError("working tree has tracked changes; commit, stash, or reset before running workflow\n" + text)
+
+
+def ensure_local_agent_branch(root: Path, agent: str) -> str:
+    branch = agent_branch(agent)
+    remote = remote_agent_branch(agent)
+    if ref_exists(root, branch):
+        return branch
+    if ref_exists(root, remote):
+        git(["branch", branch, remote], root)
+        return branch
+    git(["branch", branch, MAIN_REF], root)
+    return branch
+
+
+def best_agent_ref(root: Path, agent: str) -> str:
+    branch = agent_branch(agent)
+    if ref_exists(root, branch):
+        return branch
+    remote = remote_agent_branch(agent)
+    if ref_exists(root, remote):
+        return remote
+    raise RuntimeError(f"missing agent branch: {branch}")
 
 
 def candidate_worktree(root: Path, agent: str) -> Path:
@@ -252,10 +285,10 @@ def bind_workflow(workflow: dict[str, Any], argv: list[str]) -> dict[str, str]:
     params = workflow.get("parameters", [])
     if len(argv) != len(params):
         raise RuntimeError(f"workflow {workflow.get('name')} expects {len(params)} argument(s): {', '.join(params)}")
-    bound = {str(name): value for name, value in zip(params, argv)}
-    if "agent" in bound:
-        bound["agent"] = normalize_agent(bound["agent"])
-    return bound
+    env = {str(name): value for name, value in zip(params, argv)}
+    if "agent" in env:
+        env["agent"] = normalize_agent(env["agent"])
+    return env
 
 
 def subst(value: Any, env: dict[str, str]) -> Any:
@@ -281,13 +314,63 @@ def op_assert_no_tracked_changes(root: Path, step: dict[str, Any]) -> None:
     print("ok clean tracked worktree")
 
 
+def carry_agent(root: Path, agent: str) -> None:
+    branch = ensure_local_agent_branch(root, agent)
+    ahead, behind = ahead_behind(root, branch)
+    state = classify(ahead, behind)
+    if state == "even":
+        print(f"{branch}: even")
+        return
+    if state == "behind-only":
+        if current_branch(root) != branch:
+            git(["branch", "-f", branch, MAIN_REF], root)
+        else:
+            git(["reset", "--hard", MAIN_REF], root)
+        git(["push", "--force-with-lease", "origin", f"{branch}:{branch}"], root)
+        print(f"{branch}: synced to {short_commit(root, MAIN_REF)}")
+        return
+    if state == "ahead-only":
+        print(f"{branch}: ahead-only ahead={ahead}")
+        return
+    current = current_branch(root)
+    if current != branch:
+        git(["checkout", branch], root)
+    proc = git(["rebase", MAIN_REF], root, check=False)
+    print(proc.stdout, end="")
+    print(proc.stderr, end="", file=sys.stderr)
+    if proc.returncode != 0:
+        raise RuntimeError(f"{branch}: rebase failed; resolve conflicts or run git rebase --abort")
+    git(["push", "--force-with-lease", "origin", f"{branch}:{branch}"], root)
+    print(f"{branch}: carried onto {short_commit(root, MAIN_REF)}")
+
+
+def op_carry_agent(root: Path, step: dict[str, Any]) -> None:
+    carry_agent(root, normalize_agent(step["agent"]))
+
+
+def op_carry_lanes(root: Path, step: dict[str, Any]) -> None:
+    for agent in step.get("agents", list(AGENTS)):
+        carry_agent(root, normalize_agent(str(agent)))
+
+
+def op_sync_lanes(root: Path, step: dict[str, Any]) -> None:
+    for agent in step.get("agents", list(AGENTS)):
+        branch = ensure_local_agent_branch(root, str(agent))
+        ahead, behind = ahead_behind(root, branch)
+        state = classify(ahead, behind)
+        if state in {"ahead-only", "diverged"}:
+            print(f"{branch}: preserved {state} ahead={ahead} behind={behind}")
+            continue
+        carry_agent(root, str(agent))
+
+
 def op_require_agent_ahead_only(root: Path, step: dict[str, Any]) -> None:
     agent = normalize_agent(step["agent"])
     ref = best_agent_ref(root, agent)
     ahead, behind = ahead_behind(root, ref)
     state = classify(ahead, behind)
     if state != "ahead-only":
-        raise RuntimeError(f"{agent_branch(agent)} must be ahead-only to land directly; state={state} ahead={ahead} behind={behind}")
+        raise RuntimeError(f"{agent_branch(agent)} must be ahead-only; state={state} ahead={ahead} behind={behind}")
     print(f"ok {agent_branch(agent)} ahead-only ahead={ahead}")
 
 
@@ -369,8 +452,7 @@ def op_push_main_fast_forward(root: Path, step: dict[str, Any]) -> None:
         raise RuntimeError("origin/main moved since verification; rerun workflow")
     if receipt.get("candidate_commit") != commit(work, "HEAD"):
         raise RuntimeError("candidate HEAD differs from verification receipt")
-    ancestor = git(["merge-base", "--is-ancestor", MAIN_REF, "HEAD"], work, check=False)
-    if ancestor.returncode != 0:
+    if git(["merge-base", "--is-ancestor", MAIN_REF, "HEAD"], work, check=False).returncode != 0:
         raise RuntimeError("origin/main is not an ancestor of candidate HEAD")
     ahead, behind = ahead_behind(work, "HEAD")
     if behind != 0 or ahead == 0:
@@ -384,39 +466,12 @@ def op_push_main_fast_forward(root: Path, step: dict[str, Any]) -> None:
     print("ok pushed main fast-forward")
 
 
-def sync_branch_to_main(root: Path, branch: str) -> None:
-    if not ref_exists(root, branch):
-        git(["branch", branch, MAIN_REF], root)
-        print(f"{branch}: created at {short_commit(root, MAIN_REF)}")
-        return
-    ahead, behind = ahead_behind(root, branch)
-    state = classify(ahead, behind)
-    if state == "even":
-        print(f"{branch}: even")
-        return
-    if state == "behind-only":
-        if current_branch(root) == branch:
-            git(["reset", "--hard", MAIN_REF], root)
-        else:
-            git(["branch", "-f", branch, MAIN_REF], root)
-        print(f"{branch}: synced to {short_commit(root, MAIN_REF)}")
-        return
-    raise RuntimeError(f"refusing to sync {branch}; it has unique work state={state} ahead={ahead} behind={behind}")
-
-
-def op_sync_lanes(root: Path, step: dict[str, Any]) -> None:
-    fetch_origin(root)
-    agents = step.get("agents", list(AGENTS))
-    for agent in agents:
-        sync_branch_to_main(root, agent_branch(str(agent)))
-
-
 def op_status(root: Path, step: dict[str, Any]) -> None:
     fetch_origin(root)
     print(f"main {short_commit(root, MAIN_REF)}")
     for agent in AGENTS:
         branch = agent_branch(agent)
-        ref = branch if ref_exists(root, branch) else f"origin/{branch}"
+        ref = branch if ref_exists(root, branch) else remote_agent_branch(agent)
         if not ref_exists(root, ref):
             print(f"{branch}: missing")
             continue
@@ -427,11 +482,13 @@ def op_status(root: Path, step: dict[str, Any]) -> None:
 OPS = {
     "fetch_origin": op_fetch_origin,
     "assert_no_tracked_changes": op_assert_no_tracked_changes,
+    "carry_agent": op_carry_agent,
+    "carry_lanes": op_carry_lanes,
+    "sync_lanes": op_sync_lanes,
     "require_agent_ahead_only": op_require_agent_ahead_only,
     "stage_candidate_direct": op_stage_candidate_direct,
     "verify_candidate": op_verify_candidate,
     "push_main_fast_forward": op_push_main_fast_forward,
-    "sync_lanes": op_sync_lanes,
     "status": op_status,
 }
 
@@ -449,13 +506,7 @@ def run_workflow(name: str, argv: list[str]) -> int:
             raise RuntimeError(f"unknown workflow op: {op}")
         print(f"-- {op}")
         OPS[op](root, step)
-    run_record = {
-        "format": "LS_FORK_WORKFLOW_RUN_V1",
-        "workflow": name,
-        "parameters": env,
-        "completed_at": now_iso(),
-    }
-    write_json(root / FORKS_DIR / "workflow-runs" / f"{name}.json", run_record)
+    write_json(root / FORKS_DIR / "workflow-runs" / f"{name}.json", {"format": "LS_FORK_WORKFLOW_RUN_V1", "workflow": name, "parameters": env, "completed_at": now_iso()})
     print(f"workflow {name} complete")
     return 0
 
@@ -466,11 +517,15 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("run", help="run a named workflow")
     p.add_argument("workflow")
     p.add_argument("args", nargs="*")
-    p = sub.add_parser("land", help="land an ahead-only agent branch")
+    p = sub.add_parser("status", help="show workflow-aware branch status")
+    p = sub.add_parser("land", help="carry, verify, and land an agent branch")
     p.add_argument("agent")
-    p = sub.add_parser("sync-all", help="sync all agent lanes that have no unique work")
-    p = sub.add_parser("verify-agent", help="stage and verify an ahead-only agent branch without pushing main")
+    p = sub.add_parser("verify-agent", help="carry and verify an agent branch without landing it")
     p.add_argument("agent")
+    p = sub.add_parser("carry", help="carry one agent branch onto origin/main")
+    p.add_argument("agent")
+    p = sub.add_parser("carry-all", help="carry all agent lanes onto origin/main when possible")
+    p = sub.add_parser("sync-all", help="sync lanes that have no unique work and preserve lanes that do")
     return parser
 
 
@@ -480,12 +535,18 @@ def main(argv: list[str]) -> int:
     try:
         if args.command == "run":
             return run_workflow(args.workflow, args.args)
+        if args.command == "status":
+            return run_workflow("status", [])
         if args.command == "land":
             return run_workflow("land-agent", [args.agent])
-        if args.command == "sync-all":
-            return run_workflow("sync-lanes", [])
         if args.command == "verify-agent":
             return run_workflow("verify-agent", [args.agent])
+        if args.command == "carry":
+            return run_workflow("carry-agent", [args.agent])
+        if args.command == "carry-all":
+            return run_workflow("carry-lanes", [])
+        if args.command == "sync-all":
+            return run_workflow("sync-lanes", [])
         raise RuntimeError(f"unknown command: {args.command}")
     except Exception as exc:
         print(f"forks workflow: {exc}", file=sys.stderr)
