@@ -67,6 +67,24 @@ function findKeywordAtTopLevel(text: string, keyword: string): number {
   return -1;
 }
 
+function findBindingEqualsAtTopLevel(text: string): number {
+  let depth = 0;
+  let inString = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '"') inString = !inString;
+    if (inString) continue;
+    if (ch === '(') depth++;
+    if (ch === ')') depth--;
+    if (depth !== 0 || ch !== '=') continue;
+    const prev = i > 0 ? text[i - 1] : '';
+    const next = i + 1 < text.length ? text[i + 1] : '';
+    if (prev === '<' || prev === '>' || prev === '!' || prev === '=' || next === '=') continue;
+    return i;
+  }
+  return -1;
+}
+
 function findOperatorAtTopLevel(text: string, ops: string[]): { index: number; op: string } | undefined {
   let depth = 0;
   let inString = false;
@@ -112,6 +130,23 @@ function splitArgs(text: string): string[] {
 
 function parseExpression(text: string, span: Span): Expression | undefined {
   const s = stripOuterParens(text);
+  if (s.startsWith('let ')) {
+    const inIdx = findKeywordAtTopLevel(s, 'in');
+    if (inIdx > 0) {
+      const binding = s.slice(4, inIdx).trim();
+      const eqIdx = findBindingEqualsAtTopLevel(binding);
+      if (eqIdx > 0) {
+        const nameText = binding.slice(0, eqIdx).trim();
+        const valueText = binding.slice(eqIdx + 1).trim();
+        const bodyText = s.slice(inIdx + 2).trim();
+        if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(nameText)) {
+          const value = parseExpression(valueText, span);
+          const body = parseExpression(bodyText, span);
+          if (value && body) return { kind: 'LetExpression', name: { kind: 'Identifier', name: nameText, span }, value, body, span };
+        }
+      }
+    }
+  }
   if (s.startsWith('if ')) {
     const thenIdx = findKeywordAtTopLevel(s, 'then');
     if (thenIdx > 0) {
