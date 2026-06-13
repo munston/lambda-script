@@ -1,6 +1,11 @@
 import { Program } from './program';
 import { Diagnostic } from './diagnostic';
-import { CallExpression, ForeignImport } from './ast';
+import { CallExpression, Expression, ForeignImport, FunctionDeclaration } from './ast';
+
+interface Scope {
+  topLevel: Set<string>;
+  locals: Set<string>;
+}
 
 export function checkProgram(program: Program): { diagnostics: Diagnostic[] } {
   const diagnostics: Diagnostic[] = [];
@@ -9,43 +14,55 @@ export function checkProgram(program: Program): { diagnostics: Diagnostic[] } {
   for (const mod of program.modules) {
     names.clear();
     for (const item of mod.declarations) {
-      const name = item.kind === 'Declaration' ? item.name.name : item.name.name;
+      const name = item.name.name;
       if (names.has(name)) diagnostics.push({ message: `Duplicate top-level name: ${name}` });
       names.add(name);
     }
 
     for (const item of mod.declarations) {
-      if (item.kind === 'Declaration' && item.value.kind === 'CallExpression') {
-        const call = item.value as CallExpression;
-        const callee = call.callee.name;
-
-        const foreign = mod.declarations.find(d =>
-          d.kind === 'ForeignImport' && d.name.name === callee
-        ) as ForeignImport | undefined;
-
-        if (!foreign) {
-          diagnostics.push({ message: `Unknown function: ${callee}` });
-          continue;
+      if (item.kind === 'FunctionDeclaration') {
+        const fn = item as FunctionDeclaration;
+        if (fn.signature.params.length !== fn.params.length) diagnostics.push({ message: `Wrong parameter count for ${fn.name.name}` });
+        const localNames = new Set<string>();
+        for (const param of fn.params) {
+          if (localNames.has(param.name)) diagnostics.push({ message: `Duplicate parameter ${param.name} in ${fn.name.name}` });
+          localNames.add(param.name);
         }
-
-        if (call.arguments.length !== foreign.signature.params.length) {
-          diagnostics.push({ message: `Wrong argument count for ${callee}` });
-          continue;
-        }
-
-        for (let j = 0; j < call.arguments.length; j++) {
-          const arg = call.arguments[j];
-          const expected = foreign.signature.params[j];
-          if (arg.kind === 'Literal') {
-            const lit = arg as any;
-            if (expected === 'i32' && typeof lit.value !== 'number') diagnostics.push({ message: `Expected i32 for arg ${j} of ${callee}` });
-            if (expected === 'f64' && typeof lit.value !== 'number') diagnostics.push({ message: `Expected f64 for arg ${j} of ${callee}` });
-            if (expected === 'bool' && typeof lit.value !== 'boolean') diagnostics.push({ message: `Expected bool for arg ${j} of ${callee}` });
-            if (expected === 'string' && typeof lit.value !== 'string') diagnostics.push({ message: `Expected string for arg ${j} of ${callee}` });
-          }
-        }
+        checkExpression(fn.body, { topLevel: names, locals: localNames }, diagnostics);
+      }
+      if (item.kind === 'Declaration') {
+        checkExpression(item.value, { topLevel: names, locals: new Set<string>() }, diagnostics);
+      }
+      if (item.kind === 'ForeignImport') {
+        const foreign = item as ForeignImport;
+        if (foreign.signature.params.includes('void')) diagnostics.push({ message: `void cannot be a parameter type for ${foreign.name.name}` });
       }
     }
   }
   return { diagnostics };
+}
+
+function checkExpression(expr: Expression, scope: Scope, diagnostics: Diagnostic[]): void {
+  if (expr.kind === 'Literal') return;
+  if (expr.kind === 'Identifier') {
+    if (!scope.locals.has(expr.name) && !scope.topLevel.has(expr.name)) diagnostics.push({ message: `Unknown identifier: ${expr.name}` });
+    return;
+  }
+  if (expr.kind === 'CallExpression') {
+    const call = expr as CallExpression;
+    const callee = call.callee.name;
+    if (!scope.topLevel.has(callee)) diagnostics.push({ message: `Unknown function: ${callee}` });
+    for (const arg of call.arguments) checkExpression(arg, scope, diagnostics);
+    return;
+  }
+  if (expr.kind === 'BinaryExpression') {
+    checkExpression(expr.left, scope, diagnostics);
+    checkExpression(expr.right, scope, diagnostics);
+    return;
+  }
+  if (expr.kind === 'IfExpression') {
+    checkExpression(expr.condition, scope, diagnostics);
+    checkExpression(expr.thenBranch, scope, diagnostics);
+    checkExpression(expr.elseBranch, scope, diagnostics);
+  }
 }
