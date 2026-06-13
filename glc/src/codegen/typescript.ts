@@ -9,6 +9,7 @@ export function emitTypeScript(program: Program): string {
 ` : '';
 
   for (const mod of program.modules) {
+    const foreignNames = new Set(mod.declarations.filter(d => d.kind === 'ForeignImport').map(d => d.name.name));
     out += `// Module: ${mod.name}\n\n`;
 
     for (const item of mod.declarations) {
@@ -40,7 +41,7 @@ export function emitTypeScript(program: Program): string {
       }
       if (item.kind === 'Declaration') {
         const d = item as Declaration;
-        if (d.value.kind === 'CallExpression') {
+        if (d.value.kind === 'CallExpression' && foreignNames.has((d.value as CallExpression).callee.name)) {
           const call = d.value as CallExpression;
           const args = call.arguments.map(a => emitExpr(a)).join(', ');
           out += `export function ${d.name.name}(runtime: CppForeignRuntime) {
