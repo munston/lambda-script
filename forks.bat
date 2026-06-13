@@ -27,6 +27,30 @@ if /I "%~1"=="replay" (
   exit /b %errorlevel%
 )
 
+if /I "%~1"=="verify-submission" (
+  shift
+  python scripts\forks\submission_object.py verify %*
+  exit /b %errorlevel%
+)
+
+if /I "%~1"=="submit-submission" (
+  shift
+  python scripts\forks\submission_object.py submit %*
+  exit /b %errorlevel%
+)
+
+if /I "%~1"=="submission-ship-plan" (
+  shift
+  python scripts\forks\submission_object.py ship-plan %*
+  exit /b %errorlevel%
+)
+
+if /I "%~1"=="sync-captured-lane" (
+  shift
+  python scripts\forks\submission_object.py sync-lane %*
+  exit /b %errorlevel%
+)
+
 if /I "%~1"=="plan" (
   shift
   python scripts\forks\workflow_plan.py %*
