@@ -23,6 +23,53 @@ MAIN_REF = "origin/main"
 FORKS_DIR = ".forks"
 WORKFLOW_DIR = Path("scripts") / "forks" / "workflows"
 
+BUILTIN_WORKFLOWS: dict[str, dict[str, Any]] = {
+    "status": {
+        "name": "status",
+        "parameters": [],
+        "steps": [
+            {"op": "fetch_origin"},
+            {"op": "status"},
+        ],
+    },
+    "sync-lanes": {
+        "name": "sync-lanes",
+        "parameters": [],
+        "steps": [
+            {"op": "fetch_origin"},
+            {"op": "assert_no_tracked_changes", "allow_untracked": True},
+            {"op": "sync_lanes", "agents": ["ed", "edd", "eddy", "guy"]},
+            {"op": "status"},
+        ],
+    },
+    "verify-agent": {
+        "name": "verify-agent",
+        "parameters": ["agent"],
+        "steps": [
+            {"op": "fetch_origin"},
+            {"op": "assert_no_tracked_changes", "allow_untracked": True},
+            {"op": "require_agent_ahead_only", "agent": "$agent"},
+            {"op": "stage_candidate_direct", "agent": "$agent"},
+            {"op": "verify_candidate", "agent": "$agent", "command": "verify.bat"},
+            {"op": "status"},
+        ],
+    },
+    "land-agent": {
+        "name": "land-agent",
+        "parameters": ["agent"],
+        "steps": [
+            {"op": "fetch_origin"},
+            {"op": "assert_no_tracked_changes", "allow_untracked": True},
+            {"op": "require_agent_ahead_only", "agent": "$agent"},
+            {"op": "stage_candidate_direct", "agent": "$agent"},
+            {"op": "verify_candidate", "agent": "$agent", "command": "verify.bat"},
+            {"op": "push_main_fast_forward", "agent": "$agent"},
+            {"op": "sync_lanes", "agents": ["ed", "edd", "eddy", "guy"]},
+            {"op": "status"},
+        ],
+    },
+}
+
 
 def run(args: list[str], cwd: Path, check: bool = True) -> subprocess.CompletedProcess[str]:
     proc = subprocess.run(args, cwd=str(cwd), text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -190,11 +237,14 @@ def load_workflow(root: Path, name: str) -> dict[str, Any]:
     if "/" in safe or not safe:
         raise RuntimeError(f"invalid workflow name: {name!r}")
     path = root / WORKFLOW_DIR / f"{safe}.json"
-    if not path.exists():
+    if path.exists():
+        data = json.loads(path.read_text(encoding="utf-8"))
+    elif safe in BUILTIN_WORKFLOWS:
+        data = BUILTIN_WORKFLOWS[safe]
+    else:
         raise RuntimeError(f"missing workflow: {path}")
-    data = json.loads(path.read_text(encoding="utf-8"))
     if data.get("name") != safe:
-        raise RuntimeError(f"workflow name mismatch in {path}")
+        raise RuntimeError(f"workflow name mismatch for {safe}")
     return data
 
 
