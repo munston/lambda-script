@@ -6,6 +6,7 @@ export function emitHaskell(program: Program): string {
   let needsCString = false;
 
   for (const mod of program.modules) {
+    const foreignNames = new Set(mod.declarations.filter(d => d.kind === 'ForeignImport').map(d => d.name.name));
     out += `-- Module: ${mod.name}\n\n`;
 
     for (const item of mod.declarations) {
@@ -28,7 +29,7 @@ export function emitHaskell(program: Program): string {
       }
       if (item.kind === 'Declaration') {
         const d = item as Declaration;
-        if (d.value.kind === 'CallExpression') {
+        if (d.value.kind === 'CallExpression' && foreignNames.has((d.value as CallExpression).callee.name)) {
           const call = d.value as CallExpression;
           const foreign = mod.declarations.find(f => f.kind === 'ForeignImport' && f.name.name === call.callee.name) as ForeignImport | undefined;
           const retType = foreign ? mapHaskellType(foreign.signature.result) : 'Int';
