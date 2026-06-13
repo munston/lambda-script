@@ -1,0 +1,12 @@
+{
+  "name": "verify-agent",
+  "parameters": ["agent"],
+  "steps": [
+    { "op": "fetch_origin" },
+    { "op": "assert_no_tracked_changes", "allow_untracked": true },
+    { "op": "require_agent_ahead_only", "agent": "$agent" },
+    { "op": "stage_candidate_direct", "agent": "$agent" },
+    { "op": "verify_candidate", "agent": "$agent", "command": "verify.bat" },
+    { "op": "status" }
+  ]
+}
