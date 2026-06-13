@@ -1,5 +1,5 @@
 import { Program } from '../core/program';
-import { Declaration, ForeignImport, CallExpression } from '../core/ast';
+import { Declaration, ForeignImport, CallExpression, FunctionDeclaration } from '../core/ast';
 
 export function emitTypeScript(program: Program): string {
   const hasFFI = program.modules.some(m => m.declarations.some(d => d.kind === 'ForeignImport'));
@@ -21,11 +21,23 @@ export function emitTypeScript(program: Program): string {
         out += `  return runtime.call({ symbol: '${f.symbol}', args: [${f.signature.params.map((_,i)=>`arg${i}`).join(', ')}] }) as ${ret};
 `;
         out += `}
-\n`;
+
+`;
       }
     }
 
     for (const item of mod.declarations) {
+      if (item.kind === 'FunctionDeclaration') {
+        const fn = item as FunctionDeclaration;
+        const params = fn.params.map((p, i) => `${p.name}: ${mapTsType(fn.signature.params[i])}`).join(', ');
+        out += `export function ${fn.name.name}(${params}): ${mapTsType(fn.signature.result)} {
+`;
+        out += `  return ${emitExpr(fn.body)};
+`;
+        out += `}
+
+`;
+      }
       if (item.kind === 'Declaration') {
         const d = item as Declaration;
         if (d.value.kind === 'CallExpression') {
@@ -54,7 +66,7 @@ function mapTsType(t: string): string {
   if (t === 'bool') return 'boolean';
   if (t === 'string') return 'string';
   if (t === 'void') return 'null';
-  return 'any';
+  return 'unknown';
 }
 
 function emitExpr(e: any): string {
@@ -64,5 +76,7 @@ function emitExpr(e: any): string {
     const c = e;
     return `${c.callee.name}(${c.arguments.map(emitExpr).join(', ')})`;
   }
+  if (e.kind === 'BinaryExpression') return `(${emitExpr(e.left)} ${e.operator} ${emitExpr(e.right)})`;
+  if (e.kind === 'IfExpression') return `(${emitExpr(e.condition)} ? ${emitExpr(e.thenBranch)} : ${emitExpr(e.elseBranch)})`;
   return '/* unsupported */';
 }
