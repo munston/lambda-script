@@ -38,6 +38,13 @@ function checkFixture(fixture: FixtureExpectation) {
   }
 }
 
+function checkFails(name: string, source: string, expected: string) {
+  const pr = parse(source, `${name}.ls`);
+  assert.strictEqual(pr.diagnostics.length, 0, `${name} should parse`);
+  const c = checkProgram(pr.program!);
+  assert.ok(c.diagnostics.some(d => d.message.includes(expected)), `${name} should report ${expected}, got ${c.diagnostics.map(d => d.message).join('; ')}`);
+}
+
 function main() {
   const fixtures: FixtureExpectation[] = [
     {
@@ -65,8 +72,21 @@ function main() {
       tsIncludes: ['export function square_plus(x: number, y: number): number', 'const xx = (x * x); return (xx + y)', 'const below = (x < floor); return (below ? floor : x)'],
       hsIncludes: ['square_plus :: Int -> Int -> Int', 'square_plus x y = (let xx = (x * x) in (xx + y))', 'clamp_min floor x = (let below = (x < floor) in (if below then floor else x))'],
     },
+    {
+      file: 'examples/core/core1_pure_calls.ls',
+      tsIncludes: ['export const total = add(1, 2)', 'export const chosen = max_i32(add(1, 1), 3)'],
+      hsIncludes: ['total = add 1 2', 'chosen = max_i32 (add 1 1) 3'],
+    },
   ];
   for (const fixture of fixtures) checkFixture(fixture);
+
+  checkFails('unknown-variable', `module Bad\n\nf : i32 -> i32\nf x = y\n`, 'Unknown identifier: y');
+  checkFails('wrong-arity', `module Bad\n\nadd : i32 -> i32 -> i32\nadd x y = x + y\nz = add(1)\n`, 'Wrong argument count for add');
+  checkFails('wrong-argument-type', `module Bad\n\nadd : i32 -> i32 -> i32\nadd x y = x + y\nz = add(true, 1)\n`, 'Argument 1 for add has type bool, expected i32');
+  checkFails('if-condition-type', `module Bad\n\nf : i32 -> i32\nf x = if x then 1 else 2\n`, 'If condition has type i32, expected bool');
+  checkFails('if-branch-type', `module Bad\n\nf : i32 -> i32\nf x = if x < 1 then 1 else false\n`, 'If branches have different types: i32 and bool');
+  checkFails('return-type', `module Bad\n\nf : i32 -> i32\nf x = false\n`, 'Function f returns bool, expected i32');
+  checkFails('binary-type', `module Bad\n\nf : bool -> bool\nf x = x + true\n`, 'Operator + expects numeric operands');
   console.log('Smoke test passed');
 }
 
