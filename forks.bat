@@ -9,6 +9,24 @@ if not exist "scripts\forks\forks.py" (
   exit /b 1
 )
 
+if /I "%~1"=="capture" (
+  shift
+  python scripts\forks\submission_object.py capture %*
+  exit /b %errorlevel%
+)
+
+if /I "%~1"=="submission-status" (
+  shift
+  python scripts\forks\submission_object.py status %*
+  exit /b %errorlevel%
+)
+
+if /I "%~1"=="replay" (
+  shift
+  python scripts\forks\submission_object.py replay %*
+  exit /b %errorlevel%
+)
+
 if /I "%~1"=="plan" (
   shift
   python scripts\forks\workflow_plan.py %*
