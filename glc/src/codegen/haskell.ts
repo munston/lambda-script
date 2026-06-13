@@ -1,5 +1,5 @@
 import { Program } from '../core/program';
-import { Declaration, ForeignImport, CallExpression, Literal } from '../core/ast';
+import { Declaration, ForeignImport, CallExpression, Literal, FunctionDeclaration } from '../core/ast';
 
 export function emitHaskell(program: Program): string {
   let out = '';
@@ -19,6 +19,13 @@ export function emitHaskell(program: Program): string {
     }
 
     for (const item of mod.declarations) {
+      if (item.kind === 'FunctionDeclaration') {
+        const fn = item as FunctionDeclaration;
+        const params = fn.signature.params.map(t => mapHaskellType(t));
+        const sig = [...params, mapHaskellType(fn.signature.result)].join(' -> ');
+        out += `${fn.name.name} :: ${sig}\n`;
+        out += `${fn.name.name} ${fn.params.map(p => p.name).join(' ')} = ${emitHaskellExpr(fn.body)}\n\n`;
+      }
       if (item.kind === 'Declaration') {
         const d = item as Declaration;
         if (d.value.kind === 'CallExpression') {
@@ -66,5 +73,15 @@ function emitHaskellExpr(e: any): string {
     return String(e.value);
   }
   if (e.kind === 'Identifier') return e.name;
+  if (e.kind === 'CallExpression') {
+    const args = e.arguments.map((arg: any) => {
+      const emitted = emitHaskellExpr(arg);
+      if (arg.kind === 'Literal' || arg.kind === 'Identifier') return emitted;
+      return `(${emitted})`;
+    }).join(' ');
+    return args.length > 0 ? `${e.callee.name} ${args}` : e.callee.name;
+  }
+  if (e.kind === 'BinaryExpression') return `(${emitHaskellExpr(e.left)} ${e.operator} ${emitHaskellExpr(e.right)})`;
+  if (e.kind === 'IfExpression') return `(if ${emitHaskellExpr(e.condition)} then ${emitHaskellExpr(e.thenBranch)} else ${emitHaskellExpr(e.elseBranch)})`;
   return '/* unsupported */';
 }
