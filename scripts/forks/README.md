@@ -13,6 +13,8 @@ agents/guy
 
 The basic safety rule is that an agent lane can be worked independently, but a candidate should be staged, verified, and checked against current `origin/main` before it is allowed to advance `main`.
 
+For the replayable submission-object model, see `SUBMISSIONS.md`.
+
 ## Existing patch workflow
 
 The original patch-oriented workflow remains available through `forks.bat`:
