@@ -78,5 +78,6 @@ function emitExpr(e: any): string {
   }
   if (e.kind === 'BinaryExpression') return `(${emitExpr(e.left)} ${e.operator} ${emitExpr(e.right)})`;
   if (e.kind === 'IfExpression') return `(${emitExpr(e.condition)} ? ${emitExpr(e.thenBranch)} : ${emitExpr(e.elseBranch)})`;
+  if (e.kind === 'LetExpression') return `(() => { const ${e.name.name} = ${emitExpr(e.value)}; return ${emitExpr(e.body)}; })()`;
   return '/* unsupported */';
 }
