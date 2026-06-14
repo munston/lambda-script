@@ -1,20 +1,23 @@
 #!/usr/bin/env python3
-"""Land a targeted JSON patch using a hardcoded agent lane.
+r"""Land a targeted JSON patch using a hardcoded agent lane.
 
 The public button shape is intentionally one argument:
 
     guy-land-json.bat path\to\patch.json
 
-The patch itself carries its target:
+The patch itself carries its target and transaction policy:
 
     {
       "format": "LS_FORK_JSON_PATCH_V1",
       "agent": "guy",
       "target": {
         "kind": "gadget",
-        "gizmo": "lambdascript",
-        "gadget": "core",
-        "profile": "quick"
+        "gizmo": "metrics",
+        "gadget": "image-metrics",
+        "profile": "quick",
+        "promote": true,
+        "sync": true,
+        "history": true
       },
       "title": "...",
       "files": [...]
@@ -24,18 +27,50 @@ The patch itself carries its target:
 from __future__ import annotations
 
 import argparse
+import subprocess
 import sys
 from pathlib import Path
 from types import SimpleNamespace
 
+import forks
+import gadget_branches
 import gadget_land_json
+import gadget_promote
 import import_json_patch
-
 
 VALID_AGENTS = {"ed", "edd", "eddy", "guy"}
 
 
-def resolve_target(payload: dict) -> tuple[str, str, str | None, bool]:
+class Target:
+    def __init__(
+        self,
+        gizmo: str,
+        gadget: str,
+        profile: str | None,
+        full: bool,
+        promote: bool,
+        sync: bool,
+        history: bool,
+        promote_profile: str | None,
+    ) -> None:
+        self.gizmo = gizmo
+        self.gadget = gadget
+        self.profile = profile
+        self.full = full
+        self.promote = promote
+        self.sync = sync
+        self.history = history
+        self.promote_profile = promote_profile
+
+
+def _bool(target: dict, name: str, default: bool) -> bool:
+    value = target.get(name, default)
+    if not isinstance(value, bool):
+        raise RuntimeError(f"target.{name} must be a boolean")
+    return value
+
+
+def resolve_target(payload: dict) -> Target:
     target = payload.get("target")
     if not isinstance(target, dict):
         raise RuntimeError("JSON patch is missing target object")
@@ -55,8 +90,20 @@ def resolve_target(payload: dict) -> tuple[str, str, str | None, bool]:
     if profile is not None and (not isinstance(profile, str) or not profile):
         raise RuntimeError("target.profile must be a non-empty string when present")
 
-    full = bool(target.get("full", False))
-    return gizmo, gadget, profile, full
+    promote_profile = target.get("promote_profile")
+    if promote_profile is not None and (not isinstance(promote_profile, str) or not promote_profile):
+        raise RuntimeError("target.promote_profile must be a non-empty string when present")
+
+    return Target(
+        gizmo=gizmo,
+        gadget=gadget,
+        profile=profile,
+        full=_bool(target, "full", False),
+        promote=_bool(target, "promote", False),
+        sync=_bool(target, "sync", True),
+        history=_bool(target, "history", True),
+        promote_profile=promote_profile,
+    )
 
 
 def validate_agent(hardcoded_agent: str, payload: dict, strict_agent: bool) -> None:
@@ -72,6 +119,37 @@ def validate_agent(hardcoded_agent: str, payload: dict, strict_agent: bool) -> N
         raise RuntimeError(f"patch declares agent {declared!r}, but this button is for {hardcoded_agent!r}")
 
 
+def fetch(root: Path) -> None:
+    forks.git(["fetch", "--prune", "origin"], root)
+
+
+def force_align_branch(root: Path, branch: str, source_ref: str) -> None:
+    fetch(root)
+    if not forks.ref_exists(root, source_ref):
+        raise RuntimeError(f"missing source ref: {source_ref}")
+    commit = forks.commit(root, source_ref)
+    if forks.current_branch(root) == branch:
+        forks.git(["reset", "--hard", commit], root)
+    elif forks.ref_exists(root, branch):
+        forks.git(["branch", "-f", branch, commit], root)
+    else:
+        forks.git(["branch", branch, commit], root)
+    forks.git(["push", "--force-with-lease", "origin", f"{commit}:refs/heads/{branch}"], root)
+    fetch(root)
+
+
+def force_align_gadget(root: Path, gizmo: str, gadget: str, source_ref: str) -> None:
+    print(f"normalizing {gizmo}/{gadget} lanes to {source_ref}")
+    force_align_branch(root, gadget_branches.integration_branch(gizmo, gadget), source_ref)
+    for agent in gadget_branches.AGENTS:
+        force_align_branch(root, gadget_branches.gadget_agent_branch(agent, gizmo, gadget), source_ref)
+
+
+def run_status(root: Path, gizmo: str, gadget: str) -> None:
+    subprocess.run(["cmd", "/c", "forks.bat", "status", "--fetch"], cwd=str(root), text=True, check=False)
+    subprocess.run(["cmd", "/c", "forks.bat", "gadget-status", gizmo, gadget], cwd=str(root), text=True, check=False)
+
+
 def cmd_land(args: argparse.Namespace) -> int:
     patch_path = Path(args.file)
     if not patch_path.exists():
@@ -79,25 +157,46 @@ def cmd_land(args: argparse.Namespace) -> int:
 
     payload = import_json_patch.load_payload(str(patch_path))
     validate_agent(args.agent, payload, args.strict_agent)
-    gizmo, gadget, profile, full = resolve_target(payload)
+    target = resolve_target(payload)
 
     print(f"agent={args.agent}")
-    print(f"target={gizmo}/{gadget}")
-    if profile:
-        print(f"profile={profile}")
-    elif full:
-        print("profile=full")
+    print(f"target={target.gizmo}/{target.gadget}")
+    print(f"profile={target.profile or ('full' if target.full else 'quick')}")
+    print(f"promote={target.promote} sync={target.sync} history={target.history}")
 
     land_args = SimpleNamespace(
         require_file=True,
-        full=full,
-        profile=profile,
-        gizmo=gizmo,
-        gadget=gadget,
+        full=target.full,
+        profile=target.profile,
+        gizmo=target.gizmo,
+        gadget=target.gadget,
         agent=args.agent,
         file=str(patch_path),
+        align_lanes=target.sync,
     )
-    return gadget_land_json.cmd_land(land_args)
+    rc = gadget_land_json.cmd_land(land_args)
+    if rc != 0:
+        return rc
+
+    if target.promote:
+        promote_args = SimpleNamespace(
+            gizmo=target.gizmo,
+            gadget=target.gadget,
+            dry_run=False,
+            profile=target.promote_profile or target.profile,
+            full=target.full and target.promote_profile is None,
+            no_verify=False,
+            no_history=not target.history,
+        )
+        rc = gadget_promote.cmd_promote(promote_args)
+        if rc != 0:
+            return rc
+        if target.sync:
+            root = forks.repo_root()
+            force_align_gadget(root, target.gizmo, target.gadget, forks.MAIN_REF)
+            run_status(root, target.gizmo, target.gadget)
+
+    return 0
 
 
 def build_parser() -> argparse.ArgumentParser:

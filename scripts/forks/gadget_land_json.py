@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 from types import SimpleNamespace
 
 import forks
@@ -31,6 +32,32 @@ def resolve_profile_commands(args: argparse.Namespace) -> tuple[str | None, list
     return None, None, args.full
 
 
+def fetch(root: Path) -> None:
+    forks.git(["fetch", "--prune", "origin"], root)
+
+
+def force_align_branch(root: Path, branch: str, source_ref: str) -> None:
+    fetch(root)
+    if not forks.ref_exists(root, source_ref):
+        raise RuntimeError(f"missing source ref: {source_ref}")
+    commit = forks.commit(root, source_ref)
+    if forks.current_branch(root) == branch:
+        forks.git(["reset", "--hard", commit], root)
+    elif forks.ref_exists(root, branch):
+        forks.git(["branch", "-f", branch, commit], root)
+    else:
+        forks.git(["branch", branch, commit], root)
+    forks.git(["push", "--force-with-lease", "origin", f"{commit}:refs/heads/{branch}"], root)
+    fetch(root)
+
+
+def force_align_gadget_lanes(root: Path, gizmo: str, gadget: str, source_ref: str) -> None:
+    print("syncing gadget integration and agent lanes")
+    force_align_branch(root, gadget_branches.integration_branch(gizmo, gadget), source_ref)
+    for agent in gadget_branches.AGENTS:
+        force_align_branch(root, gadget_branches.gadget_agent_branch(agent, gizmo, gadget), source_ref)
+
+
 def cmd_land(args: argparse.Namespace) -> int:
     target = gadget_branches.target_ref(args.gizmo, args.gadget)
     profile, commands, full_fallback = resolve_profile_commands(args)
@@ -54,9 +81,10 @@ def cmd_land(args: argparse.Namespace) -> int:
     if rc != 0:
         return rc
 
-    print("syncing gadget agent lanes")
-    sync_args = SimpleNamespace(gizmo=args.gizmo, gadget=args.gadget)
-    gadget_branches.cmd_sync_all(sync_args)
+    root = forks.repo_root()
+    fetch(root)
+    if getattr(args, "align_lanes", True):
+        force_align_gadget_lanes(root, args.gizmo, args.gadget, target)
 
     print("gadget status")
     status_args = SimpleNamespace(gizmo=args.gizmo, gadget=args.gadget, json=False)
@@ -69,6 +97,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--require-file", action="store_true")
     parser.add_argument("--full", action="store_true", help="use the full manifest verification profile, or verify.bat fallback")
     parser.add_argument("--profile", help="manifest verification profile to run before submit; defaults to quick")
+    parser.add_argument("--no-align-lanes", action="store_false", dest="align_lanes", help="do not force-align gadget lanes after a successful landing")
+    parser.set_defaults(align_lanes=True)
     parser.add_argument("gizmo")
     parser.add_argument("gadget")
     parser.add_argument("agent")
