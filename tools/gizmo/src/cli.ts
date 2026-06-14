@@ -12,6 +12,7 @@ function usage(): string {
   gizmo init <name> --out <file>
   gizmo validate <manifest.json>
   gizmo status <manifest.json>
+  gizmo branches <manifest.json>
 `;
 }
 
@@ -32,6 +33,24 @@ function initManifest(name: string): GizmoManifest {
     name,
     gadgets: {},
   };
+}
+
+function printBranches(manifest: GizmoManifest): void {
+  const status = buildStatus(manifest);
+  console.log(`gizmo ${status.name}`);
+  for (const gadget of status.gadgets) {
+    console.log(`gadget ${gadget.name}`);
+    console.log(`  target_ref: ${gadget.target_ref ?? 'n/a'}`);
+    console.log(`  integration_branch: ${gadget.integration_branch ?? 'n/a'}`);
+    console.log(`  agent_branch_template: ${gadget.agent_branch_template ?? 'n/a'}`);
+  }
+  for (const item of status.imports) {
+    console.log(`import ${item.name}`);
+    console.log(`  from: ${item.from_gizmo}/${item.from_gadget}`);
+    console.log(`  target_ref: ${item.target_ref ?? 'n/a'}`);
+    console.log(`  mode: ${item.mode}`);
+    console.log(`  write_policy: ${item.write_policy ?? 'n/a'}`);
+  }
 }
 
 export function runCli(args: string[]): number {
@@ -66,6 +85,13 @@ export function runCli(args: string[]): number {
       if (!file) throw new Error('missing manifest path');
       const manifest = ensureManifestValid(readManifest(file));
       console.log(JSON.stringify(buildStatus(manifest), null, 2));
+      return 0;
+    }
+    if (command === 'branches') {
+      const file = args[1];
+      if (!file) throw new Error('missing manifest path');
+      const manifest = ensureManifestValid(readManifest(file));
+      printBranches(manifest);
       return 0;
     }
     throw new Error(`unknown command: ${command}`);

@@ -4,11 +4,13 @@ export type GadgetLanguage = 'python' | 'typescript' | 'lambdascript' | 'cpp' | 
 
 export type GadgetOperation = 'read' | 'write' | 'mkdir' | 'copy' | 'run';
 
+export type VerificationProfileName = 'quick' | 'full' | 'custom' | string;
+
 export interface GadgetCommandMap {
   [name: string]: string;
 }
 
-export interface VerificationProfiles {
+export interface VerificationProfileMap {
   [name: string]: string[];
 }
 
@@ -22,10 +24,10 @@ export interface GadgetManifest {
   integration_branch?: string;
   agent_branch_template?: string;
   owned_paths?: string[];
-  verification_profiles?: VerificationProfiles;
+  verification_profiles?: VerificationProfileMap;
   promotion?: {
     target?: string;
-    verification?: 'quick' | 'full' | 'custom' | string;
+    verification?: VerificationProfileName;
   };
 }
 
@@ -33,10 +35,10 @@ export interface GizmoImportManifest {
   from_gizmo: string;
   from_gadget: string;
   mount: string;
-  mode: 'read-only' | 'read-write' | string;
+  mode: 'read-only' | 'pinned' | 'copy';
   target_ref?: string;
   allowed_commands?: string[];
-  write_policy?: 'deny' | 'allow-owned' | string;
+  write_policy?: 'deny' | 'copy-on-write' | 'allow';
 }
 
 export interface GizmoConnectionManifest {
@@ -64,6 +66,7 @@ export interface ValidationIssue {
 export interface GizmoStatus {
   format: typeof GIZMO_FORMAT;
   name: string;
+  description?: string;
   gadget_count: number;
   import_count: number;
   connection_count: number;
@@ -73,19 +76,23 @@ export interface GizmoStatus {
     language: GadgetLanguage;
     allowed_ops: GadgetOperation[];
     commands: string[];
-    verification: string;
+    owned_paths: string[];
     target_ref?: string;
     integration_branch?: string;
-    owned_paths: string[];
+    agent_branch_template?: string;
+    verification_profiles: string[];
+    promotion_target?: string;
+    promotion_verification: string;
   }>;
   imports: Array<{
     name: string;
     from_gizmo: string;
     from_gadget: string;
-    mode: string;
     mount: string;
+    mode: string;
     target_ref?: string;
     allowed_commands: string[];
     write_policy?: string;
   }>;
+  connections: GizmoConnectionManifest[];
 }
