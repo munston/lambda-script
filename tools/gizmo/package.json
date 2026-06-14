@@ -8,5 +8,7 @@
     "test": "npm run build --silent && node dist/test/smoke.js",
     "gizmo": "npm run build --silent && node dist/src/cli.js"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
 }
