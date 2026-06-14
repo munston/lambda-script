@@ -17,7 +17,16 @@ From `tools/merlin`:
 
 ```bat
 python -m merlin.cli scan ../../scripts/forks --out report.json
+python -m merlin.cli scan ../../scripts/forks --out report.json --fail-on-error
 python -m merlin.cli scan ../../scripts/forks --out report.json --fail-on-issues
 ```
 
-The scan report is JSON with format `LS_MERLIN_SCAN_V1`.
+The scan report is JSON with format `LS_MERLIN_SCAN_V1`. It contains a gear summary, a pass flag, issue counts by severity, and source locations for findings.
+
+## Current gears
+
+`implementation-presence` checks for explicit incomplete implementation markers such as placeholder exceptions, bare `pass`, `TODO`, and `FIXME`.
+
+`return-substance` checks for unqualified empty return paths such as `return None`, `return {}`, `return []`, and empty string returns.
+
+`semantic-substance` records lower-confidence placeholder language such as mock, stub, dummy, fake, or placeholder. These are warnings by default because the words can appear in legitimate detector code.
