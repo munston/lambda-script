@@ -25,21 +25,23 @@ gadgets/<gizmo>/<gadget>/main
 Each agent lane for a gadget follows:
 
 ```text
-agents/<agent>/gadgets/<gizmo>/<gadget>
+gadget-agents/<gizmo>/<gadget>/<agent>
 ```
 
 Examples:
 
 ```text
 gadgets/lambdascript/core/main
-agents/eddy/gadgets/lambdascript/core
+gadget-agents/lambdascript/core/eddy
 
 gadgets/metrics/image-metrics/main
-agents/eddy/gadgets/metrics/image-metrics
+gadget-agents/metrics/image-metrics/eddy
 
 gadgets/metrics/text-metrics/main
-agents/eddy/gadgets/metrics/text-metrics
+gadget-agents/metrics/text-metrics/eddy
 ```
+
+The `gadget-agents/...` namespace is deliberately separate from repository-level `agents/<name>` branches. Git cannot represent both `agents/ed` and child refs under `agents/ed/...`, so gadget agent lanes use a non-conflicting top-level namespace.
 
 ## Forks compatibility
 

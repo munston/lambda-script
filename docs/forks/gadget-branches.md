@@ -11,8 +11,10 @@ gadgets/<gizmo>/<gadget>/main
 Each agent lane for that gadget is:
 
 ```text
-agents/<agent>/gadgets/<gizmo>/<gadget>
+gadget-agents/<gizmo>/<gadget>/<agent>
 ```
+
+This avoids Git ref namespace conflicts with the existing repository-level branches such as `agents/ed`.
 
 ## Create a gadget lane set
 
@@ -23,6 +25,8 @@ forks.bat gadget-init lambdascript core
 ```
 
 By default this creates the remote gadget integration branch from `origin/main`, then creates remote and local agent lanes for `ed`, `edd`, `eddy`, and `guy`.
+
+If the gadget integration branch already exists and is only behind the chosen base ref, `gadget-init` fast-forwards it. It refuses when the integration branch or an agent lane has unique work ahead of its base.
 
 To create only the integration branch:
 
@@ -46,7 +50,7 @@ forks.bat gadget-sync metrics image-metrics eddy
 forks.bat gadget-sync-all metrics image-metrics
 ```
 
-Sync refuses when an agent lane has unique work ahead of the gadget integration branch. It only updates missing, even, or behind-only lanes.
+Sync refuses when an agent lane has unique work ahead of the gadget integration branch. It updates missing, even, or behind-only lanes.
 
 ## Land a patch to a gadget branch
 

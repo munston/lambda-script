@@ -8,7 +8,7 @@
       "language": "python",
       "target_ref": "origin/gadgets/metrics/image-metrics/main",
       "integration_branch": "gadgets/metrics/image-metrics/main",
-      "agent_branch_template": "agents/{agent}/gadgets/metrics/image-metrics",
+      "agent_branch_template": "gadget-agents/metrics/image-metrics/{agent}",
       "owned_paths": [
         "tools/milk_metrics/",
         "examples/gizmos/metrics.gizmo.json"
@@ -32,7 +32,7 @@
       "language": "typescript",
       "target_ref": "origin/gadgets/metrics/text-metrics/main",
       "integration_branch": "gadgets/metrics/text-metrics/main",
-      "agent_branch_template": "agents/{agent}/gadgets/metrics/text-metrics",
+      "agent_branch_template": "gadget-agents/metrics/text-metrics/{agent}",
       "owned_paths": [
         "tools/text_metrics/",
         "examples/gizmos/metrics.gizmo.json"

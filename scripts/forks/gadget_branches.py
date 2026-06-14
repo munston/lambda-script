@@ -37,7 +37,7 @@ def target_ref(gizmo: str, gadget: str) -> str:
 
 
 def gadget_agent_branch(agent: str, gizmo: str, gadget: str) -> str:
-    return f"agents/{forks.normalize_agent(agent)}/gadgets/{clean_name('gizmo', gizmo)}/{clean_name('gadget', gadget)}"
+    return f"gadget-agents/{clean_name('gizmo', gizmo)}/{clean_name('gadget', gadget)}/{forks.normalize_agent(agent)}"
 
 
 def remote_ref(branch: str) -> str:
@@ -62,6 +62,12 @@ def remote_branch_exists(root: Path, branch: str) -> bool:
 
 
 def create_remote_branch(root: Path, branch: str, source_ref: str) -> None:
+    ensure_ref(root, source_ref)
+    source_commit = forks.commit(root, source_ref)
+    forks.git(["push", "origin", f"{source_commit}:refs/heads/{branch}"], root)
+
+
+def update_remote_branch(root: Path, branch: str, source_ref: str) -> None:
     ensure_ref(root, source_ref)
     source_commit = forks.commit(root, source_ref)
     forks.git(["push", "origin", f"{source_commit}:refs/heads/{branch}"], root)
@@ -109,6 +115,29 @@ def safe_to_sync_state(row: dict[str, Any]) -> bool:
     return row["state"] in {"missing", "even", "behind-only"}
 
 
+def assert_sync_safe(root: Path, branch: str, base_ref: str) -> None:
+    rows = []
+    if local_branch_exists(root, branch):
+        rows.append(branch_status(root, branch, base_ref))
+    if remote_branch_exists(root, branch):
+        rows.append(branch_status(root, branch, base_ref))
+    for row in rows:
+        if not safe_to_sync_state(row):
+            raise RuntimeError(f"refusing to sync {branch}; {row['ref']} is {row['state']} ahead={row['ahead']} behind={row['behind']}")
+
+
+def sync_branch_to_ref(root: Path, branch: str, base_ref: str) -> None:
+    assert_sync_safe(root, branch, base_ref)
+    if forks.current_branch(root) == branch:
+        forks.git(["reset", "--hard", base_ref], root)
+    elif local_branch_exists(root, branch):
+        forks.git(["branch", "-f", branch, base_ref], root)
+    else:
+        forks.git(["branch", branch, base_ref], root)
+    update_remote_branch(root, branch, base_ref)
+    fetch(root)
+
+
 def ensure_gadget_branch(root: Path, gizmo: str, gadget: str, base_ref: str) -> str:
     branch = integration_branch(gizmo, gadget)
     fetch(root)
@@ -117,7 +146,7 @@ def ensure_gadget_branch(root: Path, gizmo: str, gadget: str, base_ref: str) -> 
         create_remote_branch(root, branch, base_ref)
         fetch(root)
         print(f"{branch}: created remote at {forks.short_commit(root, remote_ref(branch))}")
-    ensure_local_branch(root, branch, remote_ref(branch))
+    sync_branch_to_ref(root, branch, base_ref)
     print(f"{branch}: local ready at {forks.short_commit(root, branch)}")
     return branch
 
@@ -130,7 +159,7 @@ def ensure_agent_lane(root: Path, agent: str, gizmo: str, gadget: str) -> str:
         create_remote_branch(root, branch, base)
         fetch(root)
         print(f"{branch}: created remote at {forks.short_commit(root, remote_ref(branch))}")
-    ensure_local_branch(root, branch, remote_ref(branch))
+    sync_branch_to_ref(root, branch, base)
     print(f"{branch}: local ready at {forks.short_commit(root, branch)}")
     return branch
 
@@ -193,32 +222,12 @@ def cmd_status(args: argparse.Namespace) -> int:
     return 0
 
 
-def assert_sync_safe(root: Path, branch: str, base_ref: str) -> None:
-    rows = []
-    if local_branch_exists(root, branch):
-        rows.append(branch_status(root, branch, base_ref))
-    if remote_branch_exists(root, branch):
-        rows.append(branch_status(root, branch, base_ref))
-    for row in rows:
-        if not safe_to_sync_state(row):
-            raise RuntimeError(f"refusing to sync {branch}; {row['ref']} is {row['state']} ahead={row['ahead']} behind={row['behind']}")
-
-
 def sync_agent_lane(root: Path, agent: str, gizmo: str, gadget: str) -> None:
     fetch(root)
     base = target_ref(gizmo, gadget)
     ensure_ref(root, base)
     branch = gadget_agent_branch(agent, gizmo, gadget)
-    assert_sync_safe(root, branch, base)
-    if forks.current_branch(root) == branch:
-        forks.git(["reset", "--hard", base], root)
-    elif local_branch_exists(root, branch):
-        forks.git(["branch", "-f", branch, base], root)
-    else:
-        forks.git(["branch", branch, base], root)
-    target_commit = forks.commit(root, base)
-    forks.git(["push", "origin", f"{target_commit}:refs/heads/{branch}"], root)
-    fetch(root)
+    sync_branch_to_ref(root, branch, base)
     print(f"{branch}: synced to {forks.short_commit(root, base)}")
 
 

@@ -8,7 +8,7 @@
       "language": "mixed",
       "target_ref": "origin/gadgets/lambdascript/core/main",
       "integration_branch": "gadgets/lambdascript/core/main",
-      "agent_branch_template": "agents/{agent}/gadgets/lambdascript/core",
+      "agent_branch_template": "gadget-agents/lambdascript/core/{agent}",
       "owned_paths": [
         "glc/",
         "examples/",
@@ -22,7 +22,7 @@
       ],
       "verification_profiles": {
         "quick": [
-          "python -m py_compile scripts/forks/forks.py scripts/forks/submission_object.py scripts/forks/import_json_patch.py scripts/forks/land_json_patch.py"
+          "python -m py_compile scripts/forks/forks.py scripts/forks/submission_object.py scripts/forks/import_json_patch.py scripts/forks/land_json_patch.py scripts/forks/gadget_branches.py"
         ],
         "full": [
           "verify.bat"
