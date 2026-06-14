@@ -4,7 +4,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-import { buildProvisionPlan, buildStatus, ensureManifestValid, readManifest } from '../src';
+import { buildGadgetCommandPlan, buildProvisionPlan, buildStatus, ensureManifestValid, parseArgPairs, readManifest } from '../src';
 import { runCli } from '../src/cli';
 
 const manifest = ensureManifestValid({
@@ -77,19 +77,30 @@ assert.strictEqual(plan.command_count, 3);
 assert.strictEqual(plan.imports[0].source, 'lambdascript/core');
 assert.strictEqual(plan.imports[0].mutable, false);
 
+const args = parseArgPairs(['image=sample.png', 'out=out-dir']);
+const commandPlan = buildGadgetCommandPlan(manifest, 'image-metrics', 'analyze', args, false);
+assert.strictEqual(commandPlan.format, 'LS_GIZMO_COMMAND_PLAN_V1');
+assert.strictEqual(commandPlan.execute, false);
+assert.strictEqual(commandPlan.rendered, 'python -m milk_metrics.cli analyze "sample.png" --out "out-dir"');
+assert.throws(() => parseArgPairs(['bad']), /expected --arg/);
+assert.throws(() => buildGadgetCommandPlan(manifest, 'image-metrics', 'analyze', { image: 'sample.png' }, false), /missing command args/);
+assert.throws(() => buildGadgetCommandPlan(manifest, 'image-metrics', 'analyze', { image: 'sample.png', out: 'out', extra: 'x' }, false), /unused command args/);
+assert.throws(() => buildGadgetCommandPlan(manifest, 'image-metrics', 'analyze', { image: 'a&b', out: 'out' }, false), /unsafe command argument/);
+
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gizmo-smoke-'));
 const file = path.join(dir, 'empty.gizmo.json');
 const full = path.join(dir, 'full.gizmo.json');
 const planFile = path.join(dir, 'provision-plan.json');
+fs.writeFileSync(full, JSON.stringify(manifest, null, 2) + '\n');
 assert.strictEqual(runCli(['init', 'empty', '--out', file]), 0);
 assert.strictEqual(readManifest(file).format, 'LS_GIZMO_V1');
 assert.strictEqual(runCli(['validate', file]), 0);
 assert.strictEqual(runCli(['status', file]), 0);
-fs.writeFileSync(full, JSON.stringify(manifest, null, 2) + '\n');
 assert.strictEqual(runCli(['validate', full]), 0);
 assert.strictEqual(runCli(['status', full]), 0);
 assert.strictEqual(runCli(['branches', full]), 0);
 assert.strictEqual(runCli(['provision-plan', full]), 0);
 assert.strictEqual(runCli(['provision-plan', full, '--out', planFile]), 0);
 assert.strictEqual(JSON.parse(fs.readFileSync(planFile, 'utf8')).format, 'LS_GIZMO_PROVISION_PLAN_V1');
+assert.strictEqual(runCli(['call', full, 'image-metrics', 'analyze', '--arg', 'image=sample.png', '--arg', 'out=out-dir']), 0);
 console.log('Gizmo smoke test passed');

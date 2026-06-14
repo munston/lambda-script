@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 import { buildProvisionPlan, buildStatus, ensureManifestValid, readManifest, validateManifest } from './manifest';
+import { buildGadgetCommandPlan, executeCommandPlan, parseArgPairs } from './runner';
 import { GIZMO_FORMAT, GizmoManifest } from './types';
 
 function usage(): string {
@@ -14,6 +15,7 @@ function usage(): string {
   gizmo status <manifest.json>
   gizmo branches <manifest.json>
   gizmo provision-plan <manifest.json> [--out <file>]
+  gizmo call <manifest.json> <gadget> <command> [--arg name=value ...] [--exec]
 `;
 }
 
@@ -52,6 +54,27 @@ function printBranches(manifest: GizmoManifest): void {
     console.log(`  mode: ${item.mode}`);
     console.log(`  write_policy: ${item.write_policy ?? 'n/a'}`);
   }
+}
+
+function collectCallArgs(args: string[]): { execute: boolean; pairs: string[] } {
+  const pairs: string[] = [];
+  let execute = false;
+  for (let i = 0; i < args.length; i += 1) {
+    const item = args[i];
+    if (item === '--exec') {
+      execute = true;
+      continue;
+    }
+    if (item === '--arg') {
+      const value = args[i + 1];
+      if (!value) throw new Error('missing value after --arg');
+      pairs.push(value);
+      i += 1;
+      continue;
+    }
+    throw new Error(`unknown call option: ${item}`);
+  }
+  return { execute, pairs };
 }
 
 export function runCli(args: string[]): number {
@@ -108,6 +131,17 @@ export function runCli(args: string[]): number {
         console.log(JSON.stringify(plan, null, 2));
       }
       return 0;
+    }
+    if (command === 'call') {
+      const file = args[1];
+      const gadget = args[2];
+      const commandName = args[3];
+      if (!file || !gadget || !commandName) throw new Error('usage: gizmo call <manifest.json> <gadget> <command> [--arg name=value ...] [--exec]');
+      const callArgs = collectCallArgs(args.slice(4));
+      const manifest = ensureManifestValid(readManifest(file));
+      const plan = buildGadgetCommandPlan(manifest, gadget, commandName, parseArgPairs(callArgs.pairs), callArgs.execute);
+      console.log(JSON.stringify(plan, null, 2));
+      return executeCommandPlan(plan);
     }
     throw new Error(`unknown command: ${command}`);
   } catch (error) {
