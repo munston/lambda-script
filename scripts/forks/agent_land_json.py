@@ -27,15 +27,18 @@ The patch itself carries its target and transaction policy:
 from __future__ import annotations
 
 import argparse
+import shutil
 import subprocess
 import sys
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 
 import forks
 import gadget_branches
 import gadget_land_json
 import gadget_promote
+import gadget_verify_profiles
 import import_json_patch
 
 VALID_AGENTS = {"ed", "edd", "eddy", "guy"}
@@ -150,6 +153,62 @@ def run_status(root: Path, gizmo: str, gadget: str) -> None:
     subprocess.run(["cmd", "/c", "forks.bat", "gadget-status", gizmo, gadget], cwd=str(root), text=True, check=False)
 
 
+def run_shell(command: str, cwd: Path) -> None:
+    print(f"> {command}")
+    proc = subprocess.run(command, cwd=str(cwd), shell=True, text=True)
+    if proc.returncode != 0:
+        raise RuntimeError(f"command failed: {command}")
+
+
+def verification_profile(target: Target) -> str:
+    return target.promote_profile or target.profile or ("full" if target.full else "quick")
+
+
+def verify_rebased_gadget(root: Path, work: Path, target: Target) -> None:
+    profile = verification_profile(target)
+    commands = gadget_verify_profiles.profile_commands(root, target.gizmo, target.gadget, profile)
+    if commands is None:
+        raise RuntimeError(f"missing verification profile {profile} for {target.gizmo}/{target.gadget}")
+    print(f"verification profile after rebase: {profile}")
+    for command in commands:
+        run_shell(command, work)
+
+
+def rebase_gadget_onto_main(root: Path, target: Target) -> None:
+    target_ref = gadget_branches.target_ref(target.gizmo, target.gadget)
+    fetch(root)
+    if not forks.ref_exists(root, target_ref):
+        raise RuntimeError(f"missing gadget target ref: {target_ref}")
+
+    ahead, behind = forks.ahead_behind(root, target_ref, forks.MAIN_REF)
+    state = forks.classify(ahead, behind)
+    print(f"promotion preflight: {target_ref} state={state} ahead={ahead} behind={behind}")
+
+    if state == "ahead-only":
+        return
+    if state == "even":
+        raise RuntimeError(f"{target_ref} has no unique gadget work to promote")
+    if state != "diverged":
+        raise RuntimeError(f"{target_ref} is not promotable: state={state} ahead={ahead} behind={behind}")
+
+    print(f"rebasing {target.gizmo}/{target.gadget} onto {forks.MAIN_REF}")
+    with TemporaryDirectory(prefix=f"gadget-rebase-{target.gizmo}-{target.gadget}-") as raw:
+        work = Path(raw)
+        forks.git(["worktree", "add", "--detach", str(work), target_ref], root)
+        try:
+            forks.git(["rebase", "-X", "theirs", forks.MAIN_REF], work)
+            verify_rebased_gadget(root, work, target)
+            forks.git(["push", "--force-with-lease", "origin", f"HEAD:refs/heads/{gadget_branches.integration_branch(target.gizmo, target.gadget)}"], work)
+        finally:
+            forks.git(["worktree", "remove", "--force", str(work)], root, check=False)
+            if work.exists():
+                shutil.rmtree(work, ignore_errors=True)
+            forks.git(["worktree", "prune"], root, check=False)
+
+    fetch(root)
+    force_align_gadget(root, target.gizmo, target.gadget, target_ref)
+
+
 def cmd_land(args: argparse.Namespace) -> int:
     patch_path = Path(args.file)
     if not patch_path.exists():
@@ -179,6 +238,8 @@ def cmd_land(args: argparse.Namespace) -> int:
         return rc
 
     if target.promote:
+        root = forks.repo_root()
+        rebase_gadget_onto_main(root, target)
         promote_args = SimpleNamespace(
             gizmo=target.gizmo,
             gadget=target.gadget,
@@ -192,7 +253,6 @@ def cmd_land(args: argparse.Namespace) -> int:
         if rc != 0:
             return rc
         if target.sync:
-            root = forks.repo_root()
             force_align_gadget(root, target.gizmo, target.gadget, forks.MAIN_REF)
             run_status(root, target.gizmo, target.gadget)
 
