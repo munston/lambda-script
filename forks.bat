@@ -9,6 +9,12 @@ if not exist "scripts\forks\forks.py" (
   exit /b 1
 )
 
+if /I "%~1"=="import-json" (
+  shift
+  python scripts\forks\import_json_patch.py %*
+  exit /b %errorlevel%
+)
+
 if /I "%~1"=="capture" (
   shift
   python scripts\forks\submission_object.py capture %*
