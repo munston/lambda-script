@@ -1,0 +1,74 @@
+{
+  "agent": "system",
+  "base_commit": "c664e8e1125b03a91e8e3c6fdeee672d73785a71",
+  "base_ref": "origin/main",
+  "changed_files": [
+    {
+      "path": "docs/forks/guy-targeted-button-smoke.txt",
+      "status": "A"
+    },
+    {
+      "path": "docs/forks/main-history.md",
+      "status": "A"
+    },
+    {
+      "path": "docs/forks/targeted-json-buttons.md",
+      "status": "A"
+    },
+    {
+      "path": "ed-land-json.bat",
+      "status": "A"
+    },
+    {
+      "path": "edd-land-json.bat",
+      "status": "A"
+    },
+    {
+      "path": "eddy-land-json.bat",
+      "status": "A"
+    },
+    {
+      "path": "examples/forks/targeted_patch.example.json",
+      "status": "A"
+    },
+    {
+      "path": "examples/gizmos/lambdascript.gizmo.json",
+      "status": "M"
+    },
+    {
+      "path": "guy-land-json.bat",
+      "status": "A"
+    },
+    {
+      "path": "scripts/forks/agent_land_json.py",
+      "status": "A"
+    },
+    {
+      "path": "scripts/forks/gadget_promote.py",
+      "status": "M"
+    },
+    {
+      "path": "scripts/forks/land_json_patch.py",
+      "status": "M"
+    },
+    {
+      "path": "scripts/forks/main_history.py",
+      "status": "A"
+    }
+  ],
+  "created_at": "2026-06-14T18:14:13.419999+00:00",
+  "format": "LS_MAIN_HISTORY_V1",
+  "kind": "gadget_promotion",
+  "metadata": {
+    "gadget": "core",
+    "gizmo": "lambdascript",
+    "promoted_commits": 3,
+    "target_ref": "origin/gadgets/lambdascript/core/main"
+  },
+  "number": 1,
+  "source_head_before_receipt": "852bc61ff574f4ab75bdeb26751433749017baeb",
+  "source_ref": "origin/gadgets/lambdascript/core/main",
+  "source_tree_before_receipt": "7a5ea61e833ba2228637292a65605c2da92276d4",
+  "title": "Promote lambdascript/core",
+  "version": "main-000001"
+}
