@@ -1,0 +1,39 @@
+{
+  "format": "LS_GIZMO_V1",
+  "name": "lambdascript",
+  "description": "Development gizmo for the LambdaScript compiler, interchange model, forks tooling, and gizmo tooling.",
+  "gadgets": {
+    "core": {
+      "root": ".",
+      "language": "mixed",
+      "target_ref": "origin/gadgets/lambdascript/core/main",
+      "integration_branch": "gadgets/lambdascript/core/main",
+      "agent_branch_template": "agents/{agent}/gadgets/lambdascript/core",
+      "owned_paths": [
+        "glc/",
+        "examples/",
+        "docs/core/",
+        "docs/forks/",
+        "scripts/forks/",
+        "tools/gizmo/",
+        "forks.bat",
+        "install.bat",
+        "verify.bat"
+      ],
+      "verification_profiles": {
+        "quick": [
+          "python -m py_compile scripts/forks/forks.py scripts/forks/submission_object.py scripts/forks/import_json_patch.py scripts/forks/land_json_patch.py"
+        ],
+        "full": [
+          "verify.bat"
+        ]
+      },
+      "commands": {
+        "forks": "forks.bat {args}",
+        "glc": "cd glc && npm run glc -- {args}",
+        "gizmo": "cd tools/gizmo && node dist/src/cli.js {args}"
+      }
+    }
+  },
+  "imports": {}
+}

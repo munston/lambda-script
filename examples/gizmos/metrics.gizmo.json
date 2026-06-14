@@ -1,0 +1,87 @@
+{
+  "format": "LS_GIZMO_V1",
+  "name": "metrics",
+  "description": "Development gizmo for image and text metric processors, with LambdaScript tooling imported as a protected toolchain.",
+  "gadgets": {
+    "image-metrics": {
+      "root": "tools/milk_metrics",
+      "language": "python",
+      "target_ref": "origin/gadgets/metrics/image-metrics/main",
+      "integration_branch": "gadgets/metrics/image-metrics/main",
+      "agent_branch_template": "agents/{agent}/gadgets/metrics/image-metrics",
+      "owned_paths": [
+        "tools/milk_metrics/",
+        "examples/gizmos/metrics.gizmo.json"
+      ],
+      "verification_profiles": {
+        "quick": [
+          "python -m py_compile tools/milk_metrics/milk_metrics/*.py"
+        ],
+        "full": [
+          "python tools/milk_metrics/test/smoke.py"
+        ]
+      },
+      "commands": {
+        "analyze": "python -m milk_metrics.cli analyze {image} --out {out}",
+        "penalty-mask": "python -m milk_metrics.cli penalty-mask {image} --out {out}",
+        "restore": "python -m milk_metrics.cli restore {image} --out {out}"
+      }
+    },
+    "text-metrics": {
+      "root": "tools/text_metrics",
+      "language": "typescript",
+      "target_ref": "origin/gadgets/metrics/text-metrics/main",
+      "integration_branch": "gadgets/metrics/text-metrics/main",
+      "agent_branch_template": "agents/{agent}/gadgets/metrics/text-metrics",
+      "owned_paths": [
+        "tools/text_metrics/",
+        "examples/gizmos/metrics.gizmo.json"
+      ],
+      "verification_profiles": {
+        "quick": [
+          "cd tools/text_metrics && npm run build"
+        ],
+        "full": [
+          "cd tools/text_metrics && npm test"
+        ]
+      },
+      "commands": {
+        "analyze": "cd tools/text_metrics && node dist/src/cli.js analyze {file} --out {out}",
+        "compare": "cd tools/text_metrics && node dist/src/cli.js compare {file_a} {file_b} --out {out}",
+        "analyze-bundle": "cd tools/text_metrics && node dist/src/cli.js analyze-bundle {bundle} --out {out}"
+      }
+    }
+  },
+  "imports": {
+    "lambdascript-core": {
+      "from_gizmo": "lambdascript",
+      "from_gadget": "core",
+      "mount": "toolchains/lambdascript",
+      "mode": "read-only",
+      "target_ref": "origin/gadgets/lambdascript/core/main",
+      "allowed_commands": [
+        "forks",
+        "glc",
+        "gizmo"
+      ],
+      "write_policy": "deny"
+    }
+  },
+  "connections": [
+    {
+      "from": "text-metrics",
+      "to": "image-metrics",
+      "via": "declared-artifacts",
+      "allowed_reads": [
+        "report.json",
+        "penalty_report.json",
+        "bundle_report.json",
+        "bundle_manifest.json"
+      ],
+      "allowed_commands": [
+        "analyze",
+        "penalty-mask"
+      ]
+    }
+  ]
+}
