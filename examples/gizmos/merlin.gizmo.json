@@ -1,0 +1,58 @@
+{
+  "format": "LS_GIZMO_V1",
+  "name": "merlin",
+  "description": "Development gizmo for Merlin, a geared mock detector for forks-backed agent work.",
+  "gadgets": {
+    "mock-detector": {
+      "root": "tools/merlin",
+      "language": "python",
+      "allowed_ops": [
+        "read",
+        "write",
+        "mkdir",
+        "copy",
+        "run"
+      ],
+      "target_ref": "origin/gadgets/merlin/mock-detector/main",
+      "integration_branch": "gadgets/merlin/mock-detector/main",
+      "agent_branch_template": "agents/{agent}/gadgets/merlin/mock-detector",
+      "owned_paths": [
+        "tools/merlin/",
+        "docs/merlin/",
+        "examples/gizmos/merlin.gizmo.json"
+      ],
+      "verification_profiles": {
+        "quick": [
+          "python -m py_compile tools/merlin/merlin/__init__.py tools/merlin/merlin/detector.py tools/merlin/merlin/cli.py tools/merlin/test/smoke.py"
+        ],
+        "full": [
+          "python tools/merlin/test/smoke.py"
+        ]
+      },
+      "commands": {
+        "scan": "cd tools/merlin && python -m merlin.cli scan {path} --out {out}",
+        "scan-strict": "cd tools/merlin && python -m merlin.cli scan {path} --out {out} --fail-on-issues"
+      },
+      "promotion": {
+        "target": "origin/gadgets/merlin/mock-detector/main",
+        "verification": "full"
+      }
+    }
+  },
+  "imports": {
+    "lambdascript-core": {
+      "from_gizmo": "lambdascript",
+      "from_gadget": "core",
+      "mount": "toolchains/lambdascript",
+      "mode": "read-only",
+      "target_ref": "origin/gadgets/lambdascript/core/main",
+      "allowed_commands": [
+        "forks",
+        "gizmo",
+        "glc"
+      ],
+      "write_policy": "deny"
+    }
+  },
+  "connections": []
+}
