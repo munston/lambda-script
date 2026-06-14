@@ -12,6 +12,7 @@ from pathlib import Path
 import forks
 import gadget_branches
 import gadget_verify_profiles
+import main_history
 
 AGENTS = ("ed", "edd", "eddy", "guy")
 PROMOTION_DIR = "promotions"
@@ -103,6 +104,26 @@ def require_ahead_only(root: Path, target_ref: str) -> tuple[int, int]:
     return ahead, behind
 
 
+def stamp_promotion_history(work: Path, gizmo: str, gadget: str, target_ref: str, ahead: int) -> None:
+    changed_files = forks.changed_files(work, "HEAD", forks.MAIN_REF)
+    receipt = main_history.stamp_main_version(
+        work,
+        kind="gadget_promotion",
+        agent="system",
+        title=f"Promote {gizmo}/{gadget}",
+        base_ref=forks.MAIN_REF,
+        source_ref=target_ref,
+        changed_files=changed_files,
+        metadata={
+            "gizmo": gizmo,
+            "gadget": gadget,
+            "target_ref": target_ref,
+            "promoted_commits": ahead,
+        },
+    )
+    print(f"main version: {receipt['version']}")
+
+
 def cmd_promote(args: argparse.Namespace) -> int:
     root = forks.repo_root()
     forks.ensure_dirs(root)
@@ -136,6 +157,9 @@ def cmd_promote(args: argparse.Namespace) -> int:
     if ahead_after != ahead or behind_after != behind:
         raise RuntimeError("source/destination relationship changed during verification; rerun promotion")
 
+    if not args.no_history:
+        stamp_promotion_history(work, args.gizmo, args.gadget, target_ref, ahead)
+
     ancestor = forks.git(["merge-base", "--is-ancestor", forks.MAIN_REF, "HEAD"], work, check=False)
     if ancestor.returncode != 0:
         raise RuntimeError(f"{forks.MAIN_REF} is not an ancestor of promotion candidate")
@@ -166,6 +190,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--profile", help="manifest verification profile to run before promotion; defaults to quick")
     parser.add_argument("--full", action="store_true", help="use the full manifest verification profile")
     parser.add_argument("--no-verify", action="store_true", help="skip verification gate")
+    parser.add_argument("--no-history", action="store_true", help="do not append a main-history receipt before pushing")
     return parser
 
 

@@ -26,7 +26,7 @@
       ],
       "verification_profiles": {
         "quick": [
-          "python -m py_compile scripts/forks/forks.py scripts/forks/submission_object.py scripts/forks/import_json_patch.py scripts/forks/land_json_patch.py scripts/forks/gadget_branches.py scripts/forks/gadget_land_json.py scripts/forks/gadget_verify_profiles.py scripts/forks/gadget_promote.py scripts/forks/ensure_node_toolchains.py scripts/forks/agent_land_json.py"
+          "python -m py_compile scripts/forks/forks.py scripts/forks/submission_object.py scripts/forks/import_json_patch.py scripts/forks/land_json_patch.py scripts/forks/gadget_branches.py scripts/forks/gadget_land_json.py scripts/forks/gadget_verify_profiles.py scripts/forks/gadget_promote.py scripts/forks/ensure_node_toolchains.py scripts/forks/agent_land_json.py scripts/forks/main_history.py"
         ],
         "gizmo": [
           "python scripts/forks/ensure_node_toolchains.py --install --only tools/gizmo",

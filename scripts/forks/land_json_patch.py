@@ -10,6 +10,7 @@ from pathlib import Path
 
 import forks
 import import_json_patch
+import main_history
 
 AGENTS = ("ed", "edd", "eddy", "guy")
 
@@ -35,7 +36,7 @@ def sync_agent(root: Path, agent: str) -> None:
         print(f"{branch}: created at {forks.short_commit(root, forks.MAIN_REF)}")
         return
 
-    ahead, behind = forks.ahead_behind(root, branch)
+    ahead, behind = forks.ahead_behind(root, branch, forks.MAIN_REF)
     state = forks.classify(ahead, behind)
 
     if state == "even":
@@ -105,7 +106,30 @@ def verify_candidate(args: argparse.Namespace, work: Path) -> None:
             "scripts/forks/gadget_branches.py",
             "scripts/forks/gadget_land_json.py",
             "scripts/forks/gadget_verify_profiles.py",
+            "scripts/forks/main_history.py",
         ], work)
+
+
+def maybe_stamp_main_history(args: argparse.Namespace, payload: dict, submission: dict, work: Path) -> None:
+    if args.target_ref != forks.MAIN_REF:
+        return
+    print("recording main version receipt")
+    receipt = main_history.stamp_main_version(
+        work,
+        kind="json_patch",
+        agent=submission["agent"],
+        title=str(payload.get("title", "")),
+        base_ref=args.target_ref,
+        source_ref=str(submission.get("source_ref", "json-import")),
+        changed_files=list(submission.get("changed_files", [])),
+        metadata={
+            "json_patch_format": payload.get("format"),
+            "json_patch_title": payload.get("title", ""),
+            "patch_sha256": submission.get("patch_sha256", ""),
+            "target_ref": args.target_ref,
+        },
+    )
+    print(f"main version: {receipt['version']}")
 
 
 def cmd_land(args: argparse.Namespace) -> int:
@@ -130,6 +154,8 @@ def cmd_land(args: argparse.Namespace) -> int:
     print("verifying imported candidate")
     verify_candidate(args, work)
 
+    require_candidate_fresh(work, args.target_ref)
+    maybe_stamp_main_history(args, payload, submission, work)
     require_candidate_fresh(work, args.target_ref)
 
     push_ref = remote_push_ref(args.target_ref, args.push_ref)
