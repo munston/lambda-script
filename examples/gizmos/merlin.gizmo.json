@@ -31,6 +31,7 @@
       },
       "commands": {
         "scan": "cd tools/merlin && python -m merlin.cli scan {path} --out {out}",
+        "scan-gated": "cd tools/merlin && python -m merlin.cli scan {path} --out {out} --fail-on-error",
         "scan-strict": "cd tools/merlin && python -m merlin.cli scan {path} --out {out} --fail-on-issues"
       },
       "promotion": {
