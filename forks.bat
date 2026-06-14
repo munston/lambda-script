@@ -12,6 +12,10 @@ if not exist "scripts\forks\forks.py" (
 if /I "%~1"=="import-json" goto import_json
 if /I "%~1"=="land-json" goto land_json
 if /I "%~1"=="land-json-file" goto land_json_file
+if /I "%~1"=="gadget-init" goto gadget_init
+if /I "%~1"=="gadget-status" goto gadget_status
+if /I "%~1"=="gadget-sync" goto gadget_sync
+if /I "%~1"=="gadget-sync-all" goto gadget_sync_all
 if /I "%~1"=="capture" goto capture
 if /I "%~1"=="submission-status" goto submission_status
 if /I "%~1"=="replay" goto replay
@@ -41,6 +45,26 @@ exit /b %errorlevel%
 :land_json_file
 shift
 python scripts\forks\land_json_patch.py --require-file %1 %2 %3 %4 %5 %6 %7 %8 %9
+exit /b %errorlevel%
+
+:gadget_init
+shift
+python scripts\forks\gadget_branches.py init %1 %2 %3 %4 %5 %6 %7 %8 %9
+exit /b %errorlevel%
+
+:gadget_status
+shift
+python scripts\forks\gadget_branches.py status %1 %2 %3 %4 %5 %6 %7 %8 %9
+exit /b %errorlevel%
+
+:gadget_sync
+shift
+python scripts\forks\gadget_branches.py sync %1 %2 %3 %4 %5 %6 %7 %8 %9
+exit /b %errorlevel%
+
+:gadget_sync_all
+shift
+python scripts\forks\gadget_branches.py sync-all %1 %2 %3 %4 %5 %6 %7 %8 %9
 exit /b %errorlevel%
 
 :capture
