@@ -18,10 +18,37 @@ From `tools/merlin`:
 ```bat
 python -m merlin.cli scan ../../scripts/forks --out report.json
 python -m merlin.cli scan ../../scripts/forks --out report.json --fail-on-error
+python -m merlin.cli scan ../../scripts/forks --out report.json --fail-on-warning
 python -m merlin.cli scan ../../scripts/forks --out report.json --fail-on-issues
+python -m merlin.cli scan ../../scripts/forks --out report.json --suppressions suppressions.json
 ```
 
-The scan report is JSON with format `LS_MERLIN_SCAN_V1`. It contains a gear summary, a pass flag, issue counts by severity, and source locations for findings.
+The scan report is JSON with format `LS_MERLIN_SCAN_V1`. It contains version metadata, file hashes, deterministic issue fingerprints, a gear summary, a pass flag, active issue counts by severity, suppressed findings, and source locations for review.
+
+## Suppressions
+
+Inline suppressions use a local comment:
+
+```python
+return None  # merlin: allow return-substance
+```
+
+JSON suppressions use this format:
+
+```json
+{
+  "format": "LS_MERLIN_SUPPRESSIONS_V1",
+  "suppressions": [
+    {
+      "path": "sample.py",
+      "rule": "mock-language",
+      "reason": "fixture intentionally uses detector vocabulary"
+    }
+  ]
+}
+```
+
+Suppression entries may match by `path`, `rule`, `gear`, or `fingerprint`. A reason is required.
 
 ## Current gears
 
@@ -30,3 +57,5 @@ The scan report is JSON with format `LS_MERLIN_SCAN_V1`. It contains a gear summ
 `return-substance` checks for unqualified empty return paths such as `return None`, `return {}`, `return []`, and empty string returns.
 
 `semantic-substance` records lower-confidence placeholder language such as mock, stub, dummy, fake, or placeholder. These are warnings by default because the words can appear in legitimate detector code.
+
+`test-integrity` records skipped test markers so deliberate test dilution is visible during review.
