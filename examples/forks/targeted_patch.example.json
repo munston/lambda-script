@@ -1,0 +1,19 @@
+{
+  "format": "LS_FORK_JSON_PATCH_V1",
+  "agent": "guy",
+  "target": {
+    "kind": "gadget",
+    "gizmo": "lambdascript",
+    "gadget": "core",
+    "profile": "quick"
+  },
+  "title": "Example targeted patch",
+  "files": [
+    {
+      "op": "upsert",
+      "path": "docs/forks/example-targeted-patch-output.txt",
+      "encoding": "utf-8",
+      "content": "This file is only an example payload for the targeted JSON patch format.\\n"
+    }
+  ]
+}
