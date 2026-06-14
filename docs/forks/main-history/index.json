@@ -11,6 +11,17 @@
       "source_head_before_receipt": "852bc61ff574f4ab75bdeb26751433749017baeb",
       "title": "Promote lambdascript/core",
       "version": "main-000001"
+    },
+    {
+      "agent": "system",
+      "base_commit": "4964a97ba22ddadee8a57d6b3a355c4f4a4abc42",
+      "created_at": "2026-06-14T18:30:28.801788+00:00",
+      "kind": "gadget_promotion",
+      "number": 2,
+      "receipt": "docs/forks/main-history/patches/main-000002.json",
+      "source_head_before_receipt": "0db80d7580efa31fe81267e4cd2842b4e0fb5096",
+      "title": "Promote lambdascript/core",
+      "version": "main-000002"
     }
   ],
   "format": "LS_MAIN_HISTORY_V1"
