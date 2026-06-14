@@ -21,6 +21,13 @@ def run(args: list[str], cwd: Path, check: bool = True) -> subprocess.CompletedP
     return proc
 
 
+def run_shell(command: str, cwd: Path, check: bool = True) -> subprocess.CompletedProcess[str]:
+    proc = subprocess.run(command, cwd=str(cwd), shell=True, text=True)
+    if check and proc.returncode != 0:
+        raise RuntimeError("command failed: " + command)
+    return proc
+
+
 def sync_agent(root: Path, agent: str) -> None:
     branch = forks.agent_branch(agent)
     if not forks.ref_exists(root, branch):
@@ -73,6 +80,34 @@ def require_candidate_fresh(work: Path, target_ref: str) -> None:
         raise RuntimeError(f"imported candidate is not fresh ahead-only against {target_ref}: ahead={ahead} behind={behind}")
 
 
+def verify_candidate(args: argparse.Namespace, work: Path) -> None:
+    commands = getattr(args, "verify_commands", None)
+    profile = getattr(args, "verify_profile", None)
+    if commands:
+        label = f" using profile {profile}" if profile else ""
+        print(f"running manifest verification{label}")
+        for command in commands:
+            print(f"> {command}")
+            run_shell(command, work)
+        return
+
+    if args.full:
+        run(["cmd", "/c", "verify.bat"], work)
+    else:
+        run([
+            sys.executable,
+            "-m",
+            "py_compile",
+            "scripts/forks/forks.py",
+            "scripts/forks/submission_object.py",
+            "scripts/forks/import_json_patch.py",
+            "scripts/forks/land_json_patch.py",
+            "scripts/forks/gadget_branches.py",
+            "scripts/forks/gadget_land_json.py",
+            "scripts/forks/gadget_verify_profiles.py",
+        ], work)
+
+
 def cmd_land(args: argparse.Namespace) -> int:
     root = forks.repo_root()
     forks.ensure_dirs(root)
@@ -93,18 +128,7 @@ def cmd_land(args: argparse.Namespace) -> int:
     print(f"files={len(submission['changed_files'])} ahead={submission['ahead']} behind={submission['behind']}")
 
     print("verifying imported candidate")
-    if args.full:
-        run(["cmd", "/c", "verify.bat"], work)
-    else:
-        run([
-            sys.executable,
-            "-m",
-            "py_compile",
-            "scripts/forks/forks.py",
-            "scripts/forks/submission_object.py",
-            "scripts/forks/import_json_patch.py",
-            "scripts/forks/land_json_patch.py",
-        ], work)
+    verify_candidate(args, work)
 
     require_candidate_fresh(work, args.target_ref)
 
