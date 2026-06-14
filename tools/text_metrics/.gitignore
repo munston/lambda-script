@@ -1,0 +1,7 @@
+dist/
+runs/
+node_modules/
+*.zip
+*.tar
+*.tgz
+*.tar.gz

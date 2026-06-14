@@ -1,0 +1,14 @@
+{
+  "name": "lambda-text-metrics",
+  "version": "0.2.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node dist/test/smoke.js",
+    "text-metrics": "npm run build --silent && node dist/src/cli.js"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
