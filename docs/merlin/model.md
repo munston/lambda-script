@@ -1,6 +1,6 @@
 # Merlin model
 
-Merlin is a mock detector for forks-backed agent work. Its purpose is to distinguish operational progress from semantic hollowing-out. A gremlin may compile a patch by introducing a stub, dummy branch, bypass, or weakened return path; Merlin should make that kind of apparent progress visible before it is rewarded or promoted.
+Merlin is a mock detector for agent-written code. Its purpose is to distinguish operational progress from semantic hollowing-out. A gremlin may compile a patch by introducing a stub, dummy branch, bypass, weakened return path, or test dilution; Merlin should make that kind of apparent progress visible before it is rewarded or accepted.
 
 ## Objects
 
@@ -10,29 +10,14 @@ A gearbox is the collection of gears across a program. Because geared components
 
 A mock signal is evidence that a patch has replaced semantic work with a placeholder. Early signals include explicit mock/stub language, `NotImplementedError`, unqualified `pass`, placeholder returns, dummy values, bypassed calls, and test weakening.
 
-A Merlin scan is an auditable report over a tree of source files. It records the files scanned, the signals found, and enough location data to support review by an agent or operator.
+A Merlin scan is an auditable report over a tree of source files. It records the files scanned, the gears evaluated, the signals found, and enough location data to support review by an agent or operator.
 
-## Gizmo placement
+## Current scope
 
-Merlin is initially developed in its own gizmo and its own writable gadget:
+Merlin currently works as a local source-tree scanner. It is developed and tested as ordinary tool code. It has no provisioning boundary, no external command capability model, and no import relationship to other toolchains.
 
-```text
-gizmo:  merlin
-gadget: mock-detector
-branch: gadgets/merlin/mock-detector/main
-lanes:  agents/<agent>/gadgets/merlin/mock-detector
-```
+The first operational form is deliberately conservative: a finding is evidence for review, not proof of fraud. Error-grade findings represent strong placeholder patterns such as empty return paths or explicit incomplete implementation markers. Warning-grade findings represent lower-confidence language signals that may also occur in legitimate detector code.
 
-This keeps Merlin separate while gizmos and gadgets mature. The `merlin/mock-detector` gadget may import `lambdascript/core` as a read-only toolchain so it can call forks, gizmo, or compiler commands through declared capabilities. It may not mutate LambdaScript source unless the work is later promoted through the LambdaScript gizmo's own gadget process.
+## Intended development path
 
-## Integration target
-
-The first operational form is a static source scan. It deliberately starts conservative: a finding is evidence for review, not a proof of fraud. Later gears can add stronger semantic checks, such as replayed behavioural tests, generated oracle fixtures, cross-version invariants, dependency boundary checks, and fork receipt comparison.
-
-The eventual incorporation path is:
-
-```text
-merlin/mock-detector gadget -> verified Merlin integration branch -> promoted toolchain import -> LambdaScript core adopts Merlin as a declared command -> forks receipts can require Merlin scans
-```
-
-The separation is intentional. Merlin should become useful before it becomes authoritative.
+The next useful embodiment is stronger gear semantics inside Merlin itself: clearer rule classes, source-language-aware detectors, suppression metadata for legitimate self-reference, and receipt-compatible JSON output. After extensive testing, a separate integration task may decide how Merlin should be provisioned by the surrounding tool system. That integration task should not be encoded in Merlin's own model or documentation while the detector is still being developed.
