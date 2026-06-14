@@ -22,13 +22,15 @@
       ],
       "verification_profiles": {
         "quick": [
-          "python -m py_compile scripts/forks/forks.py scripts/forks/submission_object.py scripts/forks/import_json_patch.py scripts/forks/land_json_patch.py scripts/forks/gadget_branches.py scripts/forks/gadget_land_json.py scripts/forks/gadget_verify_profiles.py scripts/forks/gadget_promote.py"
+          "python -m py_compile scripts/forks/forks.py scripts/forks/submission_object.py scripts/forks/import_json_patch.py scripts/forks/land_json_patch.py scripts/forks/gadget_branches.py scripts/forks/gadget_land_json.py scripts/forks/gadget_verify_profiles.py scripts/forks/gadget_promote.py scripts/forks/ensure_node_toolchains.py"
         ],
         "gizmo": [
+          "python scripts/forks/ensure_node_toolchains.py --install --only tools/gizmo",
           "cd tools/gizmo && npm run build",
           "cd tools/gizmo && npm test"
         ],
         "full": [
+          "python scripts/forks/ensure_node_toolchains.py --install",
           "verify.bat"
         ]
       },

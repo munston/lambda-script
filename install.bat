@@ -1,7 +1,6 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 
-:: Locate repo root from script location
 set "ROOT=%~dp0"
 cd /d "%ROOT%"
 
@@ -10,7 +9,6 @@ echo   LambdaScript Toolchain Installer
 echo ========================================
 echo.
 
-:: Check prerequisites
 where node >nul 2>nul
 if errorlevel 1 (
     echo [ERROR] Node.js is not installed or not in PATH.
@@ -37,36 +35,44 @@ if errorlevel 1 (
 echo [OK] Node.js and npm detected.
 echo.
 
-:: Install glc dependencies
-echo [1/3] Installing dependencies in glc/...
-pushd glc
-call npm install
+echo [1/4] Establishing local Node/TypeScript toolchains...
+python scripts\forks\ensure_node_toolchains.py --install
 if errorlevel 1 (
-    echo [ERROR] npm install failed.
+    echo [ERROR] Node/TypeScript toolchain setup failed.
+    exit /b 1
+)
+
+echo [2/4] Building glc...
+pushd glc
+call npm run build
+if errorlevel 1 (
+    echo [ERROR] glc build failed.
     popd
     exit /b 1
 )
 popd
 
-echo [2/3] Building glc...
-pushd glc
-call npm exec -- tsc -p tsconfig.json
-if errorlevel 1 (
-    echo [ERROR] Build failed.
-    popd
-    exit /b 1
-)
-popd
-
-echo [3/3] Running tests...
+echo [3/4] Running glc tests...
 pushd glc
 call npm test
 if errorlevel 1 (
-    echo [ERROR] Tests failed.
+    echo [ERROR] glc tests failed.
     popd
     exit /b 1
 )
 popd
+
+echo [4/4] Checking optional tool builds...
+if exist "tools\gizmo\package.json" (
+    pushd tools\gizmo
+    call npm run build
+    if errorlevel 1 (
+        echo [ERROR] gizmo build failed.
+        popd
+        exit /b 1
+    )
+    popd
+)
 
 echo.
 echo ========================================
