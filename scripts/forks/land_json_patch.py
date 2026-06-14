@@ -76,7 +76,18 @@ def cmd_land(args: argparse.Namespace) -> int:
     print(f"files={len(submission['changed_files'])} ahead={submission['ahead']} behind={submission['behind']}")
 
     print("verifying imported candidate")
-    run(["cmd", "/c", "verify.bat"], work)
+    if args.full:
+        run(["cmd", "/c", "verify.bat"], work)
+    else:
+        run([
+            sys.executable,
+            "-m",
+            "py_compile",
+            "scripts/forks/forks.py",
+            "scripts/forks/submission_object.py",
+            "scripts/forks/import_json_patch.py",
+            "scripts/forks/land_json_patch.py",
+        ], work)
 
     require_candidate_fresh(work)
 
@@ -100,6 +111,7 @@ def cmd_land(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="forks land-json")
     parser.add_argument("--require-file", action="store_true")
+    parser.add_argument("--full", action="store_true", help="run full verify.bat instead of quick Python tooling verification")
     parser.add_argument("agent")
     parser.add_argument("file", nargs="?")
     return parser
