@@ -1,0 +1,35 @@
+{
+  "format": "LS_GIZMO_V1",
+  "name": "metrics-lab",
+  "description": "Combined image/text metrics development booth with separated gadget roots.",
+  "gadgets": {
+    "image-metrics": {
+      "root": "tools/milk_metrics",
+      "language": "python",
+      "allowed_ops": ["read", "write", "mkdir", "copy", "run"],
+      "commands": {
+        "analyze": "python -m milk_metrics.cli analyze {image} --out {out}",
+        "penalty-mask": "python -m milk_metrics.cli penalty-mask {image} --out {out}",
+        "restore": "python -m milk_metrics.cli restore {image} --out {out} --steps {steps} --seed {seed}"
+      },
+      "promotion": {
+        "target": "main",
+        "verification": "custom"
+      }
+    },
+    "text-metrics": {
+      "root": "tools/text_metrics",
+      "language": "typescript",
+      "allowed_ops": ["read", "write", "mkdir", "copy", "run"],
+      "commands": {
+        "analyze": "node dist/src/cli.js analyze {file} --out {out}",
+        "compare": "node dist/src/cli.js compare {left} {right} --out {out}",
+        "analyze-bundle": "node dist/src/cli.js analyze-bundle {bundle} --out {out}"
+      },
+      "promotion": {
+        "target": "main",
+        "verification": "custom"
+      }
+    }
+  }
+}
