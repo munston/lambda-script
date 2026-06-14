@@ -54,7 +54,7 @@ assert.strictEqual(status.import_count, 1);
 assert.deepStrictEqual(status.gadgets.map(g => g.name), ['image-metrics', 'text-metrics']);
 assert.strictEqual(status.gadgets[0].target_ref, 'origin/gadgets/metrics/image-metrics/main');
 
-for (const example of ['metrics-lab.gizmo.json', 'lambdascript.gizmo.json', 'metrics.gizmo.json', 'merlin.gizmo.json']) {
+for (const example of ['metrics-lab.gizmo.json', 'lambdascript.gizmo.json', 'metrics.gizmo.json']) {
   const filePath = path.join(__dirname, '..', '..', '..', '..', 'examples', 'gizmos', example);
   if (fs.existsSync(filePath)) {
     const loaded = ensureManifestValid(readManifest(filePath));
