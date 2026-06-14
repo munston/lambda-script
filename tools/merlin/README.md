@@ -2,7 +2,7 @@
 
 Merlin is a geared mock detector for agent-written patches. It scans source trees for evidence that a compile fix, implementation, or patch has replaced real behaviour with a placeholder, bypass, dummy result, or weakened semantic path.
 
-Merlin is currently isolated as the `merlin/mock-detector` gadget. It should remain outside `lambdascript/core` until the gizmo and gadget branch model is ready to import it as a protected toolchain or promote it into the main LambdaScript gizmo.
+Merlin is currently local tool code. It has no provisioning boundary, no external command capability model, and no import relationship to other toolchains. Integration into any surrounding orchestration system should be handled later as a separate task after extensive detector testing.
 
 ## Commands
 
