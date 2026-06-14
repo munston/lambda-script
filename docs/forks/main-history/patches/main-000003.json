@@ -1,0 +1,30 @@
+{
+  "agent": "system",
+  "base_commit": "1dd6b375278acea680e66ac1cea3c1ad4db9543d",
+  "base_ref": "origin/main",
+  "changed_files": [
+    {
+      "path": "tools/milk_metrics/docs/main-history-smoke.md",
+      "status": "A"
+    },
+    {
+      "path": "tools/milk_metrics/docs/one-call-transaction-smoke.md",
+      "status": "A"
+    }
+  ],
+  "created_at": "2026-06-14T18:36:47.226021+00:00",
+  "format": "LS_MAIN_HISTORY_V1",
+  "kind": "gadget_promotion",
+  "metadata": {
+    "gadget": "image-metrics",
+    "gizmo": "metrics",
+    "promoted_commits": 2,
+    "target_ref": "origin/gadgets/metrics/image-metrics/main"
+  },
+  "number": 3,
+  "source_head_before_receipt": "9886c94313ec72679dbe1efe00668da0ad41b738",
+  "source_ref": "origin/gadgets/metrics/image-metrics/main",
+  "source_tree_before_receipt": "5859fe40b535c5fec81ede99b664eb5d60942f22",
+  "title": "Promote metrics/image-metrics",
+  "version": "main-000003"
+}
