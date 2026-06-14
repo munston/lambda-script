@@ -18,6 +18,7 @@ if /I "%~1"=="gadget-sync" goto gadget_sync
 if /I "%~1"=="gadget-sync-all" goto gadget_sync_all
 if /I "%~1"=="gadget-land-json" goto gadget_land_json
 if /I "%~1"=="gadget-land-json-file" goto gadget_land_json_file
+if /I "%~1"=="gadget-promote" goto gadget_promote
 if /I "%~1"=="capture" goto capture
 if /I "%~1"=="submission-status" goto submission_status
 if /I "%~1"=="replay" goto replay
@@ -77,6 +78,11 @@ exit /b %errorlevel%
 :gadget_land_json_file
 shift
 python scripts\forks\gadget_land_json.py --require-file %1 %2 %3 %4 %5 %6 %7 %8 %9
+exit /b %errorlevel%
+
+:gadget_promote
+shift
+python scripts\forks\gadget_promote.py %1 %2 %3 %4 %5 %6 %7 %8 %9
 exit /b %errorlevel%
 
 :capture
