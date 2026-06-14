@@ -46,33 +46,50 @@ def sync_agent(root: Path, agent: str) -> None:
     raise RuntimeError(f"refusing to sync {branch}; state={state} ahead={ahead} behind={behind}")
 
 
-def require_candidate_fresh(work: Path) -> None:
-    forks.fetch_main(work)
-    ancestor = forks.git(["merge-base", "--is-ancestor", forks.MAIN_REF, "HEAD"], work, check=False)
-    if ancestor.returncode != 0:
-        raise RuntimeError("origin/main is not an ancestor of imported candidate")
+def fetch_target(root: Path, target_ref: str) -> None:
+    forks.git(["fetch", "--prune", "origin"], root)
+    if not forks.ref_exists(root, target_ref):
+        raise RuntimeError(f"missing target ref after fetch: {target_ref}")
 
-    ahead, behind = forks.ahead_behind(work, "HEAD")
+
+def remote_push_ref(target_ref: str, override: str | None) -> str:
+    if override:
+        return override
+    if target_ref.startswith("origin/"):
+        return target_ref[len("origin/"):]
+    if target_ref == "main":
+        return "main"
+    raise RuntimeError("cannot infer push ref from target ref; pass --push-ref")
+
+
+def require_candidate_fresh(work: Path, target_ref: str) -> None:
+    fetch_target(work, target_ref)
+    ancestor = forks.git(["merge-base", "--is-ancestor", target_ref, "HEAD"], work, check=False)
+    if ancestor.returncode != 0:
+        raise RuntimeError(f"{target_ref} is not an ancestor of imported candidate")
+
+    ahead, behind = forks.ahead_behind(work, "HEAD", target_ref)
     if ahead <= 0 or behind != 0:
-        raise RuntimeError(f"imported candidate is not fresh ahead-only: ahead={ahead} behind={behind}")
+        raise RuntimeError(f"imported candidate is not fresh ahead-only against {target_ref}: ahead={ahead} behind={behind}")
 
 
 def cmd_land(args: argparse.Namespace) -> int:
     root = forks.repo_root()
     forks.ensure_dirs(root)
-    forks.fetch_main(root)
+    fetch_target(root, args.target_ref)
 
     if args.require_file and not args.file:
         raise RuntimeError("land-json-file requires a JSON patch file path")
 
     payload = import_json_patch.load_payload(args.file)
-    submission = import_json_patch.make_submission(root, args.agent, payload)
+    submission = import_json_patch.make_submission(root, args.agent, payload, args.target_ref)
     import_json_patch.submission_object.write_submission(root, args.agent, submission)
 
     work = import_json_patch.import_worktree(root, args.agent)
-    require_candidate_fresh(work)
+    require_candidate_fresh(work, args.target_ref)
 
     print(f"imported JSON candidate for {submission['agent']}: {work}")
+    print(f"target={args.target_ref}")
     print(f"files={len(submission['changed_files'])} ahead={submission['ahead']} behind={submission['behind']}")
 
     print("verifying imported candidate")
@@ -89,22 +106,26 @@ def cmd_land(args: argparse.Namespace) -> int:
             "scripts/forks/land_json_patch.py",
         ], work)
 
-    require_candidate_fresh(work)
+    require_candidate_fresh(work, args.target_ref)
+
+    push_ref = remote_push_ref(args.target_ref, args.push_ref)
 
     print("dry-run submit")
-    run(["git", "push", "--dry-run", "origin", "HEAD:main"], work)
+    run(["git", "push", "--dry-run", "origin", f"HEAD:{push_ref}"], work)
 
     print("submit")
-    run(["git", "push", "origin", "HEAD:main"], work)
+    run(["git", "push", "origin", f"HEAD:{push_ref}"], work)
 
-    forks.fetch_main(root)
+    fetch_target(root, args.target_ref)
 
-    print("syncing agent lanes")
-    for agent in AGENTS:
-        sync_agent(root, agent)
-
-    print("final status")
-    run(["cmd", "/c", "forks.bat", "status", "--fetch"], root)
+    if args.target_ref == forks.MAIN_REF and not args.no_sync:
+        print("syncing agent lanes")
+        for agent in AGENTS:
+            sync_agent(root, agent)
+        print("final status")
+        run(["cmd", "/c", "forks.bat", "status", "--fetch"], root)
+    else:
+        print(f"submitted to {push_ref}; skipped repository agent sync for non-main target")
     return 0
 
 
@@ -112,6 +133,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="forks land-json")
     parser.add_argument("--require-file", action="store_true")
     parser.add_argument("--full", action="store_true", help="run full verify.bat instead of quick Python tooling verification")
+    parser.add_argument("--target-ref", default=forks.MAIN_REF, help="target integration ref; defaults to origin/main")
+    parser.add_argument("--push-ref", help="remote branch to push to; defaults to target ref with origin/ stripped")
+    parser.add_argument("--no-sync", action="store_true", help="do not sync repository agent lanes after main submission")
     parser.add_argument("agent")
     parser.add_argument("file", nargs="?")
     return parser

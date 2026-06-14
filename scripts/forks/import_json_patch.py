@@ -115,8 +115,14 @@ def commit_candidate(work: Path, agent: str, title: str) -> bool:
     return True
 
 
-def make_submission(root: Path, agent: str, data: dict[str, Any]) -> dict[str, Any]:
-    forks.fetch_main(root)
+def fetch_target(root: Path, target_ref: str) -> None:
+    forks.git(["fetch", "--prune", "origin"], root)
+    if not forks.ref_exists(root, target_ref):
+        raise RuntimeError(f"missing target ref after fetch: {target_ref}")
+
+
+def make_submission(root: Path, agent: str, data: dict[str, Any], target_ref: str = forks.MAIN_REF) -> dict[str, Any]:
+    fetch_target(root, target_ref)
     agent = forks.normalize_agent(agent)
 
     declared_agent = data.get("agent")
@@ -125,34 +131,40 @@ def make_submission(root: Path, agent: str, data: dict[str, Any]) -> dict[str, A
 
     work = import_worktree(root, agent)
     remove_worktree(root, work)
-    forks.git(["worktree", "add", "--detach", str(work), forks.MAIN_REF], root)
+    forks.git(["worktree", "add", "--detach", str(work), target_ref], root)
 
     apply_file_ops(work, data["files"])
     if not commit_candidate(work, agent, str(data.get("title", ""))):
         raise RuntimeError("JSON patch produced no file changes")
 
-    files = forks.changed_files(work, "HEAD", forks.MAIN_REF)
+    files = forks.changed_files(work, "HEAD", target_ref)
     blocked = forks.guard_forbidden_paths(files)
     if blocked:
         raise RuntimeError("refusing submission touching forbidden paths: " + ", ".join(blocked))
 
-    patch_text = forks.git(["diff", "--binary", forks.MAIN_REF, "HEAD"], work).stdout
+    patch_text = forks.git(["diff", "--binary", target_ref, "HEAD"], work).stdout
     source_snapshot = forks.compact_snapshot(work, "HEAD")
-    base_snapshot = forks.compact_snapshot(root, forks.MAIN_REF)
-    ahead, behind = forks.ahead_behind(work, "HEAD")
+    base_snapshot = forks.compact_snapshot(root, target_ref)
+    ahead, behind = forks.ahead_behind(work, "HEAD", target_ref)
 
     return {
         "format": submission_object.SUBMISSION_FORMAT,
         "agent": agent,
         "agent_branch": forks.agent_branch(agent),
+        "target_ref": target_ref,
+        "target_snapshot_at_capture": base_snapshot,
         "source_ref": f"json-import:{data.get('title', agent)}",
         "source_snapshot": source_snapshot,
         "source_commit": source_snapshot["commit"],
         "base_snapshot": base_snapshot,
         "current_main_snapshot_at_capture": forks.compact_snapshot(root, forks.MAIN_REF),
+        "current_target_snapshot_at_capture": base_snapshot,
         "base_main_commit": base_snapshot["commit"],
         "base_main_tree": base_snapshot["tree"],
         "base_main_manifest_hash": base_snapshot["manifest_hash"],
+        "base_target_commit": base_snapshot["commit"],
+        "base_target_tree": base_snapshot["tree"],
+        "base_target_manifest_hash": base_snapshot["manifest_hash"],
         "expected_result_snapshot_on_original_base": source_snapshot,
         "patch_sha256": forks.sha256_text(patch_text),
         "ahead": ahead,
@@ -169,10 +181,11 @@ def cmd_import(args: argparse.Namespace) -> int:
     root = forks.repo_root()
     forks.ensure_dirs(root)
     payload = load_payload(args.file)
-    submission = make_submission(root, args.agent, payload)
+    submission = make_submission(root, args.agent, payload, args.target_ref)
     submission_object.write_submission(root, args.agent, submission)
 
     print(f"imported JSON submission for {submission['agent']}")
+    print(f"target={submission['target_ref']}")
     print(f"wrote {submission_object.submission_path(root, args.agent)}")
     print(f"files={len(submission['changed_files'])} ahead={submission['ahead']} behind={submission['behind']}")
     return 0
@@ -180,6 +193,7 @@ def cmd_import(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="forks import-json")
+    parser.add_argument("--target-ref", default=forks.MAIN_REF, help="target integration ref; defaults to origin/main")
     parser.add_argument("agent")
     parser.add_argument("file", nargs="?")
     return parser
