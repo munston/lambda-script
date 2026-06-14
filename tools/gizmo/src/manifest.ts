@@ -4,11 +4,13 @@ const path = require('path');
 
 import {
   GIZMO_FORMAT,
+  GIZMO_PROVISION_PLAN_FORMAT,
   GadgetLanguage,
   GadgetOperation,
   GizmoConnectionManifest,
   GizmoImportManifest,
   GizmoManifest,
+  GizmoProvisionPlan,
   GizmoStatus,
   ValidationIssue,
 } from './types';
@@ -235,6 +237,31 @@ export function buildStatus(manifest: GizmoManifest): GizmoStatus {
     gadgets,
     imports,
     connections: [...(manifest.connections ?? [])],
+  };
+}
+
+export function buildProvisionPlan(manifest: GizmoManifest): GizmoProvisionPlan {
+  const imports = Object.entries(manifest.imports ?? {}).map(([name, item]) => {
+    const writePolicy = item.write_policy ?? (item.mode === 'copy' ? 'copy-on-write' : 'deny');
+    const mutable = writePolicy === 'allow' || writePolicy === 'copy-on-write';
+    return {
+      name,
+      source: `${item.from_gizmo}/${item.from_gadget}`,
+      mount: item.mount,
+      mode: item.mode,
+      target_ref: item.target_ref,
+      allowed_commands: [...(item.allowed_commands ?? [])].sort(),
+      write_policy: writePolicy,
+      mutable,
+    };
+  });
+  imports.sort((a, b) => a.name.localeCompare(b.name));
+  return {
+    format: GIZMO_PROVISION_PLAN_FORMAT,
+    name: manifest.name,
+    import_count: imports.length,
+    command_count: imports.reduce((total, item) => total + item.allowed_commands.length, 0),
+    imports,
   };
 }
 

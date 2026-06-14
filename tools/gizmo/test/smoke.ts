@@ -4,7 +4,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-import { buildStatus, ensureManifestValid, readManifest } from '../src';
+import { buildProvisionPlan, buildStatus, ensureManifestValid, readManifest } from '../src';
 import { runCli } from '../src/cli';
 
 const manifest = ensureManifestValid({
@@ -70,9 +70,17 @@ assert.strictEqual(status.gadgets[0].agent_branch_template, 'gadget-agents/metri
 assert.deepStrictEqual(status.imports.map(i => i.name), ['lambdascript-core']);
 assert.strictEqual(status.imports[0].write_policy, 'deny');
 
+const plan = buildProvisionPlan(manifest);
+assert.strictEqual(plan.format, 'LS_GIZMO_PROVISION_PLAN_V1');
+assert.strictEqual(plan.import_count, 1);
+assert.strictEqual(plan.command_count, 3);
+assert.strictEqual(plan.imports[0].source, 'lambdascript/core');
+assert.strictEqual(plan.imports[0].mutable, false);
+
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gizmo-smoke-'));
 const file = path.join(dir, 'empty.gizmo.json');
 const full = path.join(dir, 'full.gizmo.json');
+const planFile = path.join(dir, 'provision-plan.json');
 assert.strictEqual(runCli(['init', 'empty', '--out', file]), 0);
 assert.strictEqual(readManifest(file).format, 'LS_GIZMO_V1');
 assert.strictEqual(runCli(['validate', file]), 0);
@@ -81,4 +89,7 @@ fs.writeFileSync(full, JSON.stringify(manifest, null, 2) + '\n');
 assert.strictEqual(runCli(['validate', full]), 0);
 assert.strictEqual(runCli(['status', full]), 0);
 assert.strictEqual(runCli(['branches', full]), 0);
+assert.strictEqual(runCli(['provision-plan', full]), 0);
+assert.strictEqual(runCli(['provision-plan', full, '--out', planFile]), 0);
+assert.strictEqual(JSON.parse(fs.readFileSync(planFile, 'utf8')).format, 'LS_GIZMO_PROVISION_PLAN_V1');
 console.log('Gizmo smoke test passed');

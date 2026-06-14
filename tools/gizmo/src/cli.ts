@@ -4,7 +4,7 @@ declare const module: any;
 const fs = require('fs');
 const path = require('path');
 
-import { buildStatus, ensureManifestValid, readManifest, validateManifest } from './manifest';
+import { buildProvisionPlan, buildStatus, ensureManifestValid, readManifest, validateManifest } from './manifest';
 import { GIZMO_FORMAT, GizmoManifest } from './types';
 
 function usage(): string {
@@ -13,6 +13,7 @@ function usage(): string {
   gizmo validate <manifest.json>
   gizmo status <manifest.json>
   gizmo branches <manifest.json>
+  gizmo provision-plan <manifest.json> [--out <file>]
 `;
 }
 
@@ -92,6 +93,20 @@ export function runCli(args: string[]): number {
       if (!file) throw new Error('missing manifest path');
       const manifest = ensureManifestValid(readManifest(file));
       printBranches(manifest);
+      return 0;
+    }
+    if (command === 'provision-plan') {
+      const file = args[1];
+      if (!file) throw new Error('missing manifest path');
+      const out = argValue(args, '--out');
+      const manifest = ensureManifestValid(readManifest(file));
+      const plan = buildProvisionPlan(manifest);
+      if (out) {
+        writeJson(out, plan);
+        console.log(out);
+      } else {
+        console.log(JSON.stringify(plan, null, 2));
+      }
       return 0;
     }
     throw new Error(`unknown command: ${command}`);

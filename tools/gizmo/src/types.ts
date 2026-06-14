@@ -1,4 +1,5 @@
 export const GIZMO_FORMAT = 'LS_GIZMO_V1';
+export const GIZMO_PROVISION_PLAN_FORMAT = 'LS_GIZMO_PROVISION_PLAN_V1';
 
 export type GadgetLanguage = 'python' | 'typescript' | 'lambdascript' | 'cpp' | 'mixed' | 'unknown';
 
@@ -95,4 +96,21 @@ export interface GizmoStatus {
     write_policy?: string;
   }>;
   connections: GizmoConnectionManifest[];
+}
+
+export interface GizmoProvisionPlan {
+  format: typeof GIZMO_PROVISION_PLAN_FORMAT;
+  name: string;
+  import_count: number;
+  command_count: number;
+  imports: Array<{
+    name: string;
+    source: string;
+    mount: string;
+    mode: 'read-only' | 'pinned' | 'copy';
+    target_ref?: string;
+    allowed_commands: string[];
+    write_policy: 'deny' | 'copy-on-write' | 'allow';
+    mutable: boolean;
+  }>;
 }
