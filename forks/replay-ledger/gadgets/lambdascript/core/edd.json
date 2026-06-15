@@ -27,15 +27,41 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Add LSC-1 completion control document"
+    },
+    {
+      "agent": "edd",
+      "created_at": "2026-06-15T22:58:15.076116+00:00",
+      "file_count": 1,
+      "file_fingerprints": [
+        {
+          "content_length": 6979,
+          "content_sha256": "3d5cbbfbf592b90dc7548d976b001f72f16dfba6cef6ce148102c12da809ebd2",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "docs/core/LSC1_COORDINATION_INTAKE.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "f3368d14836efe09b4cee0158b00fd1906208ab139d8fba510712c3ac79a79d8",
+      "payload_path": "forks/replay-ledger/payloads/f3/f3368d14836efe09b4cee0158b00fd1906208ab139d8fba510712c3ac79a79d8.json",
+      "sequence": 2,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Add LSC-1 coordination intake document"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 2,
+  "next_sequence": 3,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-15T21:11:48.450504+00:00"
+  "updated_at": "2026-06-15T22:58:15.076134+00:00"
 }
