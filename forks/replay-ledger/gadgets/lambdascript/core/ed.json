@@ -234,15 +234,48 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Apply per-agent replay ledgers during amalgamation"
+    },
+    {
+      "agent": "ed",
+      "created_at": "2026-06-15T22:49:50.586898+00:00",
+      "file_count": 2,
+      "file_fingerprints": [
+        {
+          "content_length": 22426,
+          "content_sha256": "d24c6bb6a0b00321aa41584a1bc3a0f699c79960fb88b32056e911ebf95f26fe",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/amalgamate_all.py"
+        },
+        {
+          "content_length": 2569,
+          "content_sha256": "cf798538cc08739332aa66c9700fdc42b7f11f5197b0e0be3629eb2e508b3e42",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/README.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "82c33766e1f4fa9625cd0645d49362625e9fec7281e9ec55bee5093dad53ca3b",
+      "payload_path": "forks/replay-ledger/payloads/82/82c33766e1f4fa9625cd0645d49362625e9fec7281e9ec55bee5093dad53ca3b.json",
+      "sequence": 7,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Add gadget mode to amalgamate-all"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 7,
+  "next_sequence": 8,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-15T22:30:30.861496+00:00"
+  "updated_at": "2026-06-15T22:49:50.586910+00:00"
 }
