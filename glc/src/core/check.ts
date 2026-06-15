@@ -133,6 +133,13 @@ function inferBinaryType(op: string, left: TypeName | undefined, right: TypeName
     if (!typeCompatible(left, right) && !typeCompatible(right, left)) diagnostics.push({ message: `Operator ${op} expects matching operands, got ${left} and ${right}` });
     return 'bool';
   }
+  if (['&&', '||'].includes(op)) {
+    if (left !== 'bool' || right !== 'bool') {
+      diagnostics.push({ message: `Operator ${op} expects bool operands, got ${left} and ${right}` });
+      return undefined;
+    }
+    return 'bool';
+  }
   diagnostics.push({ message: `Unknown binary operator: ${op}` });
   return undefined;
 }
