@@ -1,0 +1,70 @@
+{
+  "agent": "system",
+  "base_commit": "c820721dca4cd1c105decdfb8dc26421e76ba097",
+  "base_ref": "origin/main",
+  "changed_files": [
+    {
+      "path": "docs/core/C1_BACKEND_PARITY_GAPS.md",
+      "status": "A"
+    },
+    {
+      "path": "forks.bat",
+      "status": "M"
+    },
+    {
+      "path": "forks/replay-ledger/gadgets/lambdascript/core/ed.json",
+      "status": "M"
+    },
+    {
+      "path": "forks/replay-ledger/gadgets/lambdascript/core/eddy.json",
+      "status": "M"
+    },
+    {
+      "path": "forks/replay-ledger/payloads/38/382345fa03a1dac32a72002a66acbae80d7bc3a62ef4529e500a5ee4dd024164.json",
+      "status": "A"
+    },
+    {
+      "path": "forks/replay-ledger/payloads/38/38c7b28f85755136f079744b6fa6e5d5dd4a989d24bb17e83fd469ba96cffa62.json",
+      "status": "A"
+    },
+    {
+      "path": "forks/replay-ledger/payloads/3b/3bf54ab91bab4440d16a48050e6dc9bd09dde4010a1706e1963bb743de3a969c.json",
+      "status": "A"
+    },
+    {
+      "path": "forks/replay-ledger/payloads/98/9877a98e50dc561b110b19f7e0d99a7220e1e09c9351a7e052c88c8a87275a94.json",
+      "status": "A"
+    },
+    {
+      "path": "forks/replay-ledger/payloads/f8/f8af690258f1ab0cd8f9649f17dc3c9c1eb30f40614b60ca8155730509d71bf1.json",
+      "status": "A"
+    },
+    {
+      "path": "scripts/forks/README.md",
+      "status": "M"
+    },
+    {
+      "path": "scripts/forks/amalgamate_all.py",
+      "status": "A"
+    },
+    {
+      "path": "scripts/forks/replay_plan.py",
+      "status": "M"
+    }
+  ],
+  "created_at": "2026-06-15T22:35:39.608778+00:00",
+  "format": "LS_MAIN_HISTORY_V1",
+  "kind": "gadget_promotion",
+  "metadata": {
+    "gadget": "core",
+    "gizmo": "lambdascript",
+    "promoted_commits": 5,
+    "target_ref": "origin/gadgets/lambdascript/core/main"
+  },
+  "number": 15,
+  "source_head_before_receipt": "ea8a8a6d8c8fae60119760c49a5153ab86025eec",
+  "source_ref": "origin/gadgets/lambdascript/core/main",
+  "source_tree_before_receipt": "fe487ce938f2c11f7c88d6e54078646ab9460c47",
+  "title": "Promote lambdascript/core",
+  "version": "main-000015"
+}
