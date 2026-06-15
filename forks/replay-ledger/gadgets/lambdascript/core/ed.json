@@ -88,15 +88,55 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Add Core-1 executable slice admission audit"
+    },
+    {
+      "agent": "ed",
+      "created_at": "2026-06-15T21:40:11.151548+00:00",
+      "file_count": 3,
+      "file_fingerprints": [
+        {
+          "content_length": 4449,
+          "content_sha256": "3af1bff55b3bbb45691fc432928a01e1941fe1e608dc0cd94cd276a5d19c2ed2",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "forks.bat"
+        },
+        {
+          "content_length": 6040,
+          "content_sha256": "71e1c635e5170e9c31e823c1ff41cdff5484fcbb536c11893be3bc697f5da0b1",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/amalgamate_all.py"
+        },
+        {
+          "content_length": 4161,
+          "content_sha256": "1db6adcea38457c899b82654fd63b90325a8d7a4fbe86f7d217d593311cf8017",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/README.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "38c7b28f85755136f079744b6fa6e5d5dd4a989d24bb17e83fd469ba96cffa62",
+      "payload_path": "forks/replay-ledger/payloads/38/38c7b28f85755136f079744b6fa6e5d5dd4a989d24bb17e83fd469ba96cffa62.json",
+      "sequence": 3,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Add guarded agent lane amalgamation workflow"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 3,
+  "next_sequence": 4,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-15T21:08:25.777934+00:00"
+  "updated_at": "2026-06-15T21:40:11.151561+00:00"
 }

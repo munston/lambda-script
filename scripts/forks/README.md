@@ -30,6 +30,45 @@ forks.bat submit eddy
 
 This path exports a patch, stages it in `.forks/worktrees/<agent>-candidate/`, writes candidate metadata, writes a verification receipt, and refuses stale or unverified submissions.
 
+## Submission-object amalgamation
+
+The guarded amalgamation workflow converts direct lane edits into replayable submission objects before any lane is rewound.
+
+Plan first:
+
+```bat
+forks.bat amalgamate-all
+```
+
+Apply after inspecting the plan:
+
+```bat
+forks.bat amalgamate-all --apply
+```
+
+The command inspects `ed`, `edd`, and `eddy` by default. For each lane with unique work it plans or applies:
+
+```text
+capture lane work as .forks/submissions/<agent>.json
+replay the saved patch onto current origin/main
+verify the replayed candidate
+submit the verified candidate
+sync the captured lane to the new main only if its head still equals the captured source commit
+```
+
+This lets an agent edit its lane directly and then have that work captured as a replayable diff. If the lane changed after capture, the captured-lane sync refuses instead of deleting work.
+
+Useful options:
+
+```bat
+forks.bat amalgamate-all --agents ed edd eddy
+forks.bat amalgamate-all --verify-command verify.bat
+forks.bat amalgamate-all --apply --no-sync-lanes
+forks.bat amalgamate-all --apply --backend contents
+```
+
+`amalgamate-all` requires a clean tracked working tree. Stash, commit, or restore local tracked edits before running it.
+
 ## Workflow runner layer
 
 The workflow runner adds named operator workflows over the same agent model. It is intended to reduce repeated command sequences, not to weaken the safety model.

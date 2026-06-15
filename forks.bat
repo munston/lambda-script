@@ -29,6 +29,7 @@ if /I "%~1"=="verify-submission" goto verify_submission
 if /I "%~1"=="submit-submission" goto submit_submission
 if /I "%~1"=="submission-ship-plan" goto submission_ship_plan
 if /I "%~1"=="sync-captured-lane" goto sync_captured_lane
+if /I "%~1"=="amalgamate-all" goto amalgamate_all
 if /I "%~1"=="plan" goto plan
 if /I "%~1"=="run" goto run
 if /I "%~1"=="land" goto land
@@ -136,6 +137,11 @@ exit /b %errorlevel%
 :sync_captured_lane
 shift
 python scripts\forks\submission_object.py sync-lane %1 %2 %3 %4 %5 %6 %7 %8 %9
+exit /b %errorlevel%
+
+:amalgamate_all
+shift
+python scripts\forks\amalgamate_all.py %1 %2 %3 %4 %5 %6 %7 %8 %9
 exit /b %errorlevel%
 
 :plan
