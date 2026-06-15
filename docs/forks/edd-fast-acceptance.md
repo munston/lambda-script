@@ -15,7 +15,8 @@ Use a targeted gadget JSON patch with:
     "profile": "gizmo",
     "promote": false,
     "sync": false,
-    "history": false
+    "history": false,
+    "refresh": true
   },
   "files": []
 }
@@ -26,12 +27,23 @@ The same convention applies to other gadget targets by changing `gizmo`, `gadget
 Fast acceptance does:
 
 ```text
+fetch origin
+refresh the gadget integration branch against origin/main
 resolve gadget target ref
-import JSON patch onto the gadget integration target
+import JSON patch onto the refreshed gadget integration target
 run the selected verification profile
 dry-run push
 push to gadgets/<gizmo>/<gadget>/main
 print gadget status
+```
+
+The refresh step treats `main` as the replaceable authority:
+
+```text
+even       -> apply the patch
+ahead-only -> apply the patch
+behind-only -> reset the gadget integration branch to origin/main before applying the patch
+diverged   -> rebase the gadget integration branch onto origin/main and verify before applying the patch
 ```
 
 Fast acceptance intentionally skips:
@@ -43,7 +55,7 @@ gadget-agent lane sync
 main-history stamping
 ```
 
-This is useful when a batch of small patches should be accepted quickly before one deliberate promotion/sync pass. After several patches have accumulated and verification is stable, use a separate promotion path to advance repository `main` and align lanes.
+This is useful when a batch of small patches should be accepted quickly before one deliberate promotion/sync pass. The gadget branch remains a replay cache over current `main`, not an independent long-lived truth branch.
 
 Expected local command form:
 

@@ -21,13 +21,27 @@ The patch carries the target and transaction policy:
     "profile": "gizmo",
     "promote": false,
     "sync": false,
-    "history": false
+    "history": false,
+    "refresh": true
   },
   "files": []
 }
 ```
 
 For fast acceptance, use `promote: false`, `sync: false`, and `history: false`. This lands to the gadget integration branch and skips repository-level promotion and lane fan-out.
+
+Before landing, `refresh` defaults to `true`. The agent lander fetches `origin/main` and the gadget target, then checks their relationship.
+
+```text
+even       -> land the JSON patch
+ahead-only -> land the JSON patch
+behind-only -> move the gadget integration branch to origin/main, then land
+diverged   -> rebase the gadget integration branch onto origin/main, verify, then land
+```
+
+This keeps a gadget branch as a replay surface rather than a private authority. Other agents may advance `main`; the next local JSON patch is applied after the gadget branch has been refreshed against that newer `main`.
+
+Set `refresh: false` only for deliberate diagnostics or manual recovery.
 
 For promotion, set `promote: true`. The promotion path may be further controlled:
 
@@ -42,7 +56,8 @@ For promotion, set `promote: true`. The promotion path may be further controlled
     "promote_profile": "gizmo",
     "sync": false,
     "history": true,
-    "repository_sync": false
+    "repository_sync": false,
+    "refresh": true
   }
 }
 ```

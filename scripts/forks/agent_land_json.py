@@ -18,7 +18,8 @@ The patch itself carries its target and transaction policy:
         "promote": true,
         "sync": true,
         "history": true,
-        "repository_sync": true
+        "repository_sync": true,
+        "refresh": true
       },
       "title": "...",
       "files": [...]
@@ -57,6 +58,7 @@ class Target:
         history: bool,
         promote_profile: str | None,
         repository_sync: bool,
+        refresh: bool,
     ) -> None:
         self.gizmo = gizmo
         self.gadget = gadget
@@ -67,6 +69,7 @@ class Target:
         self.history = history
         self.promote_profile = promote_profile
         self.repository_sync = repository_sync
+        self.refresh = refresh
 
 
 def _bool(target: dict, name: str, default: bool) -> bool:
@@ -110,6 +113,7 @@ def resolve_target(payload: dict) -> Target:
         history=_bool(target, "history", True),
         promote_profile=promote_profile,
         repository_sync=_bool(target, "repository_sync", True),
+        refresh=_bool(target, "refresh", True),
     )
 
 
@@ -178,7 +182,7 @@ def verify_rebased_gadget(root: Path, work: Path, target: Target) -> None:
         run_shell(command, work)
 
 
-def rebase_gadget_onto_main(root: Path, target: Target) -> None:
+def rebase_gadget_onto_main(root: Path, target: Target, *, require_unique: bool, align_lanes: bool) -> None:
     target_ref = gadget_branches.target_ref(target.gizmo, target.gadget)
     fetch(root)
     if not forks.ref_exists(root, target_ref):
@@ -186,14 +190,16 @@ def rebase_gadget_onto_main(root: Path, target: Target) -> None:
 
     ahead, behind = forks.ahead_behind(root, target_ref, forks.MAIN_REF)
     state = forks.classify(ahead, behind)
-    print(f"promotion preflight: {target_ref} state={state} ahead={ahead} behind={behind}")
+    print(f"gadget rebase preflight: {target_ref} state={state} ahead={ahead} behind={behind}")
 
     if state == "ahead-only":
         return
     if state == "even":
-        raise RuntimeError(f"{target_ref} has no unique gadget work to promote")
+        if require_unique:
+            raise RuntimeError(f"{target_ref} has no unique gadget work to promote")
+        return
     if state != "diverged":
-        raise RuntimeError(f"{target_ref} is not promotable: state={state} ahead={ahead} behind={behind}")
+        raise RuntimeError(f"{target_ref} is not rebaseable: state={state} ahead={ahead} behind={behind}")
 
     print(f"rebasing {target.gizmo}/{target.gadget} onto {forks.MAIN_REF}")
     with TemporaryDirectory(prefix=f"gadget-rebase-{target.gizmo}-{target.gadget}-") as raw:
@@ -210,7 +216,32 @@ def rebase_gadget_onto_main(root: Path, target: Target) -> None:
             forks.git(["worktree", "prune"], root, check=False)
 
     fetch(root)
-    force_align_gadget(root, target.gizmo, target.gadget, target_ref)
+    if align_lanes:
+        force_align_gadget(root, target.gizmo, target.gadget, target_ref)
+    else:
+        print("skipped gadget lane sync after pre-land rebase")
+
+
+def refresh_gadget_before_land(root: Path, target: Target) -> None:
+    target_ref = gadget_branches.target_ref(target.gizmo, target.gadget)
+    fetch(root)
+    if not forks.ref_exists(root, target_ref):
+        raise RuntimeError(f"missing gadget target ref: {target_ref}")
+
+    ahead, behind = forks.ahead_behind(root, target_ref, forks.MAIN_REF)
+    state = forks.classify(ahead, behind)
+    print(f"pre-land refresh: {target_ref} state={state} ahead={ahead} behind={behind}")
+
+    if state == "even" or state == "ahead-only":
+        return
+    if state == "behind-only":
+        print(f"refreshing {target.gizmo}/{target.gadget} integration branch to {forks.MAIN_REF}")
+        force_align_branch(root, gadget_branches.integration_branch(target.gizmo, target.gadget), forks.MAIN_REF)
+        return
+    if state == "diverged":
+        rebase_gadget_onto_main(root, target, require_unique=False, align_lanes=False)
+        return
+    raise RuntimeError(f"{target_ref} cannot be refreshed: state={state} ahead={ahead} behind={behind}")
 
 
 def cmd_land(args: argparse.Namespace) -> int:
@@ -225,7 +256,11 @@ def cmd_land(args: argparse.Namespace) -> int:
     print(f"agent={args.agent}")
     print(f"target={target.gizmo}/{target.gadget}")
     print(f"profile={target.profile or ('full' if target.full else 'quick')}")
-    print(f"promote={target.promote} sync={target.sync} history={target.history} repository_sync={target.repository_sync}")
+    print(f"promote={target.promote} sync={target.sync} history={target.history} repository_sync={target.repository_sync} refresh={target.refresh}")
+
+    root = forks.repo_root()
+    if target.refresh:
+        refresh_gadget_before_land(root, target)
 
     land_args = SimpleNamespace(
         require_file=True,
@@ -242,8 +277,7 @@ def cmd_land(args: argparse.Namespace) -> int:
         return rc
 
     if target.promote:
-        root = forks.repo_root()
-        rebase_gadget_onto_main(root, target)
+        rebase_gadget_onto_main(root, target, require_unique=True, align_lanes=True)
         promote_args = SimpleNamespace(
             gizmo=target.gizmo,
             gadget=target.gadget,
