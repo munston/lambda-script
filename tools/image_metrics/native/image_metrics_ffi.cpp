@@ -222,19 +222,11 @@ static Frame load_frame(const std::string& source) {
         if (decoded.w > 0 && decoded.h > 0 && !decoded.rgb.empty()) return decoded;
     }
 #endif
-    std::vector<unsigned char> bytes = read_file_bytes(source);
-    if (bytes.empty()) return synthetic_frame("synthetic://" + source);
-    int w = 192, h = 192;
-    Frame fallback;
-    fallback.w = w;
-    fallback.h = h;
-    fallback.rgb.assign(size_t(w * h * 3), 0.0);
-    for (int i = 0; i < w * h * 3; ++i) {
-        unsigned char b = bytes[size_t(i) % bytes.size()];
-        unsigned char c = bytes[(size_t(i) * 131u + 17u) % bytes.size()];
-        fallback.rgb[size_t(i)] = clamp01((0.75 * double(b) + 0.25 * double(c)) / 255.0);
-    }
-    return fallback;
+    return Frame();
+}
+
+static bool valid_frame(const Frame& f) {
+    return f.w > 0 && f.h > 0 && !f.rgb.empty();
 }
 
 static void ensure_dir(const std::string& dir) {
@@ -421,9 +413,13 @@ static void apply_atom(Frame& f, const Atom& a, double coeff) {
 
 static int cmd_analyze(const std::string& source) {
     Frame f = load_frame(source);
+    if (!valid_frame(f)) {
+        std::cerr << "failed to decode image as real pixels: " << source << "\n";
+        return 3;
+    }
     Metric m = score_frame(f);
     std::cout << "{\n";
-    std::cout << "  \"backend\": \"cpp-real-pixel-sparse-gaussian-ffi/0.3.1\",\n";
+    std::cout << "  \"backend\": \"cpp-real-pixel-sparse-gaussian-ffi/0.3.2\",\n";
     std::cout << "  \"source\": \"" << json_escape(source) << "\",\n";
     std::cout << "  \"width\": " << f.w << ",\n";
     std::cout << "  \"height\": " << f.h << ",\n";
@@ -446,6 +442,10 @@ static int cmd_update(int argc, char** argv) {
 
     ensure_dir(outDir);
     Frame original = load_frame(source);
+    if (!valid_frame(original)) {
+        std::cerr << "failed to decode image as real pixels: " << source << "\n";
+        return 3;
+    }
     Frame best = original;
     Metric initial = score_frame(best);
     Metric bestMetric = initial;
@@ -498,7 +498,7 @@ static int cmd_update(int argc, char** argv) {
 
     std::ofstream report(outDir + "/report.json");
     report << "{\n";
-    report << "  \"backend\": \"cpp-real-pixel-sparse-gaussian-ffi/0.3.1\",\n";
+    report << "  \"backend\": \"cpp-real-pixel-sparse-gaussian-ffi/0.3.2\",\n";
     report << "  \"source\": \"" << json_escape(source) << "\",\n";
     report << "  \"width\": " << original.w << ",\n";
     report << "  \"height\": " << original.h << ",\n";
@@ -515,7 +515,7 @@ static int cmd_update(int argc, char** argv) {
     report << "}\n";
 
     std::ofstream summary(outDir + "/update_summary.txt");
-    summary << "backend: cpp-real-pixel-sparse-gaussian-ffi/0.3.1\n";
+    summary << "backend: cpp-real-pixel-sparse-gaussian-ffi/0.3.2\n";
     summary << "source: " << source << "\n";
     summary << "width: " << original.w << "\n";
     summary << "height: " << original.h << "\n";
@@ -526,7 +526,7 @@ static int cmd_update(int argc, char** argv) {
     summary << "outputs: source.bmp updated.bmp source.ppm updated.ppm report.json update_trace.json support_dictionary.json\n";
 
     std::cout << "{\n";
-    std::cout << "  \"backend\": \"cpp-real-pixel-sparse-gaussian-ffi/0.3.1\",\n";
+    std::cout << "  \"backend\": \"cpp-real-pixel-sparse-gaussian-ffi/0.3.2\",\n";
     std::cout << "  \"outDir\": \"" << json_escape(outDir) << "\",\n";
     std::cout << "  \"initial_score\": " << round6(initial.score) << ",\n";
     std::cout << "  \"final_score\": " << round6(bestMetric.score) << ",\n";
