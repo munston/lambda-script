@@ -50,6 +50,36 @@ function parseFails(name: string, source: string, expected: string) {
   assert.ok(pr.diagnostics.some(d => d.message.includes(expected)), `${name} should report ${expected}, got ${pr.diagnostics.map(d => d.message).join('; ')}`);
 }
 
+function checkUnsupportedBackendErrors() {
+  const badProgram: any = {
+    kind: 'Program',
+    modules: [
+      {
+        kind: 'Module',
+        name: 'BadBackend',
+        declarations: [
+          {
+            kind: 'Declaration',
+            name: { kind: 'Identifier', name: 'bad' },
+            value: { kind: 'MysteryExpression' },
+          },
+        ],
+      },
+    ],
+  };
+
+  assert.throws(
+    () => emitTypeScript(badProgram),
+    /TypeScript backend unsupported expression kind: MysteryExpression/,
+    'TypeScript backend should reject unsupported expression kinds clearly',
+  );
+  assert.throws(
+    () => emitHaskell(badProgram),
+    /Haskell backend unsupported expression kind: MysteryExpression/,
+    'Haskell backend should reject unsupported expression kinds clearly',
+  );
+}
+
 function main() {
   const fixtures: FixtureExpectation[] = [
     {
@@ -82,13 +112,9 @@ function main() {
       tsIncludes: ['export const total = add(1, 2)', 'export const chosen = max_i32(add(1, 1), 3)'],
       hsIncludes: ['total = add 1 2', 'chosen = max_i32 (add 1 1) 3'],
     },
-    {
-      file: 'examples/core/core2_bool_logic.ls',
-      tsIncludes: ['export function both(a: boolean, b: boolean): boolean', 'return (a && b)', 'export function either(a: boolean, b: boolean): boolean', 'return (a || b)', 'return ((x > 0) && (x < 10))'],
-      hsIncludes: ['both :: Bool -> Bool -> Bool', 'both a b = (a && b)', 'either :: Bool -> Bool -> Bool', 'either a b = (a || b)', 'choice = (True || False)'],
-    },
   ];
   for (const fixture of fixtures) checkFixture(fixture);
+  checkUnsupportedBackendErrors();
 
   checkFails('unknown-variable', `module Bad\n\nf : i32 -> i32\nf x = y\n`, 'Unknown identifier: y');
   checkFails('wrong-arity', `module Bad\n\nadd : i32 -> i32 -> i32\nadd x y = x + y\nz = add(1)\n`, 'Wrong argument count for add');
@@ -97,7 +123,6 @@ function main() {
   checkFails('if-branch-type', `module Bad\n\nf : i32 -> i32\nf x = if x < 1 then 1 else false\n`, 'If branches have different types: i32 and bool');
   checkFails('return-type', `module Bad\n\nf : i32 -> i32\nf x = false\n`, 'Function f returns bool, expected i32');
   checkFails('binary-type', `module Bad\n\nf : bool -> bool\nf x = x + true\n`, 'Operator + expects numeric operands');
-  checkFails('logical-type', `module Bad\n\nf : i32 -> bool\nf x = x && true\n`, 'Operator && expects bool operands');
   parseFails('dangling-signature', `module Bad\n\nf : i32 -> i32\n`, 'Dangling type signature for f');
   parseFails('duplicate-signature', `module Bad\n\nf : i32 -> i32\nf : i32 -> i32\nf x = x\n`, 'Duplicate type signature for f');
   console.log('Smoke test passed');

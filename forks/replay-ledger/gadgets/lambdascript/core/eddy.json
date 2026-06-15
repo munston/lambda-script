@@ -53,15 +53,62 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Add C1 backend parity gap list"
+    },
+    {
+      "agent": "eddy",
+      "created_at": "2026-06-15T23:03:54.769023+00:00",
+      "file_count": 4,
+      "file_fingerprints": [
+        {
+          "content_length": 3265,
+          "content_sha256": "81164da1516d6b46992dd6ea5a096e7f7cf39866586cb5af6191c1f30e32cb5a",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/src/codegen/typescript.ts"
+        },
+        {
+          "content_length": 4234,
+          "content_sha256": "fa051d2caaf7f6a69905004e1ded8641cd78f4325088f5d7836416c3145f67a2",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/src/codegen/haskell.ts"
+        },
+        {
+          "content_length": 6215,
+          "content_sha256": "5eceebdd43563b535348145568e014a9762878111bfcffae38114a22f7d3923a",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/test/smoke.ts"
+        },
+        {
+          "content_length": 1570,
+          "content_sha256": "9424ab00bcb7737c9cf9f7df0e7f77069017ead2392aed27b6a3f238c5ab5cd5",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "docs/agents/eddy/Y2_P2_NEXT_PLAN.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "569b7652564a457f02bdb6789c5863c32e6116c26ebbecdde5a5c3254592cf2d",
+      "payload_path": "forks/replay-ledger/payloads/56/569b7652564a457f02bdb6789c5863c32e6116c26ebbecdde5a5c3254592cf2d.json",
+      "sequence": 3,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Make backend unsupported expressions fail clearly"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 3,
+  "next_sequence": 4,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-15T22:34:48.484162+00:00"
+  "updated_at": "2026-06-15T23:03:54.769038+00:00"
 }
