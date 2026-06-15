@@ -50,6 +50,10 @@ struct Atom {
     double sigma = 0.0;
     int channel = 0;
     double scale = 0.0;
+    int harmonicOrder = 0;
+    double radialFrequency = 0.0;
+    double phase = 0.0;
+    double orientation = 0.0;
 };
 
 static double clamp01(double x) {
@@ -434,13 +438,52 @@ static std::vector<Atom> make_support(uint32_t seed, int count, int w, int h, do
         a.sigma = std::max(3.0, 0.035 * std::min(w, h) + rng.next() * 0.085 * std::min(w, h));
         a.channel = int(rng.u32() % 3u);
         a.scale = step * (0.65 + 0.70 * rng.next());
+        a.harmonicOrder = int(rng.u32() % 5u);
+        a.radialFrequency = 2.2 + 7.8 * rng.next();
+        a.phase = 6.28318530717958647692 * rng.next();
+        a.orientation = 6.28318530717958647692 * rng.next();
         atoms.push_back(a);
     }
     return atoms;
 }
 
+
+static double bessel_j_int(int order, double x) {
+    int m = std::max(0, std::min(8, order));
+    double ax = std::abs(x);
+    if (ax < 1e-9) return m == 0 ? 1.0 : 0.0;
+#if defined(__cpp_lib_math_special_functions) && __cpp_lib_math_special_functions >= 201603L
+    return std::cyl_bessel_j(m, ax);
+#else
+    double half = 0.5 * ax;
+    double term = 1.0;
+    for (int i = 1; i <= m; ++i) term *= half / double(i);
+    double sum = term;
+    for (int q = 0; q < 48; ++q) {
+        term *= -(half * half) / (double(q + 1) * double(q + m + 1));
+        sum += term;
+        if (std::abs(term) < 1e-12) break;
+    }
+    return sum;
+#endif
+}
+
+static double bessel_window_value(const Atom& a, int x, int y, int c) {
+    double dx = double(x) - a.cx;
+    double dy = double(y) - a.cy;
+    double radius = std::sqrt(dx * dx + dy * dy);
+    double sigma = std::max(1e-6, a.sigma);
+    double rho = radius / sigma;
+    double theta = std::atan2(dy, dx) - a.orientation;
+    double window = std::exp(-0.5 * rho * rho);
+    double radial = bessel_j_int(a.harmonicOrder, a.radialFrequency * rho);
+    double angular = std::cos(double(a.harmonicOrder) * theta + a.phase);
+    double channelPhase = (double(c) - double(a.channel)) * 2.09439510239319549;
+    double channelMix = 0.72 + 0.28 * std::cos(channelPhase);
+    return std::max(-1.0, std::min(1.0, window * radial * angular * channelMix));
+}
+
 static void apply_atom(Frame& f, const Atom& a, double coeff) {
-    double twoSigma2 = 2.0 * a.sigma * a.sigma;
     int radius = int(std::ceil(3.0 * a.sigma));
     int x0 = std::max(0, int(std::floor(a.cx)) - radius);
     int x1 = std::min(f.w - 1, int(std::floor(a.cx)) + radius);
@@ -448,15 +491,11 @@ static void apply_atom(Frame& f, const Atom& a, double coeff) {
     int y1 = std::min(f.h - 1, int(std::floor(a.cy)) + radius);
     for (int y = y0; y <= y1; ++y) {
         for (int x = x0; x <= x1; ++x) {
-            double dx = double(x) - a.cx;
-            double dy = double(y) - a.cy;
-            double envelope = std::exp(-(dx * dx + dy * dy) / twoSigma2);
             for (int c = 0; c < 3; ++c) {
-                uint32_t s = mix32(a.seed ^ uint32_t(x * 73856093u) ^ uint32_t(y * 19349663u) ^ uint32_t(c * 83492791u));
-                double matrix = normal_from_seed(s);
-                double channelWeight = (c == a.channel) ? 1.0 : 0.35;
+                double basis = bessel_window_value(a, x, y, c);
+                double channelWeight = (c == a.channel) ? 1.0 : 0.40;
                 size_t idx = size_t((y * f.w + x) * 3 + c);
-                f.rgb[idx] = clamp01(f.rgb[idx] + coeff * envelope * matrix * channelWeight);
+                f.rgb[idx] = clamp01(f.rgb[idx] + coeff * basis * channelWeight);
             }
         }
     }
@@ -470,7 +509,7 @@ static int cmd_analyze(const std::string& source) {
     }
     Metric m = score_frame(f);
     std::cout << "{\n";
-    std::cout << "  \"backend\": \"cpp-real-pixel-sparse-gaussian-ffi/0.3.3\",\n";
+    std::cout << "  \"backend\": \"cpp-bessel-window-sparse-ffi/0.4.0\",\n";
     std::cout << "  \"source\": \"" << json_escape(source) << "\",\n";
     std::cout << "  \"width\": " << f.w << ",\n";
     std::cout << "  \"height\": " << f.h << ",\n";
@@ -500,6 +539,7 @@ static int cmd_update(int argc, char** argv) {
     Frame best = original;
     Metric initial = score_frame(best);
     Metric bestMetric = initial;
+    double bestObjective = initial.score;
     std::vector<Atom> atoms = make_support(seed, support, original.w, original.h, step);
     Rng rng(seed ^ 0x51f15eedu);
     int accepted = 0;
@@ -519,17 +559,20 @@ static int cmd_update(int argc, char** argv) {
             }
         }
         Metric cm = score_frame(cand);
-        bool ok = cm.score > bestMetric.score;
+        DeltaStats candDelta = delta_stats(original, cand);
+        double objective = cm.score - 0.70 * candDelta.rms - 0.18 * candDelta.maxAbs;
+        bool ok = objective > bestObjective;
         if (ok) {
             best = cand;
             bestMetric = cm;
+            bestObjective = objective;
             accepted++;
-            for (int j : activeIdx) atoms[j].scale = std::min(step * 5.0, atoms[j].scale * 1.025 + step * 0.002);
+            for (int j : activeIdx) atoms[j].scale = std::min(step * 3.0, atoms[j].scale * 1.018 + step * 0.001);
         } else {
-            for (int j : activeIdx) atoms[j].scale = std::max(step * 0.04, atoms[j].scale * 0.996);
+            for (int j : activeIdx) atoms[j].scale = std::max(step * 0.04, atoms[j].scale * 0.992);
         }
         trace << (t ? ",\n" : "");
-        trace << "  {\"trial\":" << t << ",\"score\":" << round6(cm.score) << ",\"best_score\":" << round6(bestMetric.score) << ",\"accepted\":" << (ok ? "true" : "false") << ",\"active\":" << active << "}";
+        trace << "  {\"trial\":" << t << ",\"score\":" << round6(cm.score) << ",\"objective\":" << round6(objective) << ",\"best_score\":" << round6(bestMetric.score) << ",\"best_objective\":" << round6(bestObjective) << ",\"accepted\":" << (ok ? "true" : "false") << ",\"active\":" << active << ",\"mean_abs_pixel_delta\":" << round6(candDelta.meanAbs) << ",\"max_abs_pixel_delta\":" << round6(candDelta.maxAbs) << ",\"rms_pixel_delta\":" << round6(candDelta.rms) << "}";
     }
     trace << "\n]\n";
 
@@ -551,13 +594,13 @@ static int cmd_update(int argc, char** argv) {
     for (size_t i = 0; i < atoms.size(); ++i) {
         const Atom& a = atoms[i];
         dict << (i ? ",\n" : "");
-        dict << "  {\"index\":" << a.index << ",\"seed\":" << a.seed << ",\"cx\":" << round6(a.cx) << ",\"cy\":" << round6(a.cy) << ",\"sigma\":" << round6(a.sigma) << ",\"channel\":" << a.channel << ",\"scale\":" << round6(a.scale) << "}";
+        dict << "  {\"index\":" << a.index << ",\"seed\":" << a.seed << ",\"cx\":" << round6(a.cx) << ",\"cy\":" << round6(a.cy) << ",\"sigma\":" << round6(a.sigma) << ",\"channel\":" << a.channel << ",\"scale\":" << round6(a.scale) << ",\"harmonic_order\":" << a.harmonicOrder << ",\"radial_frequency\":" << round6(a.radialFrequency) << ",\"phase\":" << round6(a.phase) << ",\"orientation\":" << round6(a.orientation) << "}";
     }
     dict << "\n]\n";
 
     std::ofstream report(outDir + "/report.json");
     report << "{\n";
-    report << "  \"backend\": \"cpp-real-pixel-sparse-gaussian-ffi/0.3.3\",\n";
+    report << "  \"backend\": \"cpp-bessel-window-sparse-ffi/0.4.0\",\n";
     report << "  \"source\": \"" << json_escape(source) << "\",\n";
     report << "  \"width\": " << original.w << ",\n";
     report << "  \"height\": " << original.h << ",\n";
@@ -571,18 +614,20 @@ static int cmd_update(int argc, char** argv) {
     report << "  \"rms_pixel_delta\": " << round6(ds.rms) << ",\n";
     report << "  \"initial_score\": " << round6(initial.score) << ",\n";
     report << "  \"final_score\": " << round6(bestMetric.score) << ",\n";
+    report << "  \"final_objective\": " << round6(bestObjective) << ",\n";
     report << "  \"increase\": " << round6(bestMetric.score - initial.score) << ",\n";
     report << "  \"initial\": " << metric_json(initial) << ",\n";
     report << "  \"final\": " << metric_json(bestMetric) << "\n";
     report << "}\n";
 
     std::ofstream summary(outDir + "/update_summary.txt");
-    summary << "backend: cpp-real-pixel-sparse-gaussian-ffi/0.3.3\n";
+    summary << "backend: cpp-bessel-window-sparse-ffi/0.4.0\n";
     summary << "source: " << source << "\n";
     summary << "width: " << original.w << "\n";
     summary << "height: " << original.h << "\n";
     summary << "initial_score: " << std::fixed << std::setprecision(6) << initial.score << "\n";
     summary << "final_score: " << bestMetric.score << "\n";
+    summary << "final_objective: " << bestObjective << "\n";
     summary << "increase: " << bestMetric.score - initial.score << "\n";
     summary << "accepted: " << accepted << "/" << trials << "\n";
     summary << "mean_abs_pixel_delta: " << ds.meanAbs << "\n";
@@ -591,10 +636,11 @@ static int cmd_update(int argc, char** argv) {
     summary << "outputs: source.bmp updated.bmp delta.bmp delta_overlay.bmp source.ppm updated.ppm delta.ppm delta_overlay.ppm report.json update_trace.json support_dictionary.json\n";
 
     std::cout << "{\n";
-    std::cout << "  \"backend\": \"cpp-real-pixel-sparse-gaussian-ffi/0.3.3\",\n";
+    std::cout << "  \"backend\": \"cpp-bessel-window-sparse-ffi/0.4.0\",\n";
     std::cout << "  \"outDir\": \"" << json_escape(outDir) << "\",\n";
     std::cout << "  \"initial_score\": " << round6(initial.score) << ",\n";
     std::cout << "  \"final_score\": " << round6(bestMetric.score) << ",\n";
+    std::cout << "  \"final_objective\": " << round6(bestObjective) << ",\n";
     std::cout << "  \"increase\": " << round6(bestMetric.score - initial.score) << ",\n";
     std::cout << "  \"accepted\": " << accepted << ",\n";
     std::cout << "  \"mean_abs_pixel_delta\": " << round6(ds.meanAbs) << ",\n";
