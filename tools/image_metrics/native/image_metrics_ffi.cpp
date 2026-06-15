@@ -290,6 +290,57 @@ static bool write_bmp(const std::string& path, const Frame& f) {
     return true;
 }
 
+
+struct DeltaStats {
+    double meanAbs = 0.0;
+    double maxAbs = 0.0;
+    double rms = 0.0;
+};
+
+static DeltaStats delta_stats(const Frame& a, const Frame& b) {
+    DeltaStats d;
+    if (a.w != b.w || a.h != b.h || a.rgb.size() != b.rgb.size() || a.rgb.empty()) return d;
+    double sum = 0.0;
+    double sum2 = 0.0;
+    for (size_t i = 0; i < a.rgb.size(); ++i) {
+        double v = std::abs(b.rgb[i] - a.rgb[i]);
+        sum += v;
+        sum2 += v * v;
+        d.maxAbs = std::max(d.maxAbs, v);
+    }
+    d.meanAbs = sum / double(a.rgb.size());
+    d.rms = std::sqrt(sum2 / double(a.rgb.size()));
+    return d;
+}
+
+static Frame delta_frame(const Frame& a, const Frame& b, double gain) {
+    Frame d;
+    d.w = a.w;
+    d.h = a.h;
+    d.rgb.assign(a.rgb.size(), 0.0);
+    if (a.w != b.w || a.h != b.h || a.rgb.size() != b.rgb.size()) return d;
+    for (size_t i = 0; i < a.rgb.size(); ++i) {
+        double diff = b.rgb[i] - a.rgb[i];
+        d.rgb[i] = clamp01(0.5 + diff * gain);
+    }
+    return d;
+}
+
+static Frame visible_delta_overlay(const Frame& a, const Frame& b, double gain) {
+    Frame o = a;
+    if (a.w != b.w || a.h != b.h || a.rgb.size() != b.rgb.size()) return o;
+    for (size_t i = 0; i < a.rgb.size(); i += 3) {
+        double dr = b.rgb[i + 0] - a.rgb[i + 0];
+        double dg = b.rgb[i + 1] - a.rgb[i + 1];
+        double db = b.rgb[i + 2] - a.rgb[i + 2];
+        double mag = std::sqrt((dr * dr + dg * dg + db * db) / 3.0);
+        o.rgb[i + 0] = clamp01(a.rgb[i + 0] + gain * mag);
+        o.rgb[i + 1] = clamp01(a.rgb[i + 1] - 0.35 * gain * mag);
+        o.rgb[i + 2] = clamp01(a.rgb[i + 2] - 0.35 * gain * mag);
+    }
+    return o;
+}
+
 static Metric score_frame(const Frame& f) {
     int w = f.w, h = f.h;
     double sum = 0.0, sum2 = 0.0, grad = 0.0, block = 0.0, low = 0.0, high = 0.0, chroma = 0.0;
@@ -419,7 +470,7 @@ static int cmd_analyze(const std::string& source) {
     }
     Metric m = score_frame(f);
     std::cout << "{\n";
-    std::cout << "  \"backend\": \"cpp-real-pixel-sparse-gaussian-ffi/0.3.2\",\n";
+    std::cout << "  \"backend\": \"cpp-real-pixel-sparse-gaussian-ffi/0.3.3\",\n";
     std::cout << "  \"source\": \"" << json_escape(source) << "\",\n";
     std::cout << "  \"width\": " << f.w << ",\n";
     std::cout << "  \"height\": " << f.h << ",\n";
@@ -482,10 +533,18 @@ static int cmd_update(int argc, char** argv) {
     }
     trace << "\n]\n";
 
+    DeltaStats ds = delta_stats(original, best);
+    Frame delta = delta_frame(original, best, 24.0);
+    Frame deltaOverlay = visible_delta_overlay(original, best, 18.0);
+
     write_ppm(outDir + "/source.ppm", original);
     write_ppm(outDir + "/updated.ppm", best);
+    write_ppm(outDir + "/delta.ppm", delta);
+    write_ppm(outDir + "/delta_overlay.ppm", deltaOverlay);
     write_bmp(outDir + "/source.bmp", original);
     write_bmp(outDir + "/updated.bmp", best);
+    write_bmp(outDir + "/delta.bmp", delta);
+    write_bmp(outDir + "/delta_overlay.bmp", deltaOverlay);
 
     std::ofstream dict(outDir + "/support_dictionary.json");
     dict << "[\n";
@@ -498,7 +557,7 @@ static int cmd_update(int argc, char** argv) {
 
     std::ofstream report(outDir + "/report.json");
     report << "{\n";
-    report << "  \"backend\": \"cpp-real-pixel-sparse-gaussian-ffi/0.3.2\",\n";
+    report << "  \"backend\": \"cpp-real-pixel-sparse-gaussian-ffi/0.3.3\",\n";
     report << "  \"source\": \"" << json_escape(source) << "\",\n";
     report << "  \"width\": " << original.w << ",\n";
     report << "  \"height\": " << original.h << ",\n";
@@ -507,6 +566,9 @@ static int cmd_update(int argc, char** argv) {
     report << "  \"support\": " << support << ",\n";
     report << "  \"step\": " << round6(step) << ",\n";
     report << "  \"accepted\": " << accepted << ",\n";
+    report << "  \"mean_abs_pixel_delta\": " << round6(ds.meanAbs) << ",\n";
+    report << "  \"max_abs_pixel_delta\": " << round6(ds.maxAbs) << ",\n";
+    report << "  \"rms_pixel_delta\": " << round6(ds.rms) << ",\n";
     report << "  \"initial_score\": " << round6(initial.score) << ",\n";
     report << "  \"final_score\": " << round6(bestMetric.score) << ",\n";
     report << "  \"increase\": " << round6(bestMetric.score - initial.score) << ",\n";
@@ -515,7 +577,7 @@ static int cmd_update(int argc, char** argv) {
     report << "}\n";
 
     std::ofstream summary(outDir + "/update_summary.txt");
-    summary << "backend: cpp-real-pixel-sparse-gaussian-ffi/0.3.2\n";
+    summary << "backend: cpp-real-pixel-sparse-gaussian-ffi/0.3.3\n";
     summary << "source: " << source << "\n";
     summary << "width: " << original.w << "\n";
     summary << "height: " << original.h << "\n";
@@ -523,15 +585,21 @@ static int cmd_update(int argc, char** argv) {
     summary << "final_score: " << bestMetric.score << "\n";
     summary << "increase: " << bestMetric.score - initial.score << "\n";
     summary << "accepted: " << accepted << "/" << trials << "\n";
-    summary << "outputs: source.bmp updated.bmp source.ppm updated.ppm report.json update_trace.json support_dictionary.json\n";
+    summary << "mean_abs_pixel_delta: " << ds.meanAbs << "\n";
+    summary << "max_abs_pixel_delta: " << ds.maxAbs << "\n";
+    summary << "rms_pixel_delta: " << ds.rms << "\n";
+    summary << "outputs: source.bmp updated.bmp delta.bmp delta_overlay.bmp source.ppm updated.ppm delta.ppm delta_overlay.ppm report.json update_trace.json support_dictionary.json\n";
 
     std::cout << "{\n";
-    std::cout << "  \"backend\": \"cpp-real-pixel-sparse-gaussian-ffi/0.3.2\",\n";
+    std::cout << "  \"backend\": \"cpp-real-pixel-sparse-gaussian-ffi/0.3.3\",\n";
     std::cout << "  \"outDir\": \"" << json_escape(outDir) << "\",\n";
     std::cout << "  \"initial_score\": " << round6(initial.score) << ",\n";
     std::cout << "  \"final_score\": " << round6(bestMetric.score) << ",\n";
     std::cout << "  \"increase\": " << round6(bestMetric.score - initial.score) << ",\n";
-    std::cout << "  \"accepted\": " << accepted << "\n";
+    std::cout << "  \"accepted\": " << accepted << ",\n";
+    std::cout << "  \"mean_abs_pixel_delta\": " << round6(ds.meanAbs) << ",\n";
+    std::cout << "  \"max_abs_pixel_delta\": " << round6(ds.maxAbs) << ",\n";
+    std::cout << "  \"rms_pixel_delta\": " << round6(ds.rms) << "\n";
     std::cout << "}\n";
     return 0;
 }
