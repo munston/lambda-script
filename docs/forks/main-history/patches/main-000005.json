@@ -1,0 +1,38 @@
+{
+  "agent": "system",
+  "base_commit": "d3b5e504a243d4bae90d0bc59582fb7ffa88f91f",
+  "base_ref": "origin/main",
+  "changed_files": [
+    {
+      "path": "tools/milk_metrics/docs/capabilities.md",
+      "status": "A"
+    },
+    {
+      "path": "tools/milk_metrics/test/fixtures/README.md",
+      "status": "A"
+    },
+    {
+      "path": "tools/milk_metrics/test/fixtures/adult_reference_pose.png.b64",
+      "status": "A"
+    },
+    {
+      "path": "tools/milk_metrics/test/fixtures/decode_fixture.py",
+      "status": "A"
+    }
+  ],
+  "created_at": "2026-06-15T03:25:10.509917+00:00",
+  "format": "LS_MAIN_HISTORY_V1",
+  "kind": "gadget_promotion",
+  "metadata": {
+    "gadget": "image-metrics",
+    "gizmo": "metrics",
+    "promoted_commits": 1,
+    "target_ref": "origin/gadgets/metrics/image-metrics/main"
+  },
+  "number": 5,
+  "source_head_before_receipt": "b4563ad465f4880e645a9e4a5c0189699d408ae5",
+  "source_ref": "origin/gadgets/metrics/image-metrics/main",
+  "source_tree_before_receipt": "179f91196ebeb3830cc4212e5feb85c67dee6af5",
+  "title": "Promote metrics/image-metrics",
+  "version": "main-000005"
+}
