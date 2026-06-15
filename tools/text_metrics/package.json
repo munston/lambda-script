@@ -6,7 +6,7 @@
   "scripts": {
     "prebuild": "npm install --silent",
     "build": "tsc -p tsconfig.json",
-    "test": "npm run build --silent && node dist/test/smoke.js && node dist/test/manifest_wiring.js",
+    "test": "npm run build --silent && node dist/test/smoke.js && node dist/test/manifest_wiring.js && node dist/test/parametric_invariants.js",
     "text-metrics": "npm run build --silent && node dist/src/cli.js"
   },
   "devDependencies": {
