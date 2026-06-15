@@ -1,10 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 const cp = require('child_process');
+
 const root = path.resolve(__dirname, '..');
 const src = path.join(root, 'native', 'image_metrics_ffi.cpp');
 const outDir = path.join(root, 'bin');
 const exe = path.join(outDir, process.platform === 'win32' ? 'image_metrics_ffi.exe' : 'image_metrics_ffi');
+
 function existsOnPath(name) {
   for (const dir of (process.env.PATH || '').split(path.delimiter)) {
     const full = path.join(dir, name);
@@ -13,10 +15,21 @@ function existsOnPath(name) {
   }
   return null;
 }
+
 fs.mkdirSync(outDir, { recursive: true });
+
 const cxx = process.env.CXX || existsOnPath('g++') || existsOnPath('clang++') || existsOnPath('c++');
-if (!cxx) { console.log('[image-metrics] no C++ compiler found'); process.exit(1); }
+if (!cxx) {
+  console.log('[image-metrics] no C++ compiler found; TypeScript command surface remains buildable only if a native binary already exists');
+  process.exit(1);
+}
+
 const args = [src, '-std=c++17', '-O2', '-o', exe];
+
+if (process.platform === 'win32') {
+  args.push('-lole32', '-luuid', '-lwindowscodecs');
+}
+
 console.log(`[image-metrics] ${cxx} ${args.join(' ')}`);
 const proc = cp.spawnSync(cxx, args, { cwd: root, stdio: 'inherit' });
 if (proc.status !== 0) process.exit(proc.status || 1);
