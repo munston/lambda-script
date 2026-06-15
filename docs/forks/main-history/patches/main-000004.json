@@ -1,0 +1,30 @@
+{
+  "agent": "system",
+  "base_commit": "94433f9e392a78f4100401e222e2b39b0ece9e88",
+  "base_ref": "origin/main",
+  "changed_files": [
+    {
+      "path": "docs/forks/automatic-rebase-before-promotion.md",
+      "status": "A"
+    },
+    {
+      "path": "scripts/forks/agent_land_json.py",
+      "status": "M"
+    }
+  ],
+  "created_at": "2026-06-15T03:13:09.920954+00:00",
+  "format": "LS_MAIN_HISTORY_V1",
+  "kind": "gadget_promotion",
+  "metadata": {
+    "gadget": "core",
+    "gizmo": "lambdascript",
+    "promoted_commits": 1,
+    "target_ref": "origin/gadgets/lambdascript/core/main"
+  },
+  "number": 4,
+  "source_head_before_receipt": "d552965dd38329ecd5c544fff00246efe7c71055",
+  "source_ref": "origin/gadgets/lambdascript/core/main",
+  "source_tree_before_receipt": "54b558d9bbf64b01bdf26e3f69fa48fb84b8ade9",
+  "title": "Promote lambdascript/core",
+  "version": "main-000004"
+}

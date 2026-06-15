@@ -33,6 +33,17 @@
       "source_head_before_receipt": "9886c94313ec72679dbe1efe00668da0ad41b738",
       "title": "Promote metrics/image-metrics",
       "version": "main-000003"
+    },
+    {
+      "agent": "system",
+      "base_commit": "94433f9e392a78f4100401e222e2b39b0ece9e88",
+      "created_at": "2026-06-15T03:13:09.920954+00:00",
+      "kind": "gadget_promotion",
+      "number": 4,
+      "receipt": "docs/forks/main-history/patches/main-000004.json",
+      "source_head_before_receipt": "d552965dd38329ecd5c544fff00246efe7c71055",
+      "title": "Promote lambdascript/core",
+      "version": "main-000004"
     }
   ],
   "format": "LS_MAIN_HISTORY_V1"
