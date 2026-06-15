@@ -16,7 +16,6 @@
         "docs/forks/",
         "scripts/forks/",
         "tools/gizmo/",
-        "forks/replay-ledger/",
         "forks.bat",
         "install.bat",
         "verify.bat",
@@ -27,12 +26,16 @@
       ],
       "verification_profiles": {
         "quick": [
-          "python -m py_compile scripts/forks/forks.py scripts/forks/submission_object.py scripts/forks/import_json_patch.py scripts/forks/replay_ledger.py scripts/forks/replay_plan.py scripts/forks/land_json_patch.py scripts/forks/gadget_branches.py scripts/forks/gadget_land_json.py scripts/forks/gadget_verify_profiles.py scripts/forks/gadget_promote.py scripts/forks/ensure_node_toolchains.py scripts/forks/agent_land_json.py scripts/forks/main_history.py"
+          "python -m py_compile scripts/forks/forks.py scripts/forks/submission_object.py scripts/forks/import_json_patch.py scripts/forks/land_json_patch.py scripts/forks/gadget_branches.py scripts/forks/gadget_land_json.py scripts/forks/gadget_verify_profiles.py scripts/forks/gadget_promote.py scripts/forks/ensure_node_toolchains.py scripts/forks/agent_land_json.py scripts/forks/main_history.py"
         ],
         "gizmo": [
           "python scripts/forks/ensure_node_toolchains.py --install --only tools/gizmo",
           "cd tools/gizmo && npm run build",
           "cd tools/gizmo && npm test"
+        ],
+        "glc-light": [
+          "python scripts/forks/ensure_node_toolchains.py --install --only glc",
+          "cd glc && npm test"
         ],
         "full": [
           "python scripts/forks/ensure_node_toolchains.py --install",
