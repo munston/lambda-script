@@ -32,7 +32,7 @@ This path exports a patch, stages it in `.forks/worktrees/<agent>-candidate/`, w
 
 ## Submission-object amalgamation
 
-The guarded amalgamation workflow converts direct lane edits into replayable submission objects before any lane is rewound.
+The guarded amalgamation workflow converts agent-lane work into replayable submission history before any lane is rewound.
 
 Plan first:
 
@@ -46,28 +46,43 @@ Apply after inspecting the plan:
 forks.bat amalgamate-all --apply
 ```
 
-The command inspects `ed`, `edd`, and `eddy` by default. For each lane with unique work it plans or applies:
+The command inspects `ed`, `edd`, and `eddy` by default. For each lane with unique work it proceeds sequentially:
 
 ```text
-capture lane work as .forks/submissions/<agent>.json
-replay the saved patch onto current origin/main
-verify the replayed candidate
-submit the verified candidate
-sync the captured lane to the new main only if its head still equals the captured source commit
+1. Fetch origin.
+2. Check whether a submission object already captures the lane head.
+3. If not, capture the current lane diff into .forks/submissions/<agent>.json.
+4. Destructively sync the captured lane to current main only after sync-captured-lane proves the lane head still equals the captured source commit.
+5. Replay the captured submission onto current main.
+6. Verify the replayed candidate.
+7. Submit dry-run.
+8. Submit.
+9. Fetch the newly advanced main.
+10. Continue with the next agent against that new main.
 ```
 
-This lets an agent edit its lane directly and then have that work captured as a replayable diff. If the lane changed after capture, the captured-lane sync refuses instead of deleting work.
+This supports both allowed agent behaviours:
+
+```text
+agent updates their lane directly
+agent records diff patches while updating their lane
+```
+
+In either case, the first responsibility of `amalgamate-all` is to ensure replay history exists. If it already exists and matches the lane head, it is reused. If it is missing or stale, the lane is captured before rewind. After capture, destructive lane rewind is safe because the work is durable as replayable diff history.
+
+`main` is never rewound by this command. Agent lanes may be rewound after capture. Main advances only through replay, verification, and submit.
 
 Useful options:
 
 ```bat
 forks.bat amalgamate-all --agents ed edd eddy
 forks.bat amalgamate-all --verify-command verify.bat
-forks.bat amalgamate-all --apply --no-sync-lanes
+forks.bat amalgamate-all --apply
 forks.bat amalgamate-all --apply --backend contents
+forks.bat amalgamate-all --apply --sync-clean
 ```
 
-`amalgamate-all` requires a clean tracked working tree. Stash, commit, or restore local tracked edits before running it.
+`amalgamate-all` requires no operator pre-stash as part of its replay logic. It does require that any intended lane edits are committed to that lane, because the replay history is made from branch commits. Uncommitted local tracked edits are not silently converted into agent submissions.
 
 ## Workflow runner layer
 

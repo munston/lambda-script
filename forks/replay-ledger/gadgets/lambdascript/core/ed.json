@@ -128,15 +128,48 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Add guarded agent lane amalgamation workflow"
+    },
+    {
+      "agent": "ed",
+      "created_at": "2026-06-15T22:03:36.629386+00:00",
+      "file_count": 2,
+      "file_fingerprints": [
+        {
+          "content_length": 8948,
+          "content_sha256": "47c3ded6084cc0a9563e747c805e24a1e2d60be44d4643d8574d45783cd4b573",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/amalgamate_all.py"
+        },
+        {
+          "content_length": 5052,
+          "content_sha256": "81ba6f62be83997bd669c691b09d3b699eb793dba55be3636f97435264a99773",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/README.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "9877a98e50dc561b110b19f7e0d99a7220e1e09c9351a7e052c88c8a87275a94",
+      "payload_path": "forks/replay-ledger/payloads/98/9877a98e50dc561b110b19f7e0d99a7220e1e09c9351a7e052c88c8a87275a94.json",
+      "sequence": 4,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Correct amalgamate-all to capture before lane rewind"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 4,
+  "next_sequence": 5,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-15T21:40:11.151561+00:00"
+  "updated_at": "2026-06-15T22:03:36.629406+00:00"
 }
