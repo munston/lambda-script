@@ -1,6 +1,7 @@
 export const GIZMO_FORMAT = 'LS_GIZMO_V1';
 export const GIZMO_PROVISION_PLAN_FORMAT = 'LS_GIZMO_PROVISION_PLAN_V1';
 export const GIZMO_COMMAND_PLAN_FORMAT = 'LS_GIZMO_COMMAND_PLAN_V1';
+export const GIZMO_WORKSPACE_PLAN_FORMAT = 'LS_GIZMO_WORKSPACE_PLAN_V1';
 
 export type GadgetLanguage = 'python' | 'typescript' | 'lambdascript' | 'cpp' | 'mixed' | 'unknown';
 
@@ -113,6 +114,25 @@ export interface GizmoProvisionPlan {
     allowed_commands: string[];
     write_policy: 'deny' | 'copy-on-write' | 'allow';
     mutable: boolean;
+  }>;
+}
+
+export interface GizmoWorkspacePlan {
+  format: typeof GIZMO_WORKSPACE_PLAN_FORMAT;
+  name: string;
+  workspace_root: string;
+  mount_count: number;
+  mounts: Array<{
+    name: string;
+    source: string;
+    mount: string;
+    workspace_path: string;
+    mode: 'read-only' | 'pinned' | 'copy';
+    target_ref?: string;
+    allowed_commands: string[];
+    write_policy: 'deny' | 'copy-on-write' | 'allow';
+    mutable: boolean;
+    planned_action: 'bind-readonly' | 'checkout-pinned' | 'copy-on-write';
   }>;
 }
 

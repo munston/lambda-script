@@ -7,6 +7,7 @@ const path = require('path');
 import { buildProvisionPlan, buildStatus, ensureManifestValid, readManifest, validateManifest } from './manifest';
 import { buildGadgetCommandPlan, buildImportedCommandPlan, executeCommandPlan, parseArgPairs } from './runner';
 import { GIZMO_FORMAT, GizmoManifest } from './types';
+import { buildWorkspacePlan } from './workspace';
 
 function usage(): string {
   return `Usage:
@@ -15,6 +16,7 @@ function usage(): string {
   gizmo status <manifest.json>
   gizmo branches <manifest.json>
   gizmo provision-plan <manifest.json> [--out <file>]
+  gizmo workspace-plan <manifest.json> [--root <dir>] [--out <file>]
   gizmo call <manifest.json> <gadget> <command> [--arg name=value ...] [--exec|--exec=true|--exec=false]
   gizmo import-call <manifest.json> <import> <command> [--exec=false]
 `;
@@ -135,6 +137,21 @@ export function runCli(args: string[]): number {
       const out = argValue(args, '--out');
       const manifest = ensureManifestValid(readManifest(file));
       const plan = buildProvisionPlan(manifest);
+      if (out) {
+        writeJson(out, plan);
+        console.log(out);
+      } else {
+        console.log(JSON.stringify(plan, null, 2));
+      }
+      return 0;
+    }
+    if (command === 'workspace-plan') {
+      const file = args[1];
+      if (!file) throw new Error('missing manifest path');
+      const out = argValue(args, '--out');
+      const root = argValue(args, '--root', '.');
+      const manifest = ensureManifestValid(readManifest(file));
+      const plan = buildWorkspacePlan(manifest, root);
       if (out) {
         writeJson(out, plan);
         console.log(out);

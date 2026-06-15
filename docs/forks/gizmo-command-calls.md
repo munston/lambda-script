@@ -32,6 +32,24 @@ node dist\src\cli.js call ..\..\examples\gizmos\metrics.gizmo.json image-metrics
 
 Invalid execution values such as `--exec=maybe` are rejected.
 
+## Workspace plans
+
+Workspace plans translate provisioned imports into planned workspace mount locations without copying files or executing commands.
+
+Example:
+
+```bat
+node dist\src\cli.js workspace-plan ..\..\examples\gizmos\metrics.gizmo.json --root workspace --out ..\..\runs\gizmo\metrics-workspace-plan.json
+```
+
+The output has format:
+
+```text
+LS_GIZMO_WORKSPACE_PLAN_V1
+```
+
+and lists each import's source, declared mount, workspace path, mutability, write policy, and planned action.
+
 ## Imported command plans
 
 Imported command plans are intentionally non-executing. They resolve a command name through the manifest import allow-list and print a command plan with import metadata, but they do not mount workspaces, copy files, or run the imported command.
