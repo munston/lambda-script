@@ -1,37 +1,50 @@
 # Target refs in JSON landing
 
-This patch introduces target-ref support to the JSON landing path.
+Targeted JSON landing lets one-argument agent buttons apply patches to a declared gadget target.
 
-The default remains repository main:
-
-```bat
-forks.bat land-json-file eddy patch.json
-```
-
-which is equivalent to:
+The public button shape stays fixed:
 
 ```bat
-forks.bat land-json-file --target-ref origin/main eddy patch.json
+edd-land-json.bat path\to\patch.json
 ```
 
-The JSON importer can now create a candidate from another integration ref:
+The patch carries the target and transaction policy:
 
-```bat
-forks.bat import-json --target-ref origin/gadgets/metrics/image-metrics/main eddy patch.json
+```json
+{
+  "format": "LS_FORK_JSON_PATCH_V1",
+  "agent": "edd",
+  "target": {
+    "kind": "gadget",
+    "gizmo": "lambdascript",
+    "gadget": "core",
+    "profile": "gizmo",
+    "promote": false,
+    "sync": false,
+    "history": false
+  },
+  "files": []
+}
 ```
 
-The one-shot landing path can also push to a non-main target:
+For fast acceptance, use `promote: false`, `sync: false`, and `history: false`. This lands to the gadget integration branch and skips repository-level promotion and lane fan-out.
 
-```bat
-forks.bat land-json-file --target-ref origin/gadgets/metrics/image-metrics/main eddy patch.json
+For promotion, set `promote: true`. The promotion path may be further controlled:
+
+```json
+{
+  "target": {
+    "kind": "gadget",
+    "gizmo": "lambdascript",
+    "gadget": "core",
+    "profile": "gizmo",
+    "promote": true,
+    "promote_profile": "gizmo",
+    "sync": false,
+    "history": true,
+    "repository_sync": false
+  }
+}
 ```
 
-When the target ref begins with `origin/`, the push destination is inferred by stripping `origin/`. For unusual refs, pass `--push-ref` explicitly:
-
-```bat
-forks.bat land-json-file --target-ref origin/gadgets/metrics/image-metrics/main --push-ref gadgets/metrics/image-metrics/main eddy patch.json
-```
-
-For non-main targets, repository-level agent sync is skipped. Gadget-specific agent lanes will be added by the later gadget branch model patch.
-
-This is an incremental refactor. The legacy `forks stage`, `forks verify`, and `forks submit` path still targets `origin/main`; target-ref support is first enabled on the JSON path because that is already the current patch transport used by agents.
+`sync` controls gadget-agent lane alignment after promotion. `repository_sync` controls repository-level agent lane synchronization after pushing `main`. Leaving `repository_sync` absent preserves the historical default, which syncs repository agent lanes.

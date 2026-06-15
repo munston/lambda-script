@@ -17,7 +17,8 @@ The patch itself carries its target and transaction policy:
         "profile": "quick",
         "promote": true,
         "sync": true,
-        "history": true
+        "history": true,
+        "repository_sync": true
       },
       "title": "...",
       "files": [...]
@@ -55,6 +56,7 @@ class Target:
         sync: bool,
         history: bool,
         promote_profile: str | None,
+        repository_sync: bool,
     ) -> None:
         self.gizmo = gizmo
         self.gadget = gadget
@@ -64,6 +66,7 @@ class Target:
         self.sync = sync
         self.history = history
         self.promote_profile = promote_profile
+        self.repository_sync = repository_sync
 
 
 def _bool(target: dict, name: str, default: bool) -> bool:
@@ -106,6 +109,7 @@ def resolve_target(payload: dict) -> Target:
         sync=_bool(target, "sync", True),
         history=_bool(target, "history", True),
         promote_profile=promote_profile,
+        repository_sync=_bool(target, "repository_sync", True),
     )
 
 
@@ -221,7 +225,7 @@ def cmd_land(args: argparse.Namespace) -> int:
     print(f"agent={args.agent}")
     print(f"target={target.gizmo}/{target.gadget}")
     print(f"profile={target.profile or ('full' if target.full else 'quick')}")
-    print(f"promote={target.promote} sync={target.sync} history={target.history}")
+    print(f"promote={target.promote} sync={target.sync} history={target.history} repository_sync={target.repository_sync}")
 
     land_args = SimpleNamespace(
         require_file=True,
@@ -248,6 +252,7 @@ def cmd_land(args: argparse.Namespace) -> int:
             full=target.full and target.promote_profile is None,
             no_verify=False,
             no_history=not target.history,
+            no_repository_agent_sync=not target.repository_sync,
         )
         rc = gadget_promote.cmd_promote(promote_args)
         if rc != 0:

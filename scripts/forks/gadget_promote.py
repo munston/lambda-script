@@ -173,9 +173,12 @@ def cmd_promote(args: argparse.Namespace) -> int:
     run(["git", "push", "origin", "HEAD:main"], work)
 
     fetch(root)
-    print("syncing repository agent lanes")
-    for agent in AGENTS:
-        sync_repository_agent(root, agent)
+    if getattr(args, "no_repository_agent_sync", False):
+        print("skipped repository agent lane sync")
+    else:
+        print("syncing repository agent lanes")
+        for agent in AGENTS:
+            sync_repository_agent(root, agent)
 
     print("repository status")
     run(["cmd", "/c", "forks.bat", "status", "--fetch"], root)
@@ -191,6 +194,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--full", action="store_true", help="use the full manifest verification profile")
     parser.add_argument("--no-verify", action="store_true", help="skip verification gate")
     parser.add_argument("--no-history", action="store_true", help="do not append a main-history receipt before pushing")
+    parser.add_argument("--no-repository-agent-sync", action="store_true", help="do not align repository-level agent lanes after pushing main")
     return parser
 
 

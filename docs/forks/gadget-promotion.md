@@ -38,8 +38,31 @@ create disposable promotion worktree from the gadget branch
 run the selected verification profile
 recheck freshness
 dry-run or push HEAD:main
-sync repository agent lanes
+sync repository agent lanes unless disabled
 print repository status
 ```
+
+Repository agent lane sync can be skipped:
+
+```bat
+forks.bat gadget-promote lambdascript core --no-repository-agent-sync
+```
+
+Targeted JSON patches can also control the same step:
+
+```json
+{
+  "target": {
+    "kind": "gadget",
+    "gizmo": "lambdascript",
+    "gadget": "core",
+    "promote": true,
+    "sync": false,
+    "repository_sync": false
+  }
+}
+```
+
+`sync` controls gadget-agent lane normalization after promotion. `repository_sync` controls repository-level agent lane synchronization after pushing `main`. They are deliberately separate because repository agent synchronization is often the slowest fan-out step.
 
 This keeps development and promotion separate: ordinary work lands first to the gadget branch; only a verified promotion advances repository `main`.
