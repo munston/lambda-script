@@ -1,10 +1,8 @@
 # Image Metrics
 
-TypeScript image metric command surface backed by a native C++ byte-processing bridge.
+TypeScript command surface backed by a native C++ byte-processing bridge.
 
-This package replaces the previous Python operator path. It builds a small C++ executable and calls it from TypeScript. If no C++ compiler is available, the TypeScript portable byte backend remains available so the package can still build and run smoke tests.
-
-## Build
+This is the non-Python image analyzer path. The package builds `native/image_metrics_ffi.cpp` into `bin/image_metrics_ffi.exe` and calls it from TypeScript. If a C++ compiler is unavailable, the TypeScript byte fallback remains available.
 
 ```bat
 cd tools\image_metrics
@@ -13,34 +11,11 @@ npm run build
 npm test
 ```
 
-The native backend is compiled from:
-
-```text
-native/image_metrics_ffi.cpp
-```
-
-and written to:
-
-```text
-bin/image_metrics_ffi.exe
-```
-
-## Analyze
+Repository-root use:
 
 ```bat
-cd tools\image_metrics
-npm run image-metrics -- analyze synthetic://demo --out runs\analyze
+image-metrics.bat analyze synthetic://demo --out runs\image-analyze
+image-metrics.bat image-parametric-demo --out runs\image-parametric-demo synthetic://a synthetic://b
 ```
 
-For a real file, pass the file path. The current native bridge uses byte-level analysis and synthetic fixtures; it does not yet decode PNG pixels through stb/libpng.
-
-## Parametric adaptation
-
-```bat
-cd tools\image_metrics
-npm run image-metrics -- image-parametric-demo --out runs\image-parametric-demo synthetic://a synthetic://b
-```
-
-This runs stochastic metric adaptation over analyzer-derived feature vectors using the TypeScript parametric trainer and the C++ image metric bridge.
-
-This is not Python. It is TypeScript orchestration plus a native C++ processing executable.
+The current native bridge uses byte-level analysis and synthetic fixtures. A later stride should replace the byte bridge with decoded pixel buffers through the supported C ABI.

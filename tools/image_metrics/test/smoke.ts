@@ -1,21 +1,19 @@
 declare const require: any;
+declare const process: any;
+declare const __dirname: string;
 const fs = require('fs');
 const path = require('path');
 const cp = require('child_process');
-
 const root = path.resolve(__dirname, '..', '..');
-
 function run(args: string[]): void {
   const proc = cp.spawnSync(process.execPath, args, { cwd: root, encoding: 'utf-8' });
   process.stdout.write(proc.stdout || '');
   process.stderr.write(proc.stderr || '');
   if (proc.status !== 0) throw new Error(`command failed: ${args.join(' ')}`);
 }
-
 function assertFile(p: string): void {
   if (!fs.existsSync(p) || fs.statSync(p).size <= 0) throw new Error(`missing or empty file: ${p}`);
 }
-
 const out = path.join(root, 'runs', 'smoke-image-metrics');
 fs.rmSync(out, { recursive: true, force: true });
 run(['dist/src/cli.js', 'version']);
