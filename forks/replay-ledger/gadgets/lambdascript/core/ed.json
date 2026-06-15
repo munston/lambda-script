@@ -300,15 +300,48 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Audit gadget replay materialisation during amalgamation"
+    },
+    {
+      "agent": "ed",
+      "created_at": "2026-06-15T23:36:54.849785+00:00",
+      "file_count": 2,
+      "file_fingerprints": [
+        {
+          "content_length": 27740,
+          "content_sha256": "d344a2d72c303ae932d8f58f3eeaeae49b73c9d79b8fba26bf6f66f3ee3e7845",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/amalgamate_all.py"
+        },
+        {
+          "content_length": 2999,
+          "content_sha256": "4bb44328d6a73c6b98c4ad0c7fcc581dba9666de9aa4f7ca107d8ed46a93efce",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/README.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "e7a0826f006cfbc4c8d752e253749656c403c27798cf75b536c09d6e57cb22ce",
+      "payload_path": "forks/replay-ledger/payloads/e7/e7a0826f006cfbc4c8d752e253749656c403c27798cf75b536c09d6e57cb22ce.json",
+      "sequence": 9,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Fix gadget replay audit for superseded files"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 9,
+  "next_sequence": 10,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-15T23:29:05.067142+00:00"
+  "updated_at": "2026-06-15T23:36:54.849799+00:00"
 }

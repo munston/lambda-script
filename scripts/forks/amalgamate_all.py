@@ -309,8 +309,22 @@ def gadget_ledger_path(gizmo: str, gadget: str, agent: str) -> str:
 
 
 def audit_gadget_replay_materialisation(root: Path, gizmo: str, gadget: str, agents: list[str], *, require_ledgers: bool) -> None:
+    """Audit replay materialisation without treating superseded history as failure.
+
+    Replay ledgers are historical. A file may be updated by several later replay
+    entries, so an old entry's file hash is not expected to equal the final branch
+    content. The audit therefore checks two different invariants:
+
+    1. Every ledger entry still has its payload object.
+    2. For each materialised file path, the final branch content matches the
+       latest non-delete replay fingerprint touching that path across the selected
+       agents' ledgers.
+    """
     base_ref = gadget_base_ref(gizmo, gadget)
     errors: list[str] = []
+    latest_by_path: dict[str, dict[str, Any]] = {}
+    order = 0
+
     print(f"gadget replay materialisation audit for {gizmo}/{gadget} at {forks.short_commit(root, base_ref)}")
     for agent in agents:
         ledger_path = gadget_ledger_path(gizmo, gadget, agent)
@@ -326,6 +340,7 @@ def audit_gadget_replay_materialisation(root: Path, gizmo: str, gadget: str, age
         except json.JSONDecodeError as exc:
             errors.append(f"{agent}: invalid ledger JSON: {exc}")
             continue
+
         entries = list(ledger.get("entries", []))
         print(f"{agent}: ledger entries={len(entries)} path={ledger_path}")
         for entry in entries:
@@ -336,32 +351,55 @@ def audit_gadget_replay_materialisation(root: Path, gizmo: str, gadget: str, age
                 errors.append(f"{agent}#{seq}: missing payload_path")
             elif read_text_at_ref(root, base_ref, payload_path) is None:
                 errors.append(f"{agent}#{seq}: payload missing at {payload_path}")
+
             file_count = 0
             for fp in entry.get("file_fingerprints", []):
                 file_count += 1
                 path = fp.get("path")
-                op = fp.get("op", "upsert")
-                expected = fp.get("content_sha256")
                 if not isinstance(path, str) or not path:
                     errors.append(f"{agent}#{seq}: malformed file fingerprint path")
                     continue
-                content = read_text_at_ref(root, base_ref, path)
-                if op in {"delete", "remove"}:
-                    if content is not None:
-                        errors.append(f"{agent}#{seq}: expected deletion but file exists: {path}")
-                    continue
-                if content is None:
-                    errors.append(f"{agent}#{seq}: materialised file missing: {path}")
-                    continue
-                if expected:
-                    actual = hashlib.sha256(content.encode("utf-8")).hexdigest()
-                    if actual != expected:
-                        errors.append(f"{agent}#{seq}: materialised file hash mismatch: {path} expected={expected} actual={actual}")
+                order += 1
+                latest_by_path[path] = {
+                    "order": order,
+                    "agent": agent,
+                    "sequence": seq,
+                    "title": title,
+                    "path": path,
+                    "op": fp.get("op", "upsert"),
+                    "content_sha256": fp.get("content_sha256"),
+                    "content_length": fp.get("content_length"),
+                }
             print(f"  #{seq}: files={file_count} title={title}")
+
+    if errors:
+        raise RuntimeError("gadget replay materialisation audit failed\n" + "\n".join(errors))
+
+    print(f"checking final materialisation for {len(latest_by_path)} replay-touched path(s)")
+    for path, info in sorted(latest_by_path.items()):
+        op = info.get("op", "upsert")
+        content = read_text_at_ref(root, base_ref, path)
+        label = f"{info.get('agent')}#{info.get('sequence')}: {path}"
+        if op in {"delete", "remove"}:
+            if content is not None:
+                errors.append(f"{label}: expected latest operation to delete file, but it exists")
+            else:
+                print(f"  ok deleted {label}")
+            continue
+        if content is None:
+            errors.append(f"{label}: latest replay-touched file missing")
+            continue
+        expected = info.get("content_sha256")
+        if expected:
+            actual = hashlib.sha256(content.encode("utf-8")).hexdigest()
+            if actual != expected:
+                errors.append(f"{label}: final file hash mismatch expected={expected} actual={actual}")
+                continue
+        print(f"  ok {label}")
+
     if errors:
         raise RuntimeError("gadget replay materialisation audit failed\n" + "\n".join(errors))
     print("ok gadget replay materialisation audit passed")
-
 
 def gadget_submission_dir(root: Path) -> Path:
     path = root / forks.FORKS_DIR / "gadget-submissions"

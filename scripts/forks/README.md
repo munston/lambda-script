@@ -42,7 +42,7 @@ Apply:
 forks.bat amalgamate-all --gadget lambdascript core --apply
 ```
 
-Gadget mode now begins with a non-destructive replay-materialisation audit. The audit reads each selected agent's gadget replay ledger from the gadget integration branch, checks that the payload object exists, and verifies that every recorded file fingerprint is present on the integration branch.
+Gadget mode now begins with a non-destructive replay-materialisation audit. The audit reads each selected agent's gadget replay ledger from the gadget integration branch, checks that every payload object exists, and verifies final materialisation using last-writer-wins semantics: historical entries may be superseded, so final file content is checked against the latest replay fingerprint touching each path.
 
 The audit prints each replay entry before any lane is rewound:
 
@@ -57,7 +57,7 @@ eddy: ledger entries=...
 ok gadget replay materialisation audit passed
 ```
 
-Use this before accepting claims that a patch was or was not applied. If a replay-ledger entry exists but the corresponding file content is not materialised on the gadget branch, `amalgamate-all` fails before destructive lane sync.
+Use this before accepting claims that a patch was or was not applied. If a replay-ledger payload is missing, or if the final branch content does not match the latest replay fingerprint for a touched path, `amalgamate-all` fails before destructive lane sync.
 
 Optional stricter mode:
 
