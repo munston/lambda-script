@@ -1,0 +1,41 @@
+{
+  "agent": "eddy",
+  "created_at": "2026-06-15T21:12:22.020175+00:00",
+  "entries": [
+    {
+      "agent": "eddy",
+      "created_at": "2026-06-15T21:12:22.020194+00:00",
+      "file_count": 1,
+      "file_fingerprints": [
+        {
+          "content_length": 8664,
+          "content_sha256": "5d96f634c8702989ec311336fb472ffb53c0630824cce300a40050ba6f99bbed",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "docs/core/C1_BACKEND_COVERAGE.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "a6ff4f5cc605f3e845f66c13f7c0c152af7208f12b31bd83b9963d1dd581c234",
+      "payload_path": "forks/replay-ledger/payloads/a6/a6ff4f5cc605f3e845f66c13f7c0c152af7208f12b31bd83b9963d1dd581c234.json",
+      "sequence": 1,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Add C1 backend coverage inventory"
+    }
+  ],
+  "format": "LS_FORK_REPLAY_LEDGER_V1",
+  "next_sequence": 2,
+  "target": {
+    "gadget": "core",
+    "gizmo": "lambdascript",
+    "kind": "gadget",
+    "target_ref": "origin/gadgets/lambdascript/core/main"
+  },
+  "updated_at": "2026-06-15T21:12:22.020198+00:00"
+}
