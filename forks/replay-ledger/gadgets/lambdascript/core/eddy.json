@@ -100,15 +100,55 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Make backend unsupported expressions fail clearly"
+    },
+    {
+      "agent": "eddy",
+      "created_at": "2026-06-15T23:40:51.583582+00:00",
+      "file_count": 3,
+      "file_fingerprints": [
+        {
+          "content_length": 4350,
+          "content_sha256": "30288f7b1775cb8683efda4fa8203676a5e20fc9c373c848d5cf9bc0d30f51a1",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/src/codegen/haskell.ts"
+        },
+        {
+          "content_length": 6990,
+          "content_sha256": "57982137bb34a341d87569e7ea46044fe915021b180402fcfdc71d89e520f797",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/test/smoke.ts"
+        },
+        {
+          "content_length": 1646,
+          "content_sha256": "22eb3b8f7e6b8f9b40c4cd5384dd86087b2fee1f1e5e8fc099efa49445107f1e",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "docs/agents/eddy/Y2_P3_NEXT_PLAN.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "d1a3ee74cd0f74efedecfddca0b5606aee4774d49b656d8ca28b5e7752773d26",
+      "payload_path": "forks/replay-ledger/payloads/d1/d1a3ee74cd0f74efedecfddca0b5606aee4774d49b656d8ca28b5e7752773d26.json",
+      "sequence": 4,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Fix Haskell not-equal backend parity"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 4,
+  "next_sequence": 5,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-15T23:03:54.769038+00:00"
+  "updated_at": "2026-06-15T23:40:51.583596+00:00"
 }

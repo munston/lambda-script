@@ -80,6 +80,24 @@ function checkUnsupportedBackendErrors() {
   );
 }
 
+function checkHaskellNotEqualEmission() {
+  const source = `module Compare
+
+is_not : i32 -> i32 -> bool
+is_not x y = x != y
+`;
+  const pr = parse(source, 'not-equal.ls');
+  assert.strictEqual(pr.diagnostics.length, 0, 'not-equal should parse');
+  const c = checkProgram(pr.program!);
+  assert.strictEqual(c.diagnostics.length, 0, `not-equal should check, got ${c.diagnostics.map(d => d.message).join('; ')}`);
+
+  const ts = emitTypeScript(pr.program!);
+  const hs = emitHaskell(pr.program!);
+  assert.ok(ts.includes('return (x != y);'), 'TypeScript should preserve LambdaScript != as target-valid !=');
+  assert.ok(hs.includes('is_not x y = (x /= y)'), 'Haskell should emit LambdaScript != as /=');
+  assert.ok(!hs.includes('!='), 'Haskell output should not contain raw !=');
+}
+
 function main() {
   const fixtures: FixtureExpectation[] = [
     {
@@ -115,16 +133,55 @@ function main() {
   ];
   for (const fixture of fixtures) checkFixture(fixture);
   checkUnsupportedBackendErrors();
+  checkHaskellNotEqualEmission();
 
-  checkFails('unknown-variable', `module Bad\n\nf : i32 -> i32\nf x = y\n`, 'Unknown identifier: y');
-  checkFails('wrong-arity', `module Bad\n\nadd : i32 -> i32 -> i32\nadd x y = x + y\nz = add(1)\n`, 'Wrong argument count for add');
-  checkFails('wrong-argument-type', `module Bad\n\nadd : i32 -> i32 -> i32\nadd x y = x + y\nz = add(true, 1)\n`, 'Argument 1 for add has type bool, expected i32');
-  checkFails('if-condition-type', `module Bad\n\nf : i32 -> i32\nf x = if x then 1 else 2\n`, 'If condition has type i32, expected bool');
-  checkFails('if-branch-type', `module Bad\n\nf : i32 -> i32\nf x = if x < 1 then 1 else false\n`, 'If branches have different types: i32 and bool');
-  checkFails('return-type', `module Bad\n\nf : i32 -> i32\nf x = false\n`, 'Function f returns bool, expected i32');
-  checkFails('binary-type', `module Bad\n\nf : bool -> bool\nf x = x + true\n`, 'Operator + expects numeric operands');
-  parseFails('dangling-signature', `module Bad\n\nf : i32 -> i32\n`, 'Dangling type signature for f');
-  parseFails('duplicate-signature', `module Bad\n\nf : i32 -> i32\nf : i32 -> i32\nf x = x\n`, 'Duplicate type signature for f');
+  checkFails('unknown-variable', `module Bad
+
+f : i32 -> i32
+f x = y
+`, 'Unknown identifier: y');
+  checkFails('wrong-arity', `module Bad
+
+add : i32 -> i32 -> i32
+add x y = x + y
+z = add(1)
+`, 'Wrong argument count for add');
+  checkFails('wrong-argument-type', `module Bad
+
+add : i32 -> i32 -> i32
+add x y = x + y
+z = add(true, 1)
+`, 'Argument 1 for add has type bool, expected i32');
+  checkFails('if-condition-type', `module Bad
+
+f : i32 -> i32
+f x = if x then 1 else 2
+`, 'If condition has type i32, expected bool');
+  checkFails('if-branch-type', `module Bad
+
+f : i32 -> i32
+f x = if x < 1 then 1 else false
+`, 'If branches have different types: i32 and bool');
+  checkFails('return-type', `module Bad
+
+f : i32 -> i32
+f x = false
+`, 'Function f returns bool, expected i32');
+  checkFails('binary-type', `module Bad
+
+f : bool -> bool
+f x = x + true
+`, 'Operator + expects numeric operands');
+  parseFails('dangling-signature', `module Bad
+
+f : i32 -> i32
+`, 'Dangling type signature for f');
+  parseFails('duplicate-signature', `module Bad
+
+f : i32 -> i32
+f : i32 -> i32
+f x = x
+`, 'Duplicate type signature for f');
   console.log('Smoke test passed');
 }
 
