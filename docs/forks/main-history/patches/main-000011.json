@@ -1,0 +1,30 @@
+{
+  "agent": "system",
+  "base_commit": "361fe935869f5401e2e9da0cdbf09fe0eea0c3b9",
+  "base_ref": "origin/main",
+  "changed_files": [
+    {
+      "path": "tools/image_metrics/docs/stochastic-update-diagnostics.md",
+      "status": "A"
+    },
+    {
+      "path": "tools/image_metrics/native/image_metrics_ffi.cpp",
+      "status": "M"
+    }
+  ],
+  "created_at": "2026-06-15T07:52:13.618836+00:00",
+  "format": "LS_MAIN_HISTORY_V1",
+  "kind": "gadget_promotion",
+  "metadata": {
+    "gadget": "image-metrics",
+    "gizmo": "metrics",
+    "promoted_commits": 1,
+    "target_ref": "origin/gadgets/metrics/image-metrics/main"
+  },
+  "number": 11,
+  "source_head_before_receipt": "a87cf6f341e49689bd9a363af0f66d6fdf54330d",
+  "source_ref": "origin/gadgets/metrics/image-metrics/main",
+  "source_tree_before_receipt": "952d6c68f9aeaaeadbcd712f064ed590148289aa",
+  "title": "Promote metrics/image-metrics",
+  "version": "main-000011"
+}
