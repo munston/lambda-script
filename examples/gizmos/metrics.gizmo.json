@@ -4,27 +4,29 @@
   "description": "Development gizmo for image and text metric processors, with LambdaScript tooling imported as a protected toolchain.",
   "gadgets": {
     "image-metrics": {
-      "root": "tools/milk_metrics",
-      "language": "python",
+      "root": "tools/image_metrics",
+      "language": "typescript+c++",
       "target_ref": "origin/gadgets/metrics/image-metrics/main",
       "integration_branch": "gadgets/metrics/image-metrics/main",
       "agent_branch_template": "gadget-agents/metrics/image-metrics/{agent}",
       "owned_paths": [
-        "tools/milk_metrics/",
+        "tools/image_metrics/",
+        "image-metrics.bat",
         "examples/gizmos/metrics.gizmo.json"
       ],
       "verification_profiles": {
         "quick": [
-          "python -m compileall -q tools/milk_metrics/milk_metrics"
+          "cd tools/image_metrics && npm install",
+          "cd tools/image_metrics && npm run build"
         ],
         "full": [
-          "python tools/milk_metrics/test/smoke.py"
+          "cd tools/image_metrics && npm install",
+          "cd tools/image_metrics && npm test"
         ]
       },
       "commands": {
-        "analyze": "python -m milk_metrics.cli analyze {image} --out {out}",
-        "penalty-mask": "python -m milk_metrics.cli penalty-mask {image} --out {out}",
-        "restore": "python -m milk_metrics.cli restore {image} --out {out}"
+        "analyze": "image-metrics.bat analyze {image} --out {out}",
+        "image-parametric-demo": "image-metrics.bat image-parametric-demo --out {out} {images}"
       }
     },
     "text-metrics": {
@@ -74,13 +76,12 @@
       "via": "declared-artifacts",
       "allowed_reads": [
         "report.json",
-        "penalty_report.json",
-        "bundle_report.json",
-        "bundle_manifest.json"
+        "feature_fixture.json",
+        "image_parametric_report.json"
       ],
       "allowed_commands": [
         "analyze",
-        "penalty-mask"
+        "image-parametric-demo"
       ]
     }
   ]

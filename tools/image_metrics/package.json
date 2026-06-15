@@ -1,0 +1,16 @@
+{
+  "name": "lambda-image-metrics",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "build:native": "node scripts/build-native.js",
+    "build:ts": "node ./node_modules/typescript/bin/tsc -p tsconfig.json",
+    "build": "npm run build:native && npm run build:ts",
+    "test": "npm run build --silent && node dist/test/smoke.js",
+    "image-metrics": "npm run build --silent && node dist/src/cli.js"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
