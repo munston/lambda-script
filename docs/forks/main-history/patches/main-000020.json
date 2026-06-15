@@ -1,0 +1,42 @@
+{
+  "agent": "system",
+  "base_commit": "43729a454dba461c39e6b5ee26efbac11d2bd2bf",
+  "base_ref": "origin/main",
+  "changed_files": [
+    {
+      "path": "docs/agents/eddy/Y6_P1_NEXT_PLAN.md",
+      "status": "A"
+    },
+    {
+      "path": "forks/replay-ledger/gadgets/lambdascript/core/eddy.json",
+      "status": "M"
+    },
+    {
+      "path": "forks/replay-ledger/payloads/89/89c7e74fca6eb00afbf6cb40b875b745457bb8a07bcb18cdd9bae70ce9d023c6.json",
+      "status": "A"
+    },
+    {
+      "path": "glc/src/codegen/haskell.ts",
+      "status": "M"
+    },
+    {
+      "path": "glc/test/smoke.ts",
+      "status": "M"
+    }
+  ],
+  "created_at": "2026-06-15T23:54:54.794047+00:00",
+  "format": "LS_MAIN_HISTORY_V1",
+  "kind": "gadget_promotion",
+  "metadata": {
+    "gadget": "core",
+    "gizmo": "lambdascript",
+    "promoted_commits": 1,
+    "target_ref": "origin/gadgets/lambdascript/core/main"
+  },
+  "number": 20,
+  "source_head_before_receipt": "3e2c98a466f0236328a04143e3a711ebcdd7007b",
+  "source_ref": "origin/gadgets/lambdascript/core/main",
+  "source_tree_before_receipt": "9fea215930a466baa84feff174b010d3db4631f7",
+  "title": "Promote lambdascript/core",
+  "version": "main-000020"
+}
