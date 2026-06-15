@@ -12,6 +12,7 @@ if not exist "scripts\forks\forks.py" (
 if /I "%~1"=="import-json" goto import_json
 if /I "%~1"=="land-json" goto land_json
 if /I "%~1"=="land-json-file" goto land_json_file
+if /I "%~1"=="replay-plan" goto replay_plan
 if /I "%~1"=="ensure-node-toolchains" goto ensure_node_toolchains
 if /I "%~1"=="gadget-init" goto gadget_init
 if /I "%~1"=="gadget-status" goto gadget_status
@@ -49,6 +50,11 @@ exit /b %errorlevel%
 :land_json_file
 shift
 python scripts\forks\land_json_patch.py --require-file %1 %2 %3 %4 %5 %6 %7 %8 %9
+exit /b %errorlevel%
+
+:replay_plan
+shift
+python scripts\forks\replay_plan.py %1 %2 %3 %4 %5 %6 %7 %8 %9
 exit /b %errorlevel%
 
 :ensure_node_toolchains
