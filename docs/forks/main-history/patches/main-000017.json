@@ -1,0 +1,62 @@
+{
+  "agent": "system",
+  "base_commit": "b7ae2257d89eb9b7a1869a6859f14c0cb2065ecc",
+  "base_ref": "origin/main",
+  "changed_files": [
+    {
+      "path": "docs/agents/eddy/Y2_P3_NEXT_PLAN.md",
+      "status": "A"
+    },
+    {
+      "path": "forks/replay-ledger/gadgets/lambdascript/core/ed.json",
+      "status": "M"
+    },
+    {
+      "path": "forks/replay-ledger/gadgets/lambdascript/core/eddy.json",
+      "status": "M"
+    },
+    {
+      "path": "forks/replay-ledger/payloads/6d/6d77d3d02dcf5f43ebe1d0e690e962907faafa94ffb27b6e0a34bfc7f4d29606.json",
+      "status": "A"
+    },
+    {
+      "path": "forks/replay-ledger/payloads/d1/d1a3ee74cd0f74efedecfddca0b5606aee4774d49b656d8ca28b5e7752773d26.json",
+      "status": "A"
+    },
+    {
+      "path": "forks/replay-ledger/payloads/e7/e7a0826f006cfbc4c8d752e253749656c403c27798cf75b536c09d6e57cb22ce.json",
+      "status": "A"
+    },
+    {
+      "path": "glc/src/codegen/haskell.ts",
+      "status": "M"
+    },
+    {
+      "path": "glc/test/smoke.ts",
+      "status": "M"
+    },
+    {
+      "path": "scripts/forks/README.md",
+      "status": "M"
+    },
+    {
+      "path": "scripts/forks/amalgamate_all.py",
+      "status": "M"
+    }
+  ],
+  "created_at": "2026-06-15T23:41:42.917695+00:00",
+  "format": "LS_MAIN_HISTORY_V1",
+  "kind": "gadget_promotion",
+  "metadata": {
+    "gadget": "core",
+    "gizmo": "lambdascript",
+    "promoted_commits": 3,
+    "target_ref": "origin/gadgets/lambdascript/core/main"
+  },
+  "number": 17,
+  "source_head_before_receipt": "af5bc4f7987a2717e928f11de4b3c92e454b15dd",
+  "source_ref": "origin/gadgets/lambdascript/core/main",
+  "source_tree_before_receipt": "66ffb76f05eca12aae7ec0489d34fc32eb296910",
+  "title": "Promote lambdascript/core",
+  "version": "main-000017"
+}
