@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Dry-run replay synchronizer for Forks replay ledgers."""
+"""Replay synchronizer for Forks replay ledgers."""
 
 from __future__ import annotations
 
@@ -16,17 +16,8 @@ import import_json_patch
 import replay_ledger
 import replay_plan
 
-SYNC_PLAN_FORMAT = "LS_FORK_REPLAY_SYNC_DRY_RUN_V1"
+SYNC_PLAN_FORMAT = "LS_FORK_REPLAY_SYNC_V1"
 WORK_ROOT = "replay-sync"
-
-
-def run(args: list[str], cwd: Path, check: bool = True) -> subprocess.CompletedProcess[str]:
-    proc = subprocess.run(args, cwd=str(cwd), text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    print(proc.stdout, end="")
-    print(proc.stderr, end="", file=sys.stderr)
-    if check and proc.returncode != 0:
-        raise RuntimeError("command failed: " + " ".join(args))
-    return proc
 
 
 def run_shell(command: str, cwd: Path, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -54,6 +45,25 @@ def push_ref_for(ref: str) -> str:
     if ref.startswith("origin/"):
         return ref[len("origin/"):]
     return ref
+
+
+def remote_refname(push_ref: str) -> str:
+    return push_ref if push_ref.startswith("refs/heads/") else f"refs/heads/{push_ref}"
+
+
+def lease_tracking_ref(push_ref: str) -> str:
+    branch = push_ref[len("refs/heads/"):] if push_ref.startswith("refs/heads/") else push_ref
+    return f"origin/{branch}"
+
+
+def resolve_expected_push_oid(root: Path, ref: str) -> str:
+    push_ref = push_ref_for(ref)
+    tracking = lease_tracking_ref(push_ref)
+    if forks.ref_exists(root, tracking):
+        return forks.commit(root, tracking)
+    if forks.ref_exists(root, ref):
+        return forks.commit(root, ref)
+    raise RuntimeError(f"cannot resolve expected push commit for {ref}")
 
 
 def load_branch_ledger(root: Path, ref: str, path: str) -> dict[str, Any]:
@@ -101,7 +111,42 @@ def pending_entries_for_ledger(root: Path, ref: str, ledger_row: dict[str, Any])
     return entries[prefix:]
 
 
-def replay_ref(root: Path, row: dict[str, Any], verify_command: str | None) -> dict[str, Any]:
+def push_replayed_ref(root: Path, work: Path, ref: str, expected_oid: str) -> dict[str, Any]:
+    push_ref = push_ref_for(ref)
+    remote_ref = remote_refname(push_ref)
+    tracking = lease_tracking_ref(push_ref)
+    forks.git(["fetch", "--prune", "origin"], root)
+    current_oid = forks.commit(root, tracking) if forks.ref_exists(root, tracking) else None
+    if current_oid != expected_oid:
+        return {
+            "push_ref": push_ref,
+            "remote_ref": remote_ref,
+            "expected_oid": expected_oid,
+            "current_oid": current_oid,
+            "exit_code": 1,
+            "ok": False,
+            "fresh": False,
+            "error": "remote ref changed before push",
+        }
+    proc = forks.git(
+        ["push", f"--force-with-lease={remote_ref}:{expected_oid}", "origin", f"HEAD:{remote_ref}"],
+        work,
+        check=False,
+    )
+    return {
+        "push_ref": push_ref,
+        "remote_ref": remote_ref,
+        "expected_oid": expected_oid,
+        "current_oid": current_oid,
+        "exit_code": proc.returncode,
+        "ok": proc.returncode == 0,
+        "fresh": True,
+        "stdout_tail": proc.stdout[-4000:],
+        "stderr_tail": proc.stderr[-4000:],
+    }
+
+
+def replay_ref(root: Path, row: dict[str, Any], verify_command: str | None, apply: bool) -> dict[str, Any]:
     ref = row["ref"]
     if not row.get("safe_for_destructive_replay", False):
         return {
@@ -111,6 +156,7 @@ def replay_ref(root: Path, row: dict[str, Any], verify_command: str | None) -> d
             "classification": row.get("classification"),
         }
 
+    expected_oid = resolve_expected_push_oid(root, ref)
     work = worktree_path(root, ref)
     remove_worktree(root, work)
     forks.git(["worktree", "add", "--detach", str(work), forks.MAIN_REF], root)
@@ -149,6 +195,7 @@ def replay_ref(root: Path, row: dict[str, Any], verify_command: str | None) -> d
                     "ref": ref,
                     "status": "verification-failed",
                     "classification": row.get("classification"),
+                    "expected_oid": expected_oid,
                     "applied": applied,
                     "verify": verify,
                 }
@@ -156,13 +203,14 @@ def replay_ref(root: Path, row: dict[str, Any], verify_command: str | None) -> d
         ahead, behind = forks.ahead_behind(work, "HEAD", forks.MAIN_REF)
         snapshot = forks.compact_snapshot(work, "HEAD")
         changed = forks.changed_files(work, "HEAD", forks.MAIN_REF)
-        return {
+        result = {
             "ref": ref,
             "status": "planned",
             "classification": row.get("classification"),
             "base": forks.MAIN_REF,
-            "would_push": False,
+            "would_push": apply,
             "push_ref": push_ref_for(ref),
+            "expected_oid": expected_oid,
             "worktree": str(work),
             "applied_count": len(applied),
             "applied": applied,
@@ -172,11 +220,17 @@ def replay_ref(root: Path, row: dict[str, Any], verify_command: str | None) -> d
             "changed_files": changed,
             "verify": verify,
         }
+        if apply:
+            push = push_replayed_ref(root, work, ref, expected_oid)
+            result["push"] = push
+            result["status"] = "applied" if push["ok"] else "push-failed"
+        return result
     except Exception as exc:
         return {
             "ref": ref,
             "status": "failed",
             "classification": row.get("classification"),
+            "expected_oid": expected_oid,
             "applied": applied,
             "error": str(exc),
         }
@@ -201,11 +255,12 @@ def build_sync_plan(args: argparse.Namespace) -> dict[str, Any]:
             continue
         if row.get("classification") == "no-ledger" and not args.include_empty:
             continue
-        rows.append(replay_ref(root, row, args.verify_command))
+        rows.append(replay_ref(root, row, args.verify_command, args.apply))
     return {
         "format": SYNC_PLAN_FORMAT,
         "created_at": forks.now_iso(),
-        "dry_run": True,
+        "dry_run": not args.apply,
+        "apply": args.apply,
         "main": base_plan["main"],
         "ref_count": len(rows),
         "refs": rows,
@@ -214,13 +269,20 @@ def build_sync_plan(args: argparse.Namespace) -> dict[str, Any]:
 
 def print_text(plan: dict[str, Any]) -> None:
     main = plan["main"]
-    print(f"main {main['commit'][:12]} tree {main['tree']} manifest {main['manifest_hash']}")
+    mode = "apply" if plan.get("apply") else "dry-run"
+    print(f"{mode} main {main['commit'][:12]} tree {main['tree']} manifest {main['manifest_hash']}")
     for row in plan["refs"]:
         print(f"{row.get('ref')}: {row.get('status')} classification={row.get('classification')}")
-        if row.get("status") == "planned":
+        if row.get("status") in {"planned", "applied", "push-failed"}:
             print(f"  applied={row.get('applied_count')} ahead={row.get('ahead')} behind={row.get('behind')} push_ref={row.get('push_ref')}")
+            print(f"  expected={str(row.get('expected_oid', ''))[:12]}")
             for item in row.get("applied", []):
                 print(f"  replay #{item.get('sequence')} {str(item.get('json_patch_sha256', ''))[:12]} {item.get('title', '')}")
+            if row.get("push"):
+                push = row["push"]
+                print(f"  push exit={push.get('exit_code')} ok={push.get('ok')} fresh={push.get('fresh')} remote_ref={push.get('remote_ref')}")
+                if push.get("error"):
+                    print(f"  push error: {push.get('error')}")
         if row.get("status") in {"failed", "verification-failed", "skipped"} and row.get("reason"):
             print(f"  reason: {row.get('reason')}")
         if row.get("error"):
@@ -228,8 +290,8 @@ def print_text(plan: dict[str, Any]) -> None:
 
 
 def cmd_sync(args: argparse.Namespace) -> int:
-    if not args.dry_run:
-        raise RuntimeError("replay-sync currently supports --dry-run only")
+    if args.apply and not args.verify_command:
+        raise RuntimeError("--apply requires --verify-command")
     plan = build_sync_plan(args)
     if args.output:
         out = Path(args.output)
@@ -240,20 +302,23 @@ def cmd_sync(args: argparse.Namespace) -> int:
         print(json.dumps(plan, indent=2, sort_keys=True))
     else:
         print_text(plan)
-    bad = [row for row in plan["refs"] if row.get("status") in {"failed", "verification-failed"}]
+    bad_status = {"failed", "verification-failed", "push-failed"}
+    bad = [row for row in plan["refs"] if row.get("status") in bad_status]
     return 1 if bad and args.fail_failed else 0
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="forks replay-sync")
-    parser.add_argument("ref", nargs="*", help="specific refs to dry-run; defaults to agents, gadgets, and gadget-agent refs")
-    parser.add_argument("--dry-run", action="store_true", help="required; build replay candidate worktrees without pushing")
+    parser.add_argument("ref", nargs="*", help="specific refs to replay; defaults to agents, gadgets, and gadget-agent refs")
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--dry-run", action="store_true", help="build replay candidate worktrees without pushing")
+    mode.add_argument("--apply", action="store_true", help="verify, rebuild, and push replayable refs using force-with-lease")
     parser.add_argument("--json", action="store_true", help="emit full JSON sync plan")
     parser.add_argument("--output", help="write JSON sync plan to this file")
     parser.add_argument("--include-empty", action="store_true", help="include refs with no replay ledger")
     parser.add_argument("--only-replay-needed", action="store_true", help="skip refs that have no pending replay entries")
-    parser.add_argument("--verify-command", help="optional command to run inside each replay worktree")
-    parser.add_argument("--fail-failed", action="store_true", help="exit nonzero if any dry-run replay failed")
+    parser.add_argument("--verify-command", help="command to run inside each replay worktree before apply")
+    parser.add_argument("--fail-failed", action="store_true", help="exit nonzero if any replay failed")
     return parser
 
 

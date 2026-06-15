@@ -1,0 +1,76 @@
+{
+  "agent": "ed",
+  "created_at": "2026-06-15T10:02:28.580168+00:00",
+  "entries": [
+    {
+      "agent": "ed",
+      "created_at": "2026-06-15T10:02:28.580184+00:00",
+      "file_count": 6,
+      "file_fingerprints": [
+        {
+          "content_length": 13400,
+          "content_sha256": "3f553cd8f474a6fb4157144599a3f39800e84c938c0b4db6df457cca1e644257",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/replay_sync.py"
+        },
+        {
+          "content_length": 480,
+          "content_sha256": "3ca6666f6e2fbfb5fa4f575094246fd9b766627c3ef9e5cfb1c48d0041fa6803",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "ed-sync-all.bat"
+        },
+        {
+          "content_length": 480,
+          "content_sha256": "3ca6666f6e2fbfb5fa4f575094246fd9b766627c3ef9e5cfb1c48d0041fa6803",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "edd-sync-all.bat"
+        },
+        {
+          "content_length": 480,
+          "content_sha256": "3ca6666f6e2fbfb5fa4f575094246fd9b766627c3ef9e5cfb1c48d0041fa6803",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "eddy-sync-all.bat"
+        },
+        {
+          "content_length": 480,
+          "content_sha256": "3ca6666f6e2fbfb5fa4f575094246fd9b766627c3ef9e5cfb1c48d0041fa6803",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "guy-sync-all.bat"
+        },
+        {
+          "content_length": 2117,
+          "content_sha256": "9a1b6ea553d7e6871fa78d87d744d49dee9a0182212227e3f56ddb6596178406",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "examples/gizmos/lambdascript.gizmo.json"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "9391c5b3f6ecc24526b72b2e108ea5636c3c3dc9e4b1d9200357ca3f58f4ba11",
+      "payload_path": "forks/replay-ledger/payloads/93/9391c5b3f6ecc24526b72b2e108ea5636c3c3dc9e4b1d9200357ca3f58f4ba11.json",
+      "sequence": 1,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Add guarded replay-sync apply mode and sync buttons"
+    }
+  ],
+  "format": "LS_FORK_REPLAY_LEDGER_V1",
+  "next_sequence": 2,
+  "target": {
+    "gadget": "core",
+    "gizmo": "lambdascript",
+    "kind": "gadget",
+    "target_ref": "origin/gadgets/lambdascript/core/main"
+  },
+  "updated_at": "2026-06-15T10:02:28.580188+00:00"
+}
