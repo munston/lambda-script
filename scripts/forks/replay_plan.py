@@ -40,6 +40,17 @@ def ref_exists(root: Path, ref: str) -> bool:
     return forks.ref_exists(root, ref)
 
 
+def is_replay_ledger_path(path: str) -> bool:
+    if not path.endswith(".json"):
+        return False
+    if path.startswith(f"{replay_ledger.PAYLOAD_ROOT}/"):
+        return False
+    return (
+        path.startswith(f"{replay_ledger.LEDGER_ROOT}/gadgets/")
+        or path.startswith(f"{replay_ledger.LEDGER_ROOT}/refs/")
+    )
+
+
 def list_candidate_refs(root: Path) -> list[str]:
     text = git_text(
         root,
@@ -75,7 +86,7 @@ def list_ledger_paths(root: Path, ref: str) -> list[str]:
     if not ref_exists(root, ref):
         return []
     text = git_text(root, ["ls-tree", "-r", "--name-only", ref, replay_ledger.LEDGER_ROOT])
-    return sorted(line for line in text.splitlines() if line.endswith(".json"))
+    return sorted(line for line in text.splitlines() if is_replay_ledger_path(line))
 
 
 def read_json_at_ref(root: Path, ref: str, path: str) -> dict[str, Any] | None:
@@ -104,13 +115,51 @@ def longest_matching_prefix(left: list[dict[str, Any]], right: list[dict[str, An
     return count
 
 
-def entry_summary(entry: dict[str, Any]) -> dict[str, Any]:
+def payload_status(root: Path, ref: str, entry: dict[str, Any]) -> dict[str, Any]:
+    digest = entry.get("json_patch_sha256")
+    if not isinstance(digest, str) or not digest:
+        return {
+            "payload_path": None,
+            "payload_available": False,
+            "payload_valid": False,
+            "payload_error": "missing json_patch_sha256",
+        }
+    path = entry.get("payload_path")
+    if not isinstance(path, str) or not path:
+        path = replay_ledger.payload_relpath(digest)
+    data = read_json_at_ref(root, ref, path)
+    if data is None:
+        return {
+            "payload_path": path,
+            "payload_available": False,
+            "payload_valid": False,
+            "payload_error": "payload object not found at ref",
+        }
+    try:
+        replay_ledger.validate_payload_object(data, digest)
+        return {
+            "payload_path": path,
+            "payload_available": True,
+            "payload_valid": True,
+            "payload_error": None,
+        }
+    except Exception as exc:
+        return {
+            "payload_path": path,
+            "payload_available": True,
+            "payload_valid": False,
+            "payload_error": str(exc),
+        }
+
+
+def entry_summary(root: Path, ref: str, entry: dict[str, Any]) -> dict[str, Any]:
     return {
         "sequence": entry.get("sequence"),
         "title": entry.get("title", ""),
         "json_patch_sha256": entry.get("json_patch_sha256"),
         "file_count": entry.get("file_count", 0),
         "created_at": entry.get("created_at"),
+        **payload_status(root, ref, entry),
     }
 
 
@@ -141,19 +190,26 @@ def compare_ledger(root: Path, ref: str, ledger_path: str) -> dict[str, Any]:
     mismatch_at = None
     if prefix < len(main_entries) and prefix < len(branch_entries):
         mismatch_at = {
-            "main": entry_summary(main_entries[prefix]),
-            "branch": entry_summary(branch_entries[prefix]),
+            "main": entry_summary(root, forks.MAIN_REF, main_entries[prefix]),
+            "branch": entry_summary(root, ref, branch_entries[prefix]),
         }
+    branch_replay_summary = [entry_summary(root, ref, item) for item in branch_replay]
+    main_extra_summary = [entry_summary(root, forks.MAIN_REF, item) for item in main_extra]
+    missing_payloads = [
+        item for item in branch_replay_summary
+        if not item.get("payload_available") or not item.get("payload_valid")
+    ]
     return {
         "path": ledger_path,
         "main": ledger_summary(main_ledger),
         "branch": ledger_summary(branch_ledger),
         "matching_prefix": prefix,
         "mismatch_at": mismatch_at,
-        "branch_entries_to_replay": [entry_summary(item) for item in branch_replay],
-        "main_entries_not_on_branch": [entry_summary(item) for item in main_extra],
+        "branch_entries_to_replay": branch_replay_summary,
+        "main_entries_not_on_branch": main_extra_summary,
         "replay_count": len(branch_replay),
         "main_extra_count": len(main_extra),
+        "missing_or_invalid_payload_count": len(missing_payloads),
     }
 
 
@@ -163,6 +219,8 @@ def classify_replay(row: dict[str, Any]) -> str:
         return "no-ledger"
     if any(item.get("mismatch_at") for item in ledgers):
         return "fingerprint-divergence"
+    if any(item.get("missing_or_invalid_payload_count", 0) > 0 for item in ledgers):
+        return "missing-replay-payload"
     if any(item.get("main_extra_count", 0) > 0 for item in ledgers):
         return "main-has-unseen-ledger-entries"
     if any(item.get("replay_count", 0) > 0 for item in ledgers):
@@ -193,10 +251,12 @@ def plan_ref(root: Path, ref: str) -> dict[str, Any]:
     row["classification"] = classify_replay(row)
     row["total_replay_count"] = sum(item.get("replay_count", 0) for item in ledgers)
     row["total_main_extra_count"] = sum(item.get("main_extra_count", 0) for item in ledgers)
+    row["total_missing_or_invalid_payload_count"] = sum(item.get("missing_or_invalid_payload_count", 0) for item in ledgers)
     row["safe_for_destructive_replay"] = (
         row["classification"] in {"replay-needed", "no-replay-needed"}
         and state in REPLAYABLE_PREFIX_STATES
         and all(item.get("mismatch_at") is None for item in ledgers)
+        and row["total_missing_or_invalid_payload_count"] == 0
     )
     return row
 
@@ -244,13 +304,15 @@ def print_text(plan: dict[str, Any]) -> None:
             f"classification={row['classification']} "
             f"replay={row['total_replay_count']} "
             f"main-extra={row['total_main_extra_count']} "
+            f"missing-payloads={row['total_missing_or_invalid_payload_count']} "
             f"safe={row['safe_for_destructive_replay']}"
         )
         for item in row.get("ledgers", []):
-            if item.get("replay_count") or item.get("main_extra_count") or item.get("mismatch_at"):
+            if item.get("replay_count") or item.get("main_extra_count") or item.get("mismatch_at") or item.get("missing_or_invalid_payload_count"):
                 print(
                     f"  {item['path']}: prefix={item['matching_prefix']} "
-                    f"replay={item['replay_count']} main-extra={item['main_extra_count']}"
+                    f"replay={item['replay_count']} main-extra={item['main_extra_count']} "
+                    f"missing-payloads={item['missing_or_invalid_payload_count']}"
                 )
                 if item.get("mismatch_at"):
                     print("    fingerprint divergence at matching prefix boundary")
@@ -258,7 +320,8 @@ def print_text(plan: dict[str, Any]) -> None:
                     seq = entry.get("sequence")
                     title = entry.get("title", "")
                     digest = str(entry.get("json_patch_sha256", ""))[:12]
-                    print(f"    replay #{seq} {digest} {title}")
+                    payload = "payload-ok" if entry.get("payload_valid") else "payload-missing"
+                    print(f"    replay #{seq} {digest} {payload} {title}")
 
 
 def cmd_plan(args: argparse.Namespace) -> int:

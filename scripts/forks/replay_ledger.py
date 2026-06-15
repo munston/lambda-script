@@ -11,7 +11,9 @@ import forks
 
 LEDGER_FORMAT = "LS_FORK_REPLAY_LEDGER_V1"
 ENTRY_FORMAT = "LS_FORK_REPLAY_LEDGER_ENTRY_V1"
+PAYLOAD_FORMAT = "LS_FORK_REPLAY_PAYLOAD_V1"
 LEDGER_ROOT = "forks/replay-ledger"
+PAYLOAD_ROOT = f"{LEDGER_ROOT}/payloads"
 
 
 def safe_token(raw: str) -> str:
@@ -32,6 +34,13 @@ def canonical_json(value: Any) -> str:
 
 def json_sha256(value: Any) -> str:
     return forks.sha256_text(canonical_json(value))
+
+
+def payload_relpath(json_patch_sha256: str) -> str:
+    digest = safe_token(json_patch_sha256)
+    if len(digest) < 16:
+        raise RuntimeError(f"unsafe payload digest: {json_patch_sha256!r}")
+    return f"{PAYLOAD_ROOT}/{digest[:2]}/{digest}.json"
 
 
 def target_descriptor(payload: dict[str, Any], target_ref: str) -> dict[str, Any]:
@@ -90,6 +99,40 @@ def patch_fingerprint(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def payload_object(payload: dict[str, Any], json_patch_sha256: str) -> dict[str, Any]:
+    return {
+        "format": PAYLOAD_FORMAT,
+        "json_patch_sha256": json_patch_sha256,
+        "created_at": forks.now_iso(),
+        "payload": payload,
+    }
+
+
+def validate_payload_object(data: dict[str, Any], expected_sha: str) -> None:
+    if data.get("format") != PAYLOAD_FORMAT:
+        raise RuntimeError("invalid replay payload format")
+    if data.get("json_patch_sha256") != expected_sha:
+        raise RuntimeError("replay payload digest field mismatch")
+    payload = data.get("payload")
+    if not isinstance(payload, dict):
+        raise RuntimeError("replay payload missing JSON patch payload")
+    actual = json_sha256(payload)
+    if actual != expected_sha:
+        raise RuntimeError(f"replay payload content hash mismatch: expected {expected_sha}, got {actual}")
+
+
+def write_payload_object(work: Path, payload: dict[str, Any], json_patch_sha256: str) -> str:
+    relpath = payload_relpath(json_patch_sha256)
+    path = work / relpath
+    if path.exists():
+        existing = json.loads(path.read_text(encoding="utf-8"))
+        validate_payload_object(existing, json_patch_sha256)
+        return relpath
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload_object(payload, json_patch_sha256), indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return relpath
+
+
 def empty_ledger(agent: str, target: dict[str, Any]) -> dict[str, Any]:
     return {
         "format": LEDGER_FORMAT,
@@ -130,11 +173,17 @@ def append_entry(work: Path, agent: str, payload: dict[str, Any], target_ref: st
     relpath = ledger_relpath(agent, target)
     path = work / relpath
     fingerprint = patch_fingerprint(payload)
+    payload_path = write_payload_object(work, payload, fingerprint["json_patch_sha256"])
     ledger = read_ledger(path, agent, target)
     existing = find_entry(ledger, fingerprint["json_patch_sha256"])
     if existing is not None:
+        if not existing.get("payload_path"):
+            existing["payload_path"] = payload_path
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(ledger, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         return {
             "path": relpath,
+            "payload_path": existing.get("payload_path", payload_path),
             "entry": existing,
             "appended": False,
             "reason": "json patch fingerprint already present",
@@ -147,6 +196,7 @@ def append_entry(work: Path, agent: str, payload: dict[str, Any], target_ref: st
         "target": target,
         "title": fingerprint["title"],
         "json_patch_sha256": fingerprint["json_patch_sha256"],
+        "payload_path": payload_path,
         "file_count": fingerprint["file_count"],
         "file_fingerprints": fingerprint["files"],
         "target_ref_at_capture": target_ref,
@@ -160,6 +210,7 @@ def append_entry(work: Path, agent: str, payload: dict[str, Any], target_ref: st
     path.write_text(json.dumps(ledger, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return {
         "path": relpath,
+        "payload_path": payload_path,
         "entry": entry,
         "appended": True,
     }

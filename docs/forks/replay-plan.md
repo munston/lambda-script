@@ -40,7 +40,10 @@ no-replay-needed
   The branch ledger matches main's ledger for its known entries.
 
 replay-needed
-  The branch ledger has entries after the matching prefix. A future destructive sync would rewind to main and replay those entries.
+  The branch ledger has entries after the matching prefix, and every pending entry has a valid replay payload object.
+
+missing-replay-payload
+  A pending replay entry lacks a valid content-addressed payload object under forks/replay-ledger/payloads/.
 
 main-has-unseen-ledger-entries
   Main has ledger entries missing from the branch after the matching prefix. This needs review before destructive replay.
@@ -56,8 +59,9 @@ The next layer can use this plan to implement:
 ```text
 fetch origin
 find matching ledger prefix
+verify payload objects for every pending entry
 rewind branch to origin/main
-replay branch entries after the prefix
+replay branch entries after the prefix from payload objects
 verify
 push with --force-with-lease
 ```
