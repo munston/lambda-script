@@ -9,3 +9,6 @@ export type { ImageParametricTrainingResult, ImageFeatureRecord } from './image_
 
 export { localInterrogationWitness, localInterrogationGradientStep } from './mld_local';
 export type { LocalInterrogationConfig, LocalInterrogationResult, LocalInterrogationSample } from './mld_local';
+
+export { evaluateTextGates, passesTextGates } from './gates';
+export type { GateCalibrationReport, GateFinding, GateSeverity } from './gates';
