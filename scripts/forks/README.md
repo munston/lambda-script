@@ -32,7 +32,7 @@ This path exports a patch, stages it in `.forks/worktrees/<agent>-candidate/`, w
 
 ## Submission-object amalgamation
 
-The guarded amalgamation workflow converts agent-lane work into replayable submission history before any lane is rewound.
+The guarded amalgamation workflow applies all known replay history and direct lane work for each agent, one agent at a time, onto the moving main.
 
 Plan first:
 
@@ -46,39 +46,40 @@ Apply after inspecting the plan:
 forks.bat amalgamate-all --apply
 ```
 
-The command inspects `ed`, `edd`, and `eddy` by default. For each lane with unique work it proceeds sequentially:
+For each target agent, `amalgamate-all --apply` now performs two recovery passes:
 
 ```text
-1. Fetch origin.
-2. Check whether a submission object already captures the lane head.
-3. If not, capture the current lane diff into .forks/submissions/<agent>.json.
-4. Destructively sync the captured lane to current main only after sync-captured-lane proves the lane head still equals the captured source commit.
-5. Replay the captured submission onto current main.
-6. Verify the replayed candidate.
-7. Submit dry-run.
-8. Submit.
-9. Fetch the newly advanced main.
-10. Continue with the next agent against that new main.
+1. Replay-ledger pass:
+   - inspect the agent lane replay ledger against current main;
+   - if the lane has replay-ledger entries missing from main, apply those JSON payloads first with replay-sync;
+   - this happens even when main has newer entries from other agents, provided there is no fingerprint divergence or missing payload.
+
+2. Direct-lane pass:
+   - re-resolve the lane after ledger replay;
+   - if unique lane work remains, check whether a submission object already captures the lane head;
+   - if not, capture the current lane diff into .forks/submissions/<agent>.json;
+   - destructively sync the captured lane only after sync-captured-lane proves the lane head still equals the captured source commit;
+   - replay, verify, dry-run submit, and submit that direct diff.
 ```
+
+After each agent submit, `origin/main` is fetched and the next agent is replayed against the newly advanced main.
 
 After all target agents have been processed, `amalgamate-all --apply` is terminal:
 
 ```text
-11. Sync every target agent lane to the final advanced main.
-12. Assert that each target lane is even with main.
-13. Assert that replay-plan shows no outstanding replay-needed entries for those lanes.
+sync every target agent lane to the final advanced main
+assert that each target lane is even with main
+assert that replay-plan shows no outstanding replay-needed entries for those lanes
 ```
 
 This supports both allowed agent behaviours:
 
 ```text
 agent updates their lane directly
-agent records diff patches while updating their lane
+agent records JSON/diff patches while updating their lane
 ```
 
-In either case, the first responsibility of `amalgamate-all` is to ensure replay history exists. If it already exists and matches the lane head, it is reused. If it is missing or stale, the lane is captured before rewind. After capture, destructive lane rewind is safe because the work is durable as replayable diff history.
-
-`main` is never rewound by this command. Agent lanes may be rewound after capture. Main advances only through replay, verification, and submit.
+`main` is never rewound by this command. Agent lanes may be rewound after their work is captured or replayed. Main advances only through replay, verification, and submit.
 
 Useful options:
 

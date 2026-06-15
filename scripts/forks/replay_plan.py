@@ -221,10 +221,13 @@ def classify_replay(row: dict[str, Any]) -> str:
         return "fingerprint-divergence"
     if any(item.get("missing_or_invalid_payload_count", 0) > 0 for item in ledgers):
         return "missing-replay-payload"
-    if any(item.get("main_extra_count", 0) > 0 for item in ledgers):
-        return "main-has-unseen-ledger-entries"
+    # Branch replay entries take priority over main-extra entries. This allows
+    # an agent lane to replay its pending payloads onto the moving main even when
+    # main already contains other agents' newer ledger entries.
     if any(item.get("replay_count", 0) > 0 for item in ledgers):
         return "replay-needed"
+    if any(item.get("main_extra_count", 0) > 0 for item in ledgers):
+        return "main-has-unseen-ledger-entries"
     return "no-replay-needed"
 
 

@@ -1,22 +1,10 @@
 #!/usr/bin/env python3
 """Guarded sequential amalgamation for agent lanes.
 
-This command implements the operator workflow:
-
-1. Agent lanes may contain direct commits or prior replayable submissions.
-2. Before any lane is rewound, its unique work must be represented as a
-   replayable submission object.
-3. If a valid submission already exists for the current lane head, reuse it.
-4. If no valid submission exists, capture the current lane diff as a submission.
-5. After replay history is adequate, destructively sync the captured lane to
-   current main.
-6. Replay, verify, and submit that agent's captured diff onto the latest main.
-7. Fetch the advanced main, then continue with the next agent.
-8. After all agents have been processed, sync all target agent lanes to the final
-   main and assert that no target lane has outstanding replay work.
-
-Main is never rewound by this tool. Agent lanes may be rewound only after their
-work is captured and the captured source commit matches the lane head.
+Each agent visit first applies replay-ledger-backed JSON work for that lane, then
+captures any remaining direct lane delta as a submission, then replays/verifies/
+submits that delta onto the moving main. After all agents are processed, target
+lanes are synced to the final main and asserted clean.
 """
 
 from __future__ import annotations
@@ -28,6 +16,7 @@ from typing import Any
 
 import forks
 import replay_plan
+import replay_sync
 import submission_object
 
 DEFAULT_AGENTS = ("ed", "edd", "eddy")
@@ -37,6 +26,12 @@ def run_submission(root: Path, argv: list[str]) -> None:
     code = submission_object.main(argv)
     if code != 0:
         raise RuntimeError(f"submission command failed: {' '.join(argv)}")
+
+
+def run_replay_sync(argv: list[str]) -> None:
+    code = replay_sync.main(argv)
+    if code != 0:
+        raise RuntimeError(f"replay-sync failed: {' '.join(argv)}")
 
 
 def best_ref_or_none(root: Path, agent: str) -> str | None:
@@ -57,6 +52,35 @@ def short(value: str | None) -> str:
 
 def commit_of(root: Path, ref: str) -> str:
     return forks.commit(root, ref)
+
+
+def replay_row_for_ref(root: Path, ref: str) -> dict[str, Any] | None:
+    plan = replay_plan.build_plan(root, [ref], include_empty=True)
+    rows = [row for row in plan.get("refs", []) if row.get("exists", True)]
+    if not rows:
+        return None
+    return rows[0]
+
+
+def apply_replay_ledger_for_ref(root: Path, ref: str, args: argparse.Namespace) -> None:
+    """Apply ledger-backed JSON work for this ref before direct-diff capture."""
+    row = replay_row_for_ref(root, ref)
+    if row is None:
+        print(f"{ref}: no replay row")
+        return
+    classification = row.get("classification")
+    replay_count = int(row.get("total_replay_count", 0))
+    missing = int(row.get("total_missing_or_invalid_payload_count", 0))
+    if classification in {"fingerprint-divergence", "missing-replay-payload"} or missing:
+        raise RuntimeError(f"{ref}: unsafe replay ledger state classification={classification} missing-payloads={missing}")
+    if replay_count <= 0:
+        print(f"{ref}: no ledger replay entries to apply")
+        return
+
+    print(f"{ref}: applying {replay_count} replay-ledger entr{'y' if replay_count == 1 else 'ies'} before lane capture")
+    cmd = [ref, "--apply", "--only-replay-needed", "--verify-command", args.verify_command, "--fail-failed"]
+    run_replay_sync(cmd)
+    forks.fetch_main(root)
 
 
 def existing_submission_matches(root: Path, agent: str, source_commit: str) -> bool:
@@ -89,7 +113,6 @@ def capture_if_needed(root: Path, agent: str, ref: str, args: argparse.Namespace
 
 
 def sync_captured_lane(root: Path, agent: str) -> None:
-    """Destructively sync the lane only after submission_object proves safety."""
     run_submission(root, ["sync-lane", agent, "--yes"])
 
 
@@ -110,15 +133,19 @@ def replay_verify_submit(root: Path, agent: str, args: argparse.Namespace) -> No
 
 def plan_agent(root: Path, agent: str, ref: str, state: str, ahead: int, behind: int, args: argparse.Namespace) -> None:
     print(f"{agent}: {state} ahead={ahead} behind={behind} source={ref}")
+    row = replay_row_for_ref(root, ref)
+    if row and int(row.get("total_replay_count", 0)) > 0:
+        print(f"  will first apply {row.get('total_replay_count')} replay-ledger entr{'y' if row.get('total_replay_count') == 1 else 'ies'} for {ref}")
+        print(f"  forks.bat replay-sync {ref} --apply --only-replay-needed --verify-command {args.verify_command} --fail-failed")
     if state not in {"ahead-only", "diverged"}:
-        print(f"{agent}: no unique lane work; final sync will align this lane to main")
+        print(f"  no direct lane delta; final sync will align this lane to main")
         return
 
     source_commit = commit_of(root, ref)
     if existing_submission_matches(root, agent, source_commit):
-        print(f"  replay history adequate: .forks/submissions/{agent}.json matches {short(source_commit)}")
+        print(f"  direct-diff replay history adequate: .forks/submissions/{agent}.json matches {short(source_commit)}")
     else:
-        print(f"  will create replay history from {ref} at {short(source_commit)}")
+        print(f"  will capture remaining direct lane delta from {ref} at {short(source_commit)}")
         cmd = ["forks.bat", "capture", agent, "--from-ref", ref]
         if args.allow_forbidden:
             cmd.append("--allow-forbidden")
@@ -129,13 +156,29 @@ def plan_agent(root: Path, agent: str, ref: str, state: str, ahead: int, behind:
     print(f"  forks.bat verify-submission {agent} --command {args.verify_command}")
     print(f"  forks.bat submit-submission {agent} --backend {args.backend} --dry-run")
     print(f"  forks.bat submit-submission {agent} --backend {args.backend}")
-    print("  git fetch origin --prune")
 
 
-def apply_agent(root: Path, agent: str, ref: str, state: str, ahead: int, behind: int, args: argparse.Namespace) -> None:
-    print(f"{agent}: {state} ahead={ahead} behind={behind} source={ref}")
+def apply_agent(root: Path, agent: str, args: argparse.Namespace) -> None:
+    forks.fetch_main(root)
+    ref = best_ref_or_none(root, agent)
+    if not ref:
+        print(f"{agent}: missing lane; skipped")
+        return
+
+    apply_replay_ledger_for_ref(root, ref, args)
+
+    # Re-resolve after ledger replay because the ref may have been force-with-lease updated.
+    forks.fetch_main(root)
+    ref = best_ref_or_none(root, agent)
+    if not ref:
+        print(f"{agent}: missing lane after replay; skipped")
+        return
+
+    ahead, behind = forks.ahead_behind(root, ref)
+    state = forks.classify(ahead, behind)
+    print(f"{agent}: post-ledger {state} ahead={ahead} behind={behind} source={ref}")
     if state not in {"ahead-only", "diverged"}:
-        print(f"{agent}: no unique lane work")
+        print(f"{agent}: no direct lane delta after ledger replay")
         return
 
     capture_if_needed(root, agent, ref, args)
@@ -146,12 +189,6 @@ def apply_agent(root: Path, agent: str, ref: str, state: str, ahead: int, behind
 
 
 def force_sync_lane_to_main(root: Path, agent: str) -> None:
-    """Sync an agent branch to final origin/main after all unique work is applied.
-
-    This is intentionally terminal. If unique work still exists, it refuses rather
-    than overwriting. After amalgamation, unique work should already have been
-    captured, replayed, verified, and submitted.
-    """
     branch = forks.ensure_local_agent_branch(root, agent)
     ahead, behind = forks.ahead_behind(root, branch)
     state = forks.classify(ahead, behind)
@@ -182,7 +219,7 @@ def replay_clean_for_agent_row(row: dict[str, Any]) -> bool:
     classification = row.get("classification")
     if state != "even":
         return False
-    return classification in {"no-ledger", "no-replay-needed"}
+    return classification in {"no-ledger", "no-replay-needed", "main-has-unseen-ledger-entries"}
 
 
 def assert_no_outstanding_replay(root: Path, agents: list[str]) -> None:
@@ -206,13 +243,13 @@ def assert_no_outstanding_replay(root: Path, agents: list[str]) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="forks amalgamate-all",
-        description="Ensure replay history, rewind agent lanes, replay/verify/submit each agent sequentially, then sync all lanes to final main.",
+        description="Apply per-agent replay ledgers, capture direct deltas, submit sequentially, then sync all lanes to final main.",
     )
     parser.add_argument("--agents", nargs="+", default=list(DEFAULT_AGENTS), help="agent lanes to inspect; default: ed edd eddy")
-    parser.add_argument("--verify-command", default="verify.bat", help="verification command run in the replayed candidate")
+    parser.add_argument("--verify-command", default="verify.bat", help="verification command run in replayed candidates")
     parser.add_argument("--backend", choices=("ref", "contents"), default="ref", help="submission backend")
     parser.add_argument("--allow-forbidden", action="store_true", help="allow guarded paths during capture/replay/verify")
-    parser.add_argument("--apply", action="store_true", help="mutate: capture/prove, rewind, replay, verify, submit, final-sync")
+    parser.add_argument("--apply", action="store_true", help="mutate: ledger replay, capture/prove, rewind, replay, verify, submit, final-sync")
     parser.add_argument("--skip-final-sync", action="store_true", help="advanced: do not sync target agent lanes to final main")
     parser.add_argument("--skip-final-assert", action="store_true", help="advanced: do not assert that target lanes are clean after amalgamation")
     return parser
@@ -229,31 +266,26 @@ def main(argv: list[str]) -> int:
 
         if not args.apply:
             print("amalgamate-all plan only; pass --apply to mutate")
+            for agent in agents:
+                forks.fetch_main(root)
+                ref = best_ref_or_none(root, agent)
+                if not ref:
+                    print(f"{agent}: missing lane; skipped")
+                    continue
+                ahead, behind = forks.ahead_behind(root, ref)
+                state = forks.classify(ahead, behind)
+                plan_agent(root, agent, ref, state, ahead, behind, args)
+            print("final apply will sync target agent lanes to final main and assert no outstanding replay remains")
+            return 0
 
         for agent in agents:
-            # Re-fetch and re-resolve before each agent because previous agents may
-            # have advanced main.
-            forks.fetch_main(root)
-            ref = best_ref_or_none(root, agent)
-            if not ref:
-                print(f"{agent}: missing lane; skipped")
-                continue
-            ahead, behind = forks.ahead_behind(root, ref)
-            state = forks.classify(ahead, behind)
+            apply_agent(root, agent, args)
 
-            if args.apply:
-                apply_agent(root, agent, ref, state, ahead, behind, args)
-            else:
-                plan_agent(root, agent, ref, state, ahead, behind, args)
-
-        if args.apply:
-            if not args.skip_final_sync:
-                final_sync_all_lanes(root, agents)
-            if not args.skip_final_assert:
-                assert_no_outstanding_replay(root, agents)
-            print("amalgamate-all complete")
-        else:
-            print("final apply will sync target agent lanes to final main and assert no outstanding replay remains")
+        if not args.skip_final_sync:
+            final_sync_all_lanes(root, agents)
+        if not args.skip_final_assert:
+            assert_no_outstanding_replay(root, agents)
+        print("amalgamate-all complete")
         return 0
     except Exception as exc:
         print(f"forks amalgamate-all: {exc}", file=sys.stderr)

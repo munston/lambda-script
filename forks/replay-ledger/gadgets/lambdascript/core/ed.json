@@ -194,15 +194,55 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Make amalgamate-all terminal for agent lanes"
+    },
+    {
+      "agent": "ed",
+      "created_at": "2026-06-15T22:30:30.861485+00:00",
+      "file_count": 3,
+      "file_fingerprints": [
+        {
+          "content_length": 13886,
+          "content_sha256": "179ed50d63228d411be565341549256c41da0f52a9654feab7f8586047af7707",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/replay_plan.py"
+        },
+        {
+          "content_length": 12105,
+          "content_sha256": "e71fb0de11a3d90c4b7ed3ea7d165422b3f08fe06fc5670ff55b7a94b800101d",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/amalgamate_all.py"
+        },
+        {
+          "content_length": 5342,
+          "content_sha256": "9ee6d180e9b4fdba8f1419f069dad8ca5e414c62d170a64f04ae054563e1bb83",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/README.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "f8af690258f1ab0cd8f9649f17dc3c9c1eb30f40614b60ca8155730509d71bf1",
+      "payload_path": "forks/replay-ledger/payloads/f8/f8af690258f1ab0cd8f9649f17dc3c9c1eb30f40614b60ca8155730509d71bf1.json",
+      "sequence": 6,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Apply per-agent replay ledgers during amalgamation"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 6,
+  "next_sequence": 7,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-15T22:24:25.148235+00:00"
+  "updated_at": "2026-06-15T22:30:30.861496+00:00"
 }
