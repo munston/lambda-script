@@ -102,6 +102,7 @@ def verify_candidate(args: argparse.Namespace, work: Path) -> None:
             "scripts/forks/forks.py",
             "scripts/forks/submission_object.py",
             "scripts/forks/import_json_patch.py",
+            "scripts/forks/replay_ledger.py",
             "scripts/forks/land_json_patch.py",
             "scripts/forks/gadget_branches.py",
             "scripts/forks/gadget_land_json.py",
@@ -125,6 +126,7 @@ def maybe_stamp_main_history(args: argparse.Namespace, payload: dict, submission
         metadata={
             "json_patch_format": payload.get("format"),
             "json_patch_title": payload.get("title", ""),
+            "json_patch_sha256": submission.get("json_patch_sha256", ""),
             "patch_sha256": submission.get("patch_sha256", ""),
             "target_ref": args.target_ref,
         },

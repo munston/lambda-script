@@ -25,6 +25,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 import forks
+import replay_ledger
 import submission_object
 
 JSON_FORMAT = "LS_FORK_JSON_PATCH_V1"
@@ -134,6 +135,12 @@ def make_submission(root: Path, agent: str, data: dict[str, Any], target_ref: st
     forks.git(["worktree", "add", "--detach", str(work), target_ref], root)
 
     apply_file_ops(work, data["files"])
+    ledger_result = replay_ledger.append_entry(work, agent, data, target_ref)
+    if ledger_result.get("appended"):
+        print(f"replay ledger: appended {ledger_result['path']}#{ledger_result['entry']['sequence']}")
+    else:
+        print(f"replay ledger: reused {ledger_result['path']}#{ledger_result['entry']['sequence']}")
+
     if not commit_candidate(work, agent, str(data.get("title", ""))):
         raise RuntimeError("JSON patch produced no file changes")
 
@@ -167,6 +174,8 @@ def make_submission(root: Path, agent: str, data: dict[str, Any], target_ref: st
         "base_target_manifest_hash": base_snapshot["manifest_hash"],
         "expected_result_snapshot_on_original_base": source_snapshot,
         "patch_sha256": forks.sha256_text(patch_text),
+        "json_patch_sha256": replay_ledger.json_sha256(data),
+        "replay_ledger": ledger_result,
         "ahead": ahead,
         "behind": behind,
         "state_at_capture": forks.classify(ahead, behind),
