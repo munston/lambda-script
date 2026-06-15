@@ -12,6 +12,8 @@ This command implements the operator workflow:
    current main.
 6. Replay, verify, and submit that agent's captured diff onto the latest main.
 7. Fetch the advanced main, then continue with the next agent.
+8. After all agents have been processed, sync all target agent lanes to the final
+   main and assert that no target lane has outstanding replay work.
 
 Main is never rewound by this tool. Agent lanes may be rewound only after their
 work is captured and the captured source commit matches the lane head.
@@ -22,8 +24,10 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
+from typing import Any
 
 import forks
+import replay_plan
 import submission_object
 
 DEFAULT_AGENTS = ("ed", "edd", "eddy")
@@ -35,24 +39,6 @@ def run_submission(root: Path, argv: list[str]) -> None:
         raise RuntimeError(f"submission command failed: {' '.join(argv)}")
 
 
-def tracked_status(root: Path) -> str:
-    return forks.git_text(["status", "--porcelain=v1", "--untracked-files=no"], root)
-
-
-def require_clean_tracked(root: Path) -> None:
-    """Protect operator-local tracked edits.
-
-    This command captures committed lane state. It does not silently convert
-    arbitrary uncommitted operator-local edits into agent submissions.
-    """
-    status = tracked_status(root)
-    if status.strip():
-        raise RuntimeError(
-            "working tree has tracked changes; commit them to the intended agent lane "
-            "or restore them before amalgamate-all\n" + status
-        )
-
-
 def best_ref_or_none(root: Path, agent: str) -> str | None:
     branch = forks.agent_branch(agent)
     if forks.ref_exists(root, branch):
@@ -61,6 +47,12 @@ def best_ref_or_none(root: Path, agent: str) -> str | None:
     if forks.ref_exists(root, remote):
         return remote
     return None
+
+
+def short(value: str | None) -> str:
+    if not value:
+        return "<missing>"
+    return value[:8]
 
 
 def commit_of(root: Path, ref: str) -> str:
@@ -83,24 +75,17 @@ def existing_submission_matches(root: Path, agent: str, source_commit: str) -> b
     return False
 
 
-def short(value: str | None) -> str:
-    if not value:
-        return "<missing>"
-    return value[:8]
-
-
-def capture_if_needed(root: Path, agent: str, ref: str, args: argparse.Namespace) -> bool:
+def capture_if_needed(root: Path, agent: str, ref: str, args: argparse.Namespace) -> None:
     source_commit = commit_of(root, ref)
     if existing_submission_matches(root, agent, source_commit):
         print(f"{agent}: replay history already adequate for {short(source_commit)}")
-        return False
+        return
 
     print(f"{agent}: creating replay history from {ref} at {short(source_commit)}")
     cmd = ["capture", agent, "--from-ref", ref]
     if args.allow_forbidden:
         cmd.append("--allow-forbidden")
     run_submission(root, cmd)
-    return True
 
 
 def sync_captured_lane(root: Path, agent: str) -> None:
@@ -126,7 +111,7 @@ def replay_verify_submit(root: Path, agent: str, args: argparse.Namespace) -> No
 def plan_agent(root: Path, agent: str, ref: str, state: str, ahead: int, behind: int, args: argparse.Namespace) -> None:
     print(f"{agent}: {state} ahead={ahead} behind={behind} source={ref}")
     if state not in {"ahead-only", "diverged"}:
-        print(f"{agent}: no unique lane work; ordinary sync can handle this lane")
+        print(f"{agent}: no unique lane work; final sync will align this lane to main")
         return
 
     source_commit = commit_of(root, ref)
@@ -160,30 +145,76 @@ def apply_agent(root: Path, agent: str, ref: str, state: str, ahead: int, behind
     forks.fetch_main(root)
 
 
-def sync_clean_lane(root: Path, agent: str) -> None:
+def force_sync_lane_to_main(root: Path, agent: str) -> None:
+    """Sync an agent branch to final origin/main after all unique work is applied.
+
+    This is intentionally terminal. If unique work still exists, it refuses rather
+    than overwriting. After amalgamation, unique work should already have been
+    captured, replayed, verified, and submitted.
+    """
     branch = forks.ensure_local_agent_branch(root, agent)
     ahead, behind = forks.ahead_behind(root, branch)
     state = forks.classify(ahead, behind)
-    if state in {"even", "behind-only"}:
-        print(f"{agent}: syncing clean lane through workflow sync")
-        # Use the existing safe branch reset behaviour by delegating to workflow runner.
-        import workflow_runner
-        workflow_runner.carry_agent(root, agent)
+    if state in {"ahead-only", "diverged"}:
+        raise RuntimeError(f"{branch} still has unique work after amalgamation; refusing final sync state={state} ahead={ahead} behind={behind}")
+
+    if forks.current_branch(root) == branch:
+        forks.git(["reset", "--hard", forks.MAIN_REF], root)
     else:
-        print(f"{agent}: unique work remains; not clean-syncing state={state}")
+        forks.git(["branch", "-f", branch, forks.MAIN_REF], root)
+
+    forks.git(["push", "--force-with-lease", "origin", f"{branch}:{branch}"], root)
+    print(f"{branch}: synced to final main {forks.short_commit(root, forks.MAIN_REF)}")
+
+
+def final_sync_all_lanes(root: Path, agents: list[str]) -> None:
+    forks.fetch_main(root)
+    print("final lane sync to amalgamated main")
+    for agent in agents:
+        force_sync_lane_to_main(root, agent)
+    forks.fetch_main(root)
+
+
+def replay_clean_for_agent_row(row: dict[str, Any]) -> bool:
+    if not row.get("exists", True):
+        return True
+    state = row.get("state_against_main")
+    classification = row.get("classification")
+    if state != "even":
+        return False
+    return classification in {"no-ledger", "no-replay-needed"}
+
+
+def assert_no_outstanding_replay(root: Path, agents: list[str]) -> None:
+    refs = [forks.agent_branch(agent) for agent in agents]
+    plan = replay_plan.build_plan(root, refs, include_empty=True)
+    bad = [row for row in plan["refs"] if not replay_clean_for_agent_row(row)]
+    if bad:
+        details = []
+        for row in bad:
+            details.append(
+                f"{row.get('ref')}: state={row.get('state_against_main')} "
+                f"classification={row.get('classification')} "
+                f"replay={row.get('total_replay_count')} "
+                f"main-extra={row.get('total_main_extra_count')} "
+                f"missing-payloads={row.get('total_missing_or_invalid_payload_count')}"
+            )
+        raise RuntimeError("outstanding agent lane replay remains after amalgamation\n" + "\n".join(details))
+    print("ok no outstanding agent lane replay remains")
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="forks amalgamate-all",
-        description="Ensure replay history, rewind agent lanes, then replay/verify/submit each agent sequentially.",
+        description="Ensure replay history, rewind agent lanes, replay/verify/submit each agent sequentially, then sync all lanes to final main.",
     )
     parser.add_argument("--agents", nargs="+", default=list(DEFAULT_AGENTS), help="agent lanes to inspect; default: ed edd eddy")
     parser.add_argument("--verify-command", default="verify.bat", help="verification command run in the replayed candidate")
     parser.add_argument("--backend", choices=("ref", "contents"), default="ref", help="submission backend")
     parser.add_argument("--allow-forbidden", action="store_true", help="allow guarded paths during capture/replay/verify")
-    parser.add_argument("--apply", action="store_true", help="mutate: capture/prove, rewind, replay, verify, submit")
-    parser.add_argument("--sync-clean", action="store_true", help="also sync even/behind-only lanes after inspection")
+    parser.add_argument("--apply", action="store_true", help="mutate: capture/prove, rewind, replay, verify, submit, final-sync")
+    parser.add_argument("--skip-final-sync", action="store_true", help="advanced: do not sync target agent lanes to final main")
+    parser.add_argument("--skip-final-assert", action="store_true", help="advanced: do not assert that target lanes are clean after amalgamation")
     return parser
 
 
@@ -194,7 +225,6 @@ def main(argv: list[str]) -> int:
     agents = [forks.normalize_agent(a) for a in args.agents]
 
     try:
-        require_clean_tracked(root)
         forks.fetch_main(root)
 
         if not args.apply:
@@ -213,13 +243,17 @@ def main(argv: list[str]) -> int:
 
             if args.apply:
                 apply_agent(root, agent, ref, state, ahead, behind, args)
-                if args.sync_clean:
-                    sync_clean_lane(root, agent)
             else:
                 plan_agent(root, agent, ref, state, ahead, behind, args)
 
         if args.apply:
+            if not args.skip_final_sync:
+                final_sync_all_lanes(root, agents)
+            if not args.skip_final_assert:
+                assert_no_outstanding_replay(root, agents)
             print("amalgamate-all complete")
+        else:
+            print("final apply will sync target agent lanes to final main and assert no outstanding replay remains")
         return 0
     except Exception as exc:
         print(f"forks amalgamate-all: {exc}", file=sys.stderr)

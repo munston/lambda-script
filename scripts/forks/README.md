@@ -61,6 +61,14 @@ The command inspects `ed`, `edd`, and `eddy` by default. For each lane with uniq
 10. Continue with the next agent against that new main.
 ```
 
+After all target agents have been processed, `amalgamate-all --apply` is terminal:
+
+```text
+11. Sync every target agent lane to the final advanced main.
+12. Assert that each target lane is even with main.
+13. Assert that replay-plan shows no outstanding replay-needed entries for those lanes.
+```
+
 This supports both allowed agent behaviours:
 
 ```text
@@ -79,10 +87,17 @@ forks.bat amalgamate-all --agents ed edd eddy
 forks.bat amalgamate-all --verify-command verify.bat
 forks.bat amalgamate-all --apply
 forks.bat amalgamate-all --apply --backend contents
-forks.bat amalgamate-all --apply --sync-clean
+forks.bat amalgamate-all --apply --skip-final-sync
+forks.bat amalgamate-all --apply --skip-final-assert
 ```
 
-`amalgamate-all` requires no operator pre-stash as part of its replay logic. It does require that any intended lane edits are committed to that lane, because the replay history is made from branch commits. Uncommitted local tracked edits are not silently converted into agent submissions.
+The ordinary operator command is just:
+
+```bat
+forks.bat amalgamate-all --apply
+```
+
+No additional sync command is expected afterward for the target agent lanes.
 
 ## Workflow runner layer
 
