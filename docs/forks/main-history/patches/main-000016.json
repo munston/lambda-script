@@ -1,0 +1,74 @@
+{
+  "agent": "system",
+  "base_commit": "b7e5402ec9b4559b80b0459ed9d50ff27d892cda",
+  "base_ref": "origin/main",
+  "changed_files": [
+    {
+      "path": "docs/agents/eddy/Y2_P2_NEXT_PLAN.md",
+      "status": "A"
+    },
+    {
+      "path": "docs/core/LSC1_COORDINATION_INTAKE.md",
+      "status": "A"
+    },
+    {
+      "path": "forks/replay-ledger/gadgets/lambdascript/core/ed.json",
+      "status": "M"
+    },
+    {
+      "path": "forks/replay-ledger/gadgets/lambdascript/core/edd.json",
+      "status": "M"
+    },
+    {
+      "path": "forks/replay-ledger/gadgets/lambdascript/core/eddy.json",
+      "status": "M"
+    },
+    {
+      "path": "forks/replay-ledger/payloads/56/569b7652564a457f02bdb6789c5863c32e6116c26ebbecdde5a5c3254592cf2d.json",
+      "status": "A"
+    },
+    {
+      "path": "forks/replay-ledger/payloads/82/82c33766e1f4fa9625cd0645d49362625e9fec7281e9ec55bee5093dad53ca3b.json",
+      "status": "A"
+    },
+    {
+      "path": "forks/replay-ledger/payloads/f3/f3368d14836efe09b4cee0158b00fd1906208ab139d8fba510712c3ac79a79d8.json",
+      "status": "A"
+    },
+    {
+      "path": "glc/src/codegen/haskell.ts",
+      "status": "M"
+    },
+    {
+      "path": "glc/src/codegen/typescript.ts",
+      "status": "M"
+    },
+    {
+      "path": "glc/test/smoke.ts",
+      "status": "M"
+    },
+    {
+      "path": "scripts/forks/README.md",
+      "status": "M"
+    },
+    {
+      "path": "scripts/forks/amalgamate_all.py",
+      "status": "M"
+    }
+  ],
+  "created_at": "2026-06-15T23:04:42.428188+00:00",
+  "format": "LS_MAIN_HISTORY_V1",
+  "kind": "gadget_promotion",
+  "metadata": {
+    "gadget": "core",
+    "gizmo": "lambdascript",
+    "promoted_commits": 3,
+    "target_ref": "origin/gadgets/lambdascript/core/main"
+  },
+  "number": 16,
+  "source_head_before_receipt": "d1546e68777d74a4debb01a8489837494aca4906",
+  "source_ref": "origin/gadgets/lambdascript/core/main",
+  "source_tree_before_receipt": "ae272304f426f2f426f033cabbe9ee9beae52f75",
+  "title": "Promote lambdascript/core",
+  "version": "main-000016"
+}

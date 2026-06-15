@@ -165,6 +165,17 @@
       "source_head_before_receipt": "ea8a8a6d8c8fae60119760c49a5153ab86025eec",
       "title": "Promote lambdascript/core",
       "version": "main-000015"
+    },
+    {
+      "agent": "system",
+      "base_commit": "b7e5402ec9b4559b80b0459ed9d50ff27d892cda",
+      "created_at": "2026-06-15T23:04:42.428188+00:00",
+      "kind": "gadget_promotion",
+      "number": 16,
+      "receipt": "docs/forks/main-history/patches/main-000016.json",
+      "source_head_before_receipt": "d1546e68777d74a4debb01a8489837494aca4906",
+      "title": "Promote lambdascript/core",
+      "version": "main-000016"
     }
   ],
   "format": "LS_MAIN_HISTORY_V1"
