@@ -98,6 +98,31 @@ is_not x y = x != y
   assert.ok(!hs.includes('!='), 'Haskell output should not contain raw !=');
 }
 
+function checkUnsupportedForeignCallPlacement() {
+  const source = `module BadForeignPlacement
+
+foreign cpp add_i32 : i32 -> i32 -> i32 = "ls_add_i32"
+
+bad : i32 -> i32
+bad x = add_i32(x, 1)
+`;
+  const pr = parse(source, 'bad-foreign-placement.ls');
+  assert.strictEqual(pr.diagnostics.length, 0, 'foreign-placement fixture should parse');
+  const c = checkProgram(pr.program!);
+  assert.strictEqual(c.diagnostics.length, 0, `foreign-placement fixture should check, got ${c.diagnostics.map(d => d.message).join('; ')}`);
+
+  assert.throws(
+    () => emitTypeScript(pr.program!),
+    /TypeScript backend unsupported foreign call placement: add_i32/,
+    'TypeScript backend should reject foreign calls outside direct top-level declarations',
+  );
+  assert.throws(
+    () => emitHaskell(pr.program!),
+    /Haskell backend unsupported foreign call placement: add_i32/,
+    'Haskell backend should reject foreign calls outside direct top-level declarations',
+  );
+}
+
 function main() {
   const fixtures: FixtureExpectation[] = [
     {
@@ -134,6 +159,7 @@ function main() {
   for (const fixture of fixtures) checkFixture(fixture);
   checkUnsupportedBackendErrors();
   checkHaskellNotEqualEmission();
+  checkUnsupportedForeignCallPlacement();
 
   checkFails('unknown-variable', `module Bad
 

@@ -140,15 +140,62 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Fix Haskell not-equal backend parity"
+    },
+    {
+      "agent": "eddy",
+      "created_at": "2026-06-15T23:44:49.024779+00:00",
+      "file_count": 4,
+      "file_fingerprints": [
+        {
+          "content_length": 3598,
+          "content_sha256": "d8fdd7e10e53f890075abb53afb828cf53ae7c569f0af3a1dd57bf5f54fdb04b",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/src/codegen/typescript.ts"
+        },
+        {
+          "content_length": 4675,
+          "content_sha256": "87190fc30bf72f7979d4e4df63bff5e9206f4efee70238ff517b8fc809283273",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/src/codegen/haskell.ts"
+        },
+        {
+          "content_length": 7994,
+          "content_sha256": "80d994228af259004f06967e9a143df6664df86642e07057f1937a28af8c4808",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/test/smoke.ts"
+        },
+        {
+          "content_length": 1393,
+          "content_sha256": "72efb509d74469b6aedfcc06f532968b6931e311bbd64307e58c7a9e047251bd",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "docs/agents/eddy/Y3_P1_NEXT_PLAN.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "73524465769f36fb1579ad06115e3754979814fb7f3297715a855fa2603e2a07",
+      "payload_path": "forks/replay-ledger/payloads/73/73524465769f36fb1579ad06115e3754979814fb7f3297715a855fa2603e2a07.json",
+      "sequence": 5,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Guard unsupported foreign call backend placements"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 5,
+  "next_sequence": 6,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-15T23:40:51.583596+00:00"
+  "updated_at": "2026-06-15T23:44:49.024797+00:00"
 }

@@ -33,7 +33,7 @@ export function emitTypeScript(program: Program): string {
         const params = fn.params.map((p, i) => `${p.name}: ${mapTsType(fn.signature.params[i])}`).join(', ');
         out += `export function ${fn.name.name}(${params}): ${mapTsType(fn.signature.result)} {
 `;
-        out += `  return ${emitExpr(fn.body)};
+        out += `  return ${emitExpr(fn.body, foreignNames)};
 `;
         out += `}
 
@@ -43,7 +43,7 @@ export function emitTypeScript(program: Program): string {
         const d = item as Declaration;
         if (d.value.kind === 'CallExpression' && foreignNames.has((d.value as CallExpression).callee.name)) {
           const call = d.value as CallExpression;
-          const args = call.arguments.map(a => emitExpr(a)).join(', ');
+          const args = call.arguments.map(a => emitExpr(a, foreignNames)).join(', ');
           out += `export function ${d.name.name}(runtime: CppForeignRuntime) {
 `;
           out += `  return ${call.callee.name}(runtime, ${args});
@@ -52,7 +52,7 @@ export function emitTypeScript(program: Program): string {
 
 `;
         } else {
-          out += `export const ${d.name.name} = ${emitExpr(d.value)};
+          out += `export const ${d.name.name} = ${emitExpr(d.value, foreignNames)};
 
 `;
         }
@@ -75,15 +75,16 @@ function expressionKind(e: any): string {
   return typeof e;
 }
 
-function emitExpr(e: any): string {
+function emitExpr(e: any, foreignNames: Set<string>): string {
   if (e.kind === 'Literal') return JSON.stringify(e.value);
   if (e.kind === 'Identifier') return e.name;
   if (e.kind === 'CallExpression') {
     const c = e;
-    return `${c.callee.name}(${c.arguments.map(emitExpr).join(', ')})`;
+    if (foreignNames.has(c.callee.name)) throw new Error(`TypeScript backend unsupported foreign call placement: ${c.callee.name}`);
+    return `${c.callee.name}(${c.arguments.map((arg: any) => emitExpr(arg, foreignNames)).join(', ')})`;
   }
-  if (e.kind === 'BinaryExpression') return `(${emitExpr(e.left)} ${e.operator} ${emitExpr(e.right)})`;
-  if (e.kind === 'IfExpression') return `(${emitExpr(e.condition)} ? ${emitExpr(e.thenBranch)} : ${emitExpr(e.elseBranch)})`;
-  if (e.kind === 'LetExpression') return `(() => { const ${e.name.name} = ${emitExpr(e.value)}; return ${emitExpr(e.body)}; })()`;
+  if (e.kind === 'BinaryExpression') return `(${emitExpr(e.left, foreignNames)} ${e.operator} ${emitExpr(e.right, foreignNames)})`;
+  if (e.kind === 'IfExpression') return `(${emitExpr(e.condition, foreignNames)} ? ${emitExpr(e.thenBranch, foreignNames)} : ${emitExpr(e.elseBranch, foreignNames)})`;
+  if (e.kind === 'LetExpression') return `(() => { const ${e.name.name} = ${emitExpr(e.value, foreignNames)}; return ${emitExpr(e.body, foreignNames)}; })()`;
   throw new Error(`TypeScript backend unsupported expression kind: ${expressionKind(e)}`);
 }
