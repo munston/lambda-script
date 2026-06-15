@@ -260,15 +260,55 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Support nested Haskell string FFI arguments"
+    },
+    {
+      "agent": "eddy",
+      "created_at": "2026-06-15T23:58:27.361432+00:00",
+      "file_count": 3,
+      "file_fingerprints": [
+        {
+          "content_length": 8509,
+          "content_sha256": "d00abc883b7d9c1f99557746828739347c34f9d9d7f2249a26f7baa9fe336bb7",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/test/smoke.ts"
+        },
+        {
+          "content_length": 279,
+          "content_sha256": "3bf541a1ddab9f19c906ea5c143df20953973de0a829e634aa1f26ad642d0c56",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/test/snapshots/core1_functions.ts.snap"
+        },
+        {
+          "content_length": 216,
+          "content_sha256": "0c56ae8b5d51a04e1a7be14c42cb922ba232db7cd1a594e6de706b8e13724ba6",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/test/snapshots/core1_functions.hs.snap"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "d88f4adaf0e40dc32be48621f166ef0389eb734b7c175de36b6ee4cde2170b55",
+      "payload_path": "forks/replay-ledger/payloads/d8/d88f4adaf0e40dc32be48621f166ef0389eb734b7c175de36b6ee4cde2170b55.json",
+      "sequence": 8,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Snapshot Core1 function backend output"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 8,
+  "next_sequence": 9,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-15T23:54:06.704640+00:00"
+  "updated_at": "2026-06-15T23:58:27.361457+00:00"
 }

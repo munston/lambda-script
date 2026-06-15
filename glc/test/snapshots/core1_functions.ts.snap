@@ -1,0 +1,13 @@
+// Module: Core1Functions
+
+export function add(x: number, y: number): number {
+  return (x + y);
+}
+
+export function max_i32(x: number, y: number): number {
+  return ((x <= y) ? y : x);
+}
+
+export function fact(n: number): number {
+  return ((n <= 1) ? 1 : (n * fact((n - 1))));
+}

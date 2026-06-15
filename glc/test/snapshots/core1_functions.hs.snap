@@ -1,0 +1,10 @@
+-- Module: Core1Functions
+
+add :: Int -> Int -> Int
+add x y = (x + y)
+
+max_i32 :: Int -> Int -> Int
+max_i32 x y = (if (x <= y) then y else x)
+
+fact :: Int -> Int
+fact n = (if (n <= 1) then 1 else (n * fact (n - 1)))
