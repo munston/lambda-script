@@ -187,15 +187,48 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Guard unsupported foreign call backend placements"
+    },
+    {
+      "agent": "eddy",
+      "created_at": "2026-06-15T23:50:32.169563+00:00",
+      "file_count": 2,
+      "file_fingerprints": [
+        {
+          "content_length": 3800,
+          "content_sha256": "f10aa166200437e377602a341233587528bb0cf9f889d3102ed80852971d8d08",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/src/codegen/typescript.ts"
+        },
+        {
+          "content_length": 7753,
+          "content_sha256": "b173f9e7937000c3ea932c96c2c3e606a4ffedf661bed712303d4aedab4a7d13",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/test/smoke.ts"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "237cb72d14d6519b73a1f7426919907e936f884cc021cebcd885204bbf985949",
+      "payload_path": "forks/replay-ledger/payloads/23/237cb72d14d6519b73a1f7426919907e936f884cc021cebcd885204bbf985949.json",
+      "sequence": 6,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Fix TypeScript void FFI emission"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 6,
+  "next_sequence": 7,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-15T23:44:49.024797+00:00"
+  "updated_at": "2026-06-15T23:50:32.169576+00:00"
 }
