@@ -1,8 +1,10 @@
 # Gizmo command calls
 
-`tools/gizmo` can now build a command plan from a manifest-declared gadget command.
+`tools/gizmo` can build command plans from a manifest-declared local gadget command or from an imported toolchain command.
 
-The default is non-executing. It validates the manifest, checks the gadget and command name, verifies that every template placeholder has exactly one provided argument, rejects unused arguments, quotes safe argument values, and prints a command plan.
+## Local gadget calls
+
+The default local gadget call is non-executing. It validates the manifest, checks the gadget and command name, verifies that every template placeholder has exactly one provided argument, rejects unused arguments, quotes safe argument values, and prints a command plan.
 
 Example:
 
@@ -20,10 +22,45 @@ LS_GIZMO_COMMAND_PLAN_V1
 
 and includes the original template, rendered command, arguments, cwd, and whether execution was requested.
 
-Execution is opt-in:
+Execution is opt-in for local gadget commands:
 
 ```bat
 node dist\src\cli.js call ..\..\examples\gizmos\metrics.gizmo.json image-metrics analyze --arg image=sample.png --arg out=out-dir --exec
+node dist\src\cli.js call ..\..\examples\gizmos\metrics.gizmo.json image-metrics analyze --arg image=sample.png --arg out=out-dir --exec=true
+node dist\src\cli.js call ..\..\examples\gizmos\metrics.gizmo.json image-metrics analyze --arg image=sample.png --arg out=out-dir --exec=false
 ```
 
-This first runner only supports local gadget commands. Imported toolchain commands remain represented in the provision plan until workspace mounting and import command resolution are added.
+Invalid execution values such as `--exec=maybe` are rejected.
+
+## Imported command plans
+
+Imported command plans are intentionally non-executing. They resolve a command name through the manifest import allow-list and print a command plan with import metadata, but they do not mount workspaces, copy files, or run the imported command.
+
+Example:
+
+```bat
+cd tools\gizmo
+npm run build
+node dist\src\cli.js import-call ..\..\examples\gizmos\metrics.gizmo.json lambdascript-core gizmo
+node dist\src\cli.js import-call ..\..\examples\gizmos\metrics.gizmo.json lambdascript-core forks --exec=false
+```
+
+The resulting plan has:
+
+```text
+scope: import
+execute: false
+source: <from_gizmo>/<from_gadget>
+mount: <declared mount>
+mode: read-only | pinned | copy
+target_ref: <declared target ref>
+write_policy: deny | copy-on-write | allow
+```
+
+Imported command execution is refused for now:
+
+```bat
+node dist\src\cli.js import-call ..\..\examples\gizmos\metrics.gizmo.json lambdascript-core gizmo --exec
+```
+
+Imported command arguments are also refused for now. Argument binding, workspace mounting, and controlled import execution are later runner layers. The current import-call surface is a planning and validation step only.

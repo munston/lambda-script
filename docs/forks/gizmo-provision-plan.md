@@ -2,7 +2,7 @@
 
 A gizmo can import toolchains or programs from another gizmo without owning their source. The provision plan is the declarative bridge between the manifest and later sandbox execution.
 
-The current command is intentionally non-mutating:
+The provision-plan command is non-mutating:
 
 ```bat
 cd tools\gizmo
@@ -23,6 +23,12 @@ write policy
 whether the mounted import is mutable
 ```
 
-For the metrics gizmo, `lambdascript/core` is imported as a read-only toolchain. That means metrics gadgets may use declared commands such as `forks`, `glc`, and `gizmo`, while source changes to those tools must be made through the `lambdascript/core` gadget process.
+For the metrics gizmo, `lambdascript/core` is imported as a read-only toolchain. That means metrics gadgets may plan declared commands such as `forks`, `glc`, and `gizmo`, while source changes to those tools must be made through the `lambdascript/core` gadget process.
 
-This patch only emits a plan. It does not copy files, create mounts, or execute commands. Later gizmo runner patches will consume this plan to build restricted workspaces.
+Imported commands now have a separate non-executing command-plan surface:
+
+```bat
+node dist\src\cli.js import-call ..\..\examples\gizmos\metrics.gizmo.json lambdascript-core gizmo
+```
+
+This resolves the import and validates the command allow-list, producing an `LS_GIZMO_COMMAND_PLAN_V1` plan with `scope: import`. It does not create mounts or execute commands. Workspace mounting, argument binding for imported commands, and controlled import execution remain later runner layers.
