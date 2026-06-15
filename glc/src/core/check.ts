@@ -125,19 +125,16 @@ function inferBinaryType(op: string, left: TypeName | undefined, right: TypeName
     }
     return left === 'f64' || right === 'f64' ? 'f64' : 'i32';
   }
+  if (['&&', '||'].includes(op)) {
+    if (left !== 'bool' || right !== 'bool') diagnostics.push({ message: `Operator ${op} expects bool operands, got ${left} and ${right}` });
+    return 'bool';
+  }
   if (['<', '>', '<=', '>='].includes(op)) {
     if (!isNumeric(left) || !isNumeric(right)) diagnostics.push({ message: `Operator ${op} expects numeric operands, got ${left} and ${right}` });
     return 'bool';
   }
   if (['==', '!='].includes(op)) {
     if (!typeCompatible(left, right) && !typeCompatible(right, left)) diagnostics.push({ message: `Operator ${op} expects matching operands, got ${left} and ${right}` });
-    return 'bool';
-  }
-  if (['&&', '||'].includes(op)) {
-    if (left !== 'bool' || right !== 'bool') {
-      diagnostics.push({ message: `Operator ${op} expects bool operands, got ${left} and ${right}` });
-      return undefined;
-    }
     return 'bool';
   }
   diagnostics.push({ message: `Unknown binary operator: ${op}` });

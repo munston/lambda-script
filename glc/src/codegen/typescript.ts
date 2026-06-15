@@ -17,12 +17,14 @@ export function emitTypeScript(program: Program): string {
         const f = item as ForeignImport;
         const params = f.signature.params.map((t, i) => `arg${i}: ${mapTsType(t)}`).join(', ');
         const ret = mapTsType(f.signature.result);
-        out += `export function ${f.name.name}(runtime: CppForeignRuntime, ${params}): ${ret} {
+        const suffix = params.length > 0 ? `, ${params}` : '';
+        out += `export function ${f.name.name}(runtime: CppForeignRuntime${suffix}): ${ret} {
 `;
         out += `  return runtime.call({ symbol: '${f.symbol}', args: [${f.signature.params.map((_,i)=>`arg${i}`).join(', ')}] }) as ${ret};
 `;
         out += `}
-
+`;
+        out += `
 `;
       }
     }
@@ -36,7 +38,8 @@ export function emitTypeScript(program: Program): string {
         out += `  return ${emitExpr(fn.body)};
 `;
         out += `}
-
+`;
+        out += `
 `;
       }
       if (item.kind === 'Declaration') {
@@ -44,16 +47,19 @@ export function emitTypeScript(program: Program): string {
         if (d.value.kind === 'CallExpression' && foreignNames.has((d.value as CallExpression).callee.name)) {
           const call = d.value as CallExpression;
           const args = call.arguments.map(a => emitExpr(a)).join(', ');
+          const suffix = args.length > 0 ? `, ${args}` : '';
           out += `export function ${d.name.name}(runtime: CppForeignRuntime) {
 `;
-          out += `  return ${call.callee.name}(runtime, ${args});
+          out += `  return ${call.callee.name}(runtime${suffix});
 `;
           out += `}
-
+`;
+          out += `
 `;
         } else {
           out += `export const ${d.name.name} = ${emitExpr(d.value)};
-
+`;
+          out += `
 `;
         }
       }
@@ -66,6 +72,7 @@ function mapTsType(t: string): string {
   if (t === 'i32' || t === 'f64') return 'number';
   if (t === 'bool') return 'boolean';
   if (t === 'string') return 'string';
+  if (t === 'handle' || t === 'f64buf' || t === 'i32buf') return 'number';
   if (t === 'void') return 'null';
   return 'unknown';
 }

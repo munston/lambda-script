@@ -5,7 +5,7 @@
   "type": "commonjs",
   "scripts": {
     "build": "npm exec -- tsc -p tsconfig.json",
-    "test": "npm run build && node dist/test/smoke.js && node dist/test/cpp_ffi_tensor_bridge_smoke.js",
+    "test": "npm run build && node dist/test/smoke.js && node dist/test/gpt_haskell_smoke.js && node dist/test/cpp_ffi_extended_types_smoke.js",
     "glc": "npm run build --silent && node dist/src/cli/main.js"
   },
   "devDependencies": {

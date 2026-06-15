@@ -7,7 +7,7 @@ export interface ParseResult {
   diagnostics: Diagnostic[];
 }
 
-const VALID_FFI = ['i32', 'f64', 'bool', 'string', 'void'];
+const VALID_FFI = ['i32', 'f64', 'bool', 'string', 'void', 'handle', 'f64buf', 'i32buf'];
 const BINARY_PRECEDENCE: string[][] = [
   ['||'],
   ['&&'],
@@ -102,7 +102,7 @@ function findOperatorAtTopLevel(text: string, ops: string[]): { index: number; o
       if (start < 0) continue;
       if (text.slice(start, i + 1) !== op) continue;
       const prev = start > 0 ? text[start - 1] : '';
-      if ((op === '-' || op === '+') && (start === 0 || ['+', '-', '*', '/', '<', '>', '=', '!', '(', '&', '|'].includes(prev))) continue;
+      if ((op === '-' || op === '+') && (start === 0 || ['+', '-', '*', '/', '<', '>', '=', '!', '('].includes(prev))) continue;
       return { index: start, op };
     }
   }

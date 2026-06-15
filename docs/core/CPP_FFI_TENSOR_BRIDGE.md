@@ -1,12 +1,12 @@
 # C++ FFI tensor bridge
 
-Status: Ed stage-0 bridge.
+Status: Ed typed-FFI bridge.
 
 This document records the immediate C++ FFI route for GPT/tensor work without adding `hmatrix` or any other Haskell numeric dependency.
 
-## Current ABI choice
+## Typed ABI surface
 
-The current LambdaScript FFI surface admits only primitive types:
+LambdaScript now admits the following C++ FFI boundary types:
 
 ```text
 i32
@@ -14,47 +14,46 @@ f64
 bool
 string
 void
-```
-
-Until LambdaScript admits explicit `handle`, `f64buf`, `i32buf`, array, vector, and matrix types, the stage-0 tensor bridge represents opaque C++ resources as `i32` handles. Numeric buffers and model objects live in C++ and are referred to by integer handles at the LambdaScript boundary.
-
-This is deliberately an ABI convention rather than the final type discipline.
-
-## Stage-0 handle discipline
-
-A C++ tensor bridge should expose small, explicit resource operations:
-
-```text
-gpt_alloc_f64_buffer : i32 -> i32
-gpt_free_handle      : i32 -> void
-gpt_read_f64         : i32 -> i32 -> f64
-gpt_write_f64        : i32 -> i32 -> f64 -> void
-gpt_dot_f64          : i32 -> i32 -> i32 -> f64
-gpt_matmul_f64       : i32 -> i32 -> i32 -> i32 -> i32 -> i32 -> i32
-```
-
-The first `i32` parameters are handles or dimensions depending on the function contract. Functions returning `i32` may return newly allocated handles. Functions returning `void` perform updates or release resources.
-
-## Why this is useful now
-
-This makes the existing C++ FFI do more useful work immediately:
-
-```text
-scalar LambdaScript kernels remain dependency-free
-bulk tensor work can be delegated to local C++
-Haskell emission remains ordinary `foreign import ccall`
-TypeScript emission remains runtime-mediated through `CppForeignRuntime`
-the same LambdaScript source still emits both Haskell and TypeScript
-```
-
-## Known limitation
-
-Because stage-0 handles are represented as `i32`, the checker cannot distinguish dimensions from buffer handles or model handles. The next admitted FFI extension should add explicit handle and buffer primitive types:
-
-```text
 handle
 f64buf
 i32buf
 ```
 
-Those types should map to local runtime representations in TypeScript and to pointer/foreign-handle representations in Haskell without requiring `hmatrix`.
+The new types have these intended meanings:
+
+```text
+handle  opaque C++ resource handle
+f64buf  pointer-like handle to a Double buffer
+i32buf  pointer-like handle to an Int buffer
+```
+
+They are explicit FFI boundary types, not general LambdaScript data structures. They let LambdaScript distinguish model handles, floating buffers, integer token buffers, dimensions, and ordinary scalar values.
+
+## Haskell mapping
+
+The Haskell emitter maps the typed bridge as:
+
+```text
+handle -> Ptr ()
+f64buf -> Ptr CDouble
+i32buf -> Ptr CInt
+```
+
+Foreign returns are emitted as `IO (Ptr CDouble)`, `IO (Ptr CInt)`, or `IO (Ptr ())` where required. This gives the generated Haskell an ordinary `foreign import ccall` surface while avoiding `hmatrix`.
+
+## TypeScript mapping
+
+The TypeScript emitter maps these FFI resource values to `number` for the current runtime-mediated `CppForeignRuntime` bridge. That keeps the current runtime shape intact while preserving source-level LambdaScript type checking.
+
+## GPT direction
+
+GPT tensor code should now use explicit typed FFI declarations for native resource operations:
+
+```text
+gpt_alloc_f64_buffer : i32 -> f64buf
+gpt_alloc_i32_buffer : i32 -> i32buf
+gpt_create_model     : string -> handle
+gpt_model_score      : handle -> i32buf -> i32 -> f64
+```
+
+The later compiler work is to lift these into native LambdaScript arrays/vectors/matrices. Until then, C++ can own heavy tensor memory while LambdaScript retains typed, portable declarations and can still emit both TypeScript and Haskell.

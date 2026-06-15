@@ -73,7 +73,10 @@ export type ForeignPrimitiveType =
   | 'f64'
   | 'bool'
   | 'string'
-  | 'void';
+  | 'void'
+  | 'handle'
+  | 'f64buf'
+  | 'i32buf';
 
 export interface ForeignSignature {
   params: ForeignPrimitiveType[];
