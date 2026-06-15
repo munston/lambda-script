@@ -82,7 +82,15 @@ const commandPlan = buildGadgetCommandPlan(manifest, 'image-metrics', 'analyze',
 assert.strictEqual(commandPlan.format, 'LS_GIZMO_COMMAND_PLAN_V1');
 assert.strictEqual(commandPlan.execute, false);
 assert.strictEqual(commandPlan.rendered, 'python -m milk_metrics.cli analyze "sample.png" --out "out-dir"');
+
+const spacedArgs = parseArgPairs(['image=sample input.png', 'out=out dir']);
+const spacedCommandPlan = buildGadgetCommandPlan(manifest, 'image-metrics', 'analyze', spacedArgs, false);
+assert.strictEqual(spacedCommandPlan.execute, false);
+assert.strictEqual(spacedCommandPlan.rendered, 'python -m milk_metrics.cli analyze "sample input.png" --out "out dir"');
+
 assert.throws(() => parseArgPairs(['bad']), /expected --arg/);
+assert.throws(() => parseArgPairs(['1bad=value']), /unsafe argument name/);
+assert.throws(() => parseArgPairs(['image=']), /empty argument value/);
 assert.throws(() => buildGadgetCommandPlan(manifest, 'image-metrics', 'analyze', { image: 'sample.png' }, false), /missing command args/);
 assert.throws(() => buildGadgetCommandPlan(manifest, 'image-metrics', 'analyze', { image: 'sample.png', out: 'out', extra: 'x' }, false), /unused command args/);
 assert.throws(() => buildGadgetCommandPlan(manifest, 'image-metrics', 'analyze', { image: 'a&b', out: 'out' }, false), /unsafe command argument/);
@@ -103,4 +111,9 @@ assert.strictEqual(runCli(['provision-plan', full]), 0);
 assert.strictEqual(runCli(['provision-plan', full, '--out', planFile]), 0);
 assert.strictEqual(JSON.parse(fs.readFileSync(planFile, 'utf8')).format, 'LS_GIZMO_PROVISION_PLAN_V1');
 assert.strictEqual(runCli(['call', full, 'image-metrics', 'analyze', '--arg', 'image=sample.png', '--arg', 'out=out-dir']), 0);
+assert.strictEqual(runCli(['call', full, 'image-metrics', 'analyze', '--arg', 'image=sample input.png', '--arg', 'out=out dir', '--exec=false']), 0);
+assert.strictEqual(runCli(['call', full, 'image-metrics', 'analyze', '--arg', 'image=sample.png']), 1);
+assert.strictEqual(runCli(['call', full, 'image-metrics', 'analyze', '--arg', 'image=sample.png', '--arg', 'out=out', '--arg', 'extra=x']), 1);
+assert.strictEqual(runCli(['call', full, 'image-metrics', 'analyze', '--arg', 'image=a&b', '--arg', 'out=out']), 1);
+assert.strictEqual(runCli(['call', full, 'image-metrics', 'analyze', '--arg', 'image=sample.png', '--arg', 'out=out', '--exec=maybe']), 1);
 console.log('Gizmo smoke test passed');

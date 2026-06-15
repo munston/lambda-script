@@ -15,7 +15,7 @@ function usage(): string {
   gizmo status <manifest.json>
   gizmo branches <manifest.json>
   gizmo provision-plan <manifest.json> [--out <file>]
-  gizmo call <manifest.json> <gadget> <command> [--arg name=value ...] [--exec]
+  gizmo call <manifest.json> <gadget> <command> [--arg name=value ...] [--exec|--exec=true|--exec=false]
 `;
 }
 
@@ -56,13 +56,20 @@ function printBranches(manifest: GizmoManifest): void {
   }
 }
 
+function parseExecOption(item: string): boolean {
+  if (item === '--exec') return true;
+  if (item === '--exec=true') return true;
+  if (item === '--exec=false') return false;
+  throw new Error(`invalid exec option: ${item}`);
+}
+
 function collectCallArgs(args: string[]): { execute: boolean; pairs: string[] } {
   const pairs: string[] = [];
   let execute = false;
   for (let i = 0; i < args.length; i += 1) {
     const item = args[i];
-    if (item === '--exec') {
-      execute = true;
+    if (item === '--exec' || item.startsWith('--exec=')) {
+      execute = parseExecOption(item);
       continue;
     }
     if (item === '--arg') {
@@ -136,7 +143,7 @@ export function runCli(args: string[]): number {
       const file = args[1];
       const gadget = args[2];
       const commandName = args[3];
-      if (!file || !gadget || !commandName) throw new Error('usage: gizmo call <manifest.json> <gadget> <command> [--arg name=value ...] [--exec]');
+      if (!file || !gadget || !commandName) throw new Error('usage: gizmo call <manifest.json> <gadget> <command> [--arg name=value ...] [--exec|--exec=true|--exec=false]');
       const callArgs = collectCallArgs(args.slice(4));
       const manifest = ensureManifestValid(readManifest(file));
       const plan = buildGadgetCommandPlan(manifest, gadget, commandName, parseArgPairs(callArgs.pairs), callArgs.execute);
