@@ -1,0 +1,58 @@
+{
+  "agent": "system",
+  "base_commit": "94157b44c86215c4b6cf445ee1eaa1db10a6e369",
+  "base_ref": "origin/main",
+  "changed_files": [
+    {
+      "path": "tools/image_metrics/README.md",
+      "status": "M"
+    },
+    {
+      "path": "tools/image_metrics/native/image_metrics_ffi.cpp",
+      "status": "M"
+    },
+    {
+      "path": "tools/image_metrics/package.json",
+      "status": "M"
+    },
+    {
+      "path": "tools/image_metrics/scripts/build-native.js",
+      "status": "M"
+    },
+    {
+      "path": "tools/image_metrics/scripts/ensure-typescript.js",
+      "status": "A"
+    },
+    {
+      "path": "tools/image_metrics/src/cli.ts",
+      "status": "M"
+    },
+    {
+      "path": "tools/image_metrics/src/native.ts",
+      "status": "M"
+    },
+    {
+      "path": "tools/image_metrics/test/smoke.ts",
+      "status": "M"
+    },
+    {
+      "path": "tools/image_metrics/tsconfig.json",
+      "status": "M"
+    }
+  ],
+  "created_at": "2026-06-15T06:28:47.494429+00:00",
+  "format": "LS_MAIN_HISTORY_V1",
+  "kind": "gadget_promotion",
+  "metadata": {
+    "gadget": "image-metrics",
+    "gizmo": "metrics",
+    "promoted_commits": 1,
+    "target_ref": "origin/gadgets/metrics/image-metrics/main"
+  },
+  "number": 7,
+  "source_head_before_receipt": "e2ef257699f75fee2dc74b19c21bfda5d31aecb3",
+  "source_ref": "origin/gadgets/metrics/image-metrics/main",
+  "source_tree_before_receipt": "f353f2e0bee318833ff85fdc2a5935c0f9dbef95",
+  "title": "Promote metrics/image-metrics",
+  "version": "main-000007"
+}
