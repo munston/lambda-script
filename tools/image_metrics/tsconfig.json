@@ -1,14 +1,1 @@
-{
-  "compilerOptions": {
-    "target": "ES2020",
-    "module": "commonjs",
-    "rootDir": ".",
-    "outDir": "dist",
-    "strict": true,
-    "skipLibCheck": true
-  },
-  "include": [
-    "src/**/*.ts",
-    "test/**/*.ts"
-  ]
-}
+{"compilerOptions":{"target":"ES2020","module":"commonjs","rootDir":".","outDir":"dist","strict":true,"skipLibCheck":true},"include":["src/**/*.ts","test/**/*.ts"]}

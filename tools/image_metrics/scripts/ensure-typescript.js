@@ -7,12 +7,6 @@ const lib = path.join(root, 'node_modules', 'typescript', 'lib', 'lib.es2020.ful
 if (fs.existsSync(tsc) && fs.existsSync(lib)) process.exit(0);
 console.log('[image-metrics] repairing local TypeScript toolchain');
 const cmd = process.platform === 'win32' ? 'cmd' : 'npm';
-const args = process.platform === 'win32'
-  ? ['/c', 'npm', 'install', '--save-dev', 'typescript@5.8.3']
-  : ['install', '--save-dev', 'typescript@5.8.3'];
+const args = process.platform === 'win32' ? ['/c', 'npm', 'install', '--save-dev', 'typescript@5.8.3'] : ['install', '--save-dev', 'typescript@5.8.3'];
 const proc = cp.spawnSync(cmd, args, { cwd: root, stdio: 'inherit' });
 if (proc.status !== 0) process.exit(proc.status || 1);
-if (!fs.existsSync(tsc) || !fs.existsSync(lib)) {
-  console.error('[image-metrics] TypeScript install did not produce compiler files');
-  process.exit(1);
-}

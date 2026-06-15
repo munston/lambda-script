@@ -26,7 +26,8 @@
       },
       "commands": {
         "analyze": "image-metrics.bat analyze {image} --out {out}",
-        "image-parametric-demo": "image-metrics.bat image-parametric-demo --out {out} {images}"
+        "image-parametric-demo": "image-metrics.bat image-parametric-demo --out {out} {images}",
+        "stochastic-update": "image-metrics.bat stochastic-update {image} --out {out} --seed {seed} --trials {trials} --support {support} --step {step}"
       }
     },
     "text-metrics": {
@@ -77,11 +78,15 @@
       "allowed_reads": [
         "report.json",
         "feature_fixture.json",
-        "image_parametric_report.json"
+        "image_parametric_report.json",
+        "updated.ppm",
+        "update_trace.json",
+        "support_dictionary.json"
       ],
       "allowed_commands": [
         "analyze",
-        "image-parametric-demo"
+        "image-parametric-demo",
+        "stochastic-update"
       ]
     }
   ]

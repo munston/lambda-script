@@ -1,119 +1,32 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
 static double clamp01(double x){ return std::isfinite(x) ? std::max(0.0, std::min(1.0, x)) : 0.0; }
-static double round6(double x){ return std::round(x * 1000000.0) / 1000000.0; }
-
-static uint32_t hash_string(const std::string& s){
-    uint32_t h = 2166136261u;
-    for(unsigned char c: s){ h ^= c; h *= 16777619u; }
-    return h;
-}
-
-struct Rng{
-    uint32_t x;
-    explicit Rng(uint32_t seed): x(seed ? seed : 123456789u){}
-    uint32_t u32(){ uint32_t y=x; y^=y<<13; y^=y>>17; y^=y<<5; x=y; return x; }
-    double next(){ return double(u32()) / 4294967296.0; }
-};
-
-static std::vector<unsigned char> synthetic_bytes(const std::string& id, size_t n=2048){
-    Rng rng(hash_string(id));
-    std::vector<unsigned char> out(n);
-    int centre = 70 + int(rng.u32() % 120u);
-    for(size_t i=0;i<n;i++){
-        double wave = 35.0 * std::sin(double(i) * 0.031 + double(hash_string(id) % 97u));
-        int noise = int(std::floor(70.0 * (rng.next() - 0.5)));
-        out[i] = (unsigned char)std::max(0, std::min(255, int(std::round(double(centre)+wave+double(noise)))));
-    }
-    return out;
-}
-
-static std::vector<unsigned char> read_file(const std::string& path){
-    std::ifstream in(path, std::ios::binary);
-    if(!in) return {};
-    return std::vector<unsigned char>((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
-}
-
-struct Stats{ double mean, variance, gradient, blockiness, lowMass, highMass, chromaProxy, lengthNorm; };
-
-static Stats stats_from_bytes(const std::vector<unsigned char>& in){
-    const std::vector<unsigned char> bytes = in.empty() ? synthetic_bytes("synthetic://empty") : in;
-    double n = std::max<size_t>(1, bytes.size());
-    double sum=0, sum2=0, grad=0, block=0, low=0, high=0, even=0, odd=0;
-    for(size_t i=0;i<bytes.size();i++){
-        double v = double(bytes[i]) / 255.0;
-        sum += v; sum2 += v*v;
-        if(i>0) grad += std::abs(int(bytes[i])-int(bytes[i-1])) / 255.0;
-        if(i>0 && i%8==0) block += std::abs(int(bytes[i])-int(bytes[i-1])) / 255.0;
-        if(v < 0.22) low += 1; if(v > 0.78) high += 1;
-        if(i%2==0) even += v; else odd += v;
-    }
-    double mean = sum / n;
-    return {
-        mean,
-        std::max(0.0, sum2/n - mean*mean),
-        grad / std::max(1.0, n-1.0),
-        block / std::max(1.0, std::floor(n/8.0)),
-        low/n,
-        high/n,
-        std::abs(even-odd) / std::max(1.0, std::floor(n/2.0)),
-        clamp01(std::log2(n+1.0)/16.0)
-    };
-}
-
-int main(int argc, char** argv){
-    if(argc < 3 || std::string(argv[1]) != "analyze"){
-        std::cerr << "usage: image_metrics_ffi analyze <image-or-byte-file>\n";
-        return 2;
-    }
-    std::string source = argv[2];
-    std::vector<unsigned char> bytes = source.rfind("synthetic://",0)==0 ? synthetic_bytes(source) : read_file(source);
-    if(bytes.empty()) bytes = synthetic_bytes("synthetic://" + source);
-    Stats s = stats_from_bytes(bytes);
-    double surface = clamp01(1.0 - s.variance / 0.095);
-    double central = clamp01(1.0 - (0.65*s.variance + 0.35*s.gradient) / 0.14);
-    double compression = clamp01(1.0 - s.blockiness / 0.35);
-    double background = clamp01(1.0 - s.gradient / 0.42);
-    double accent = clamp01(0.25 + 0.75*std::abs(s.mean-0.5) + 0.20*background);
-    double colour = clamp01(0.35 + 1.8*s.chromaProxy + 0.25*s.highMass);
-    double boundary = clamp01(0.15 + s.gradient / 0.32);
-    double upper = clamp01(0.45 + 0.55*s.lengthNorm);
-    double env = clamp01(0.55*s.lowMass + 0.25*s.blockiness);
-    double chroma = clamp01(1.4*s.chromaProxy + 0.15*s.highMass);
-    double edgePres = clamp01(1.0 - std::max(0.0, 0.16-s.gradient)/0.16);
-    double distort = clamp01(std::max(0.0, s.blockiness-0.18)/0.32);
-    double edgeLoss = clamp01(std::max(0.0, 0.10-s.gradient)/0.10);
-    double score = 0.14*surface + 0.16*central + 0.09*compression + 0.08*background + 0.11*accent + 0.10*colour + 0.10*boundary + 0.11*upper + 0.08 + 0.09*edgePres - 0.16*env - 0.18*chroma - 0.14*distort - 0.06*edgeLoss;
-    std::cout << std::fixed << std::setprecision(6);
-    std::cout << "{\n";
-    std::cout << "  \"backend\": \"cpp-byte-ffi/0.1.1\",\n";
-    std::cout << "  \"source\": \"" << source << "\",\n";
-    std::cout << "  \"byteLength\": " << bytes.size() << ",\n";
-    std::cout << "  \"result\": {\n";
-    std::cout << "    \"score\": " << round6(score) << ",\n";
-    std::cout << "    \"surface_smoothness\": " << round6(surface) << ",\n";
-    std::cout << "    \"central_smoothness\": " << round6(central) << ",\n";
-    std::cout << "    \"compression_cleanliness\": " << round6(compression) << ",\n";
-    std::cout << "    \"background_softness\": " << round6(background) << ",\n";
-    std::cout << "    \"accent_private_energy\": " << round6(accent) << ",\n";
-    std::cout << "    \"colour_structure\": " << round6(colour) << ",\n";
-    std::cout << "    \"boundary_structure\": " << round6(boundary) << ",\n";
-    std::cout << "    \"upper_context_proxy\": " << round6(upper) << ",\n";
-    std::cout << "    \"full_frame_context\": 1.000000,\n";
-    std::cout << "    \"environment_penalty\": " << round6(env) << ",\n";
-    std::cout << "    \"chroma_penalty\": " << round6(chroma) << ",\n";
-    std::cout << "    \"edge_preservation\": " << round6(edgePres) << ",\n";
-    std::cout << "    \"distortion_penalty\": " << round6(distort) << ",\n";
-    std::cout << "    \"edge_loss\": " << round6(edgeLoss) << ",\n";
-    std::cout << "    \"best_restore_passes\": 0\n";
-    std::cout << "  }\n";
-    std::cout << "}\n";
-    return 0;
-}
+static uint32_t mix(uint32_t x){ x ^= x >> 16; x *= 0x7feb352du; x ^= x >> 15; x *= 0x846ca68bu; x ^= x >> 16; return x; }
+static uint32_t hash_string(const std::string& s){ uint32_t h=2166136261u; for(unsigned char c:s){ h^=c; h*=16777619u; } return h; }
+static double round6(double x){ return std::round(x*1000000.0)/1000000.0; }
+static std::string esc(const std::string& s){ std::string o; for(char c:s){ if(c=='\\' || c=='\"'){ o.push_back('\\'); o.push_back(c); } else if(c=='\n') o += "\\n"; else o.push_back(c); } return o; }
+struct Rng{ uint32_t x; explicit Rng(uint32_t seed):x(seed?seed:123456789u){} uint32_t u32(){ x=mix(x+0x9e3779b9u); return x; } double next(){ return double(u32())/4294967296.0; } double normal(){ double u=std::max(1e-12,next()), v=std::max(1e-12,next()); return std::sqrt(-2.0*std::log(u))*std::cos(6.283185307179586*v); } };
+struct Result{ double score,surface,central,compression,background,accent,colour,boundary,upper,env,chroma,edgePres,distort,edgeLoss; };
+static std::vector<unsigned char> synthetic_bytes(const std::string& id,size_t n=49152){ Rng rng(hash_string(id)); std::vector<unsigned char> out(n); int centre=70+int(rng.u32()%120u); for(size_t i=0;i<n;i++){ double wave=35.0*std::sin(double(i)*0.031+double(hash_string(id)%97u)); int noise=int(std::floor(70.0*(rng.next()-0.5))); out[i]=(unsigned char)std::max(0,std::min(255,int(std::round(double(centre)+wave+double(noise))))); } return out; }
+static std::vector<unsigned char> read_file(const std::string& p){ std::ifstream in(p,std::ios::binary); if(!in) return {}; return std::vector<unsigned char>((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>()); }
+static std::vector<unsigned char> read_or_synthetic(const std::string& p){ if(p.rfind("synthetic://",0)==0) return synthetic_bytes(p); auto b=read_file(p); return b.empty()?synthetic_bytes("synthetic://"+p):b; }
+static std::vector<unsigned char> frame_from_source(const std::string& p,int w,int h){ auto b=read_or_synthetic(p); std::vector<unsigned char> f(size_t(w*h*3)); for(size_t i=0;i<f.size();i++){ int v=b[i%b.size()]; double low=18.0*std::sin(double(i)*0.007+double(hash_string(p)%83)); f[i]=(unsigned char)std::max(0,std::min(255,int(std::round(v+low)))); } return f; }
+static Result metric(const std::vector<unsigned char>& bytes){ double n=std::max<size_t>(1,bytes.size()); double sum=0,sum2=0,grad=0,block=0,low=0,high=0,even=0,odd=0; for(size_t i=0;i<bytes.size();i++){ double v=double(bytes[i])/255.0; sum+=v; sum2+=v*v; if(i>0) grad += std::abs(int(bytes[i])-int(bytes[i-1]))/255.0; if(i>0 && i%8==0) block += std::abs(int(bytes[i])-int(bytes[i-1]))/255.0; if(v<0.22) low++; if(v>0.78) high++; if(i%2==0) even+=v; else odd+=v; } double mean=sum/n, var=std::max(0.0,sum2/n-mean*mean), g=grad/std::max(1.0,n-1.0), bl=block/std::max(1.0,std::floor(n/8.0)); double lowMass=low/n, highMass=high/n, chromaProxy=std::abs(even-odd)/std::max(1.0,std::floor(n/2.0)), len=clamp01(std::log2(n+1.0)/16.0); Result r; r.surface=clamp01(1-var/0.095); r.central=clamp01(1-(0.65*var+0.35*g)/0.14); r.compression=clamp01(1-bl/0.35); r.background=clamp01(1-g/0.42); r.accent=clamp01(0.25+0.75*std::abs(mean-0.5)+0.20*r.background); r.colour=clamp01(0.35+1.8*chromaProxy+0.25*highMass); r.boundary=clamp01(0.15+g/0.32); r.upper=clamp01(0.45+0.55*len); r.env=clamp01(0.55*lowMass+0.25*bl); r.chroma=clamp01(1.4*chromaProxy+0.15*highMass); r.edgePres=clamp01(1-std::max(0.0,0.16-g)/0.16); r.distort=clamp01(std::max(0.0,bl-0.18)/0.32); r.edgeLoss=clamp01(std::max(0.0,0.10-g)/0.10); r.score=0.14*r.surface+0.16*r.central+0.09*r.compression+0.08*r.background+0.11*r.accent+0.10*r.colour+0.10*r.boundary+0.11*r.upper+0.08+0.09*r.edgePres-0.16*r.env-0.18*r.chroma-0.14*r.distort-0.06*r.edgeLoss; return r; }
+static void write_ppm(const std::filesystem::path& p,const std::vector<unsigned char>& f,int w,int h){ std::ofstream out(p,std::ios::binary); out << "P6\n" << w << " " << h << "\n255\n"; out.write((const char*)f.data(), (std::streamsize)f.size()); }
+static std::string result_json(const Result& r){ std::ostringstream o; o<<std::fixed<<std::setprecision(6); o<<"{\n"; o<<"    \"score\": "<<round6(r.score)<<",\n"; o<<"    \"surface_smoothness\": "<<round6(r.surface)<<",\n"; o<<"    \"central_smoothness\": "<<round6(r.central)<<",\n"; o<<"    \"compression_cleanliness\": "<<round6(r.compression)<<",\n"; o<<"    \"background_softness\": "<<round6(r.background)<<",\n"; o<<"    \"accent_private_energy\": "<<round6(r.accent)<<",\n"; o<<"    \"colour_structure\": "<<round6(r.colour)<<",\n"; o<<"    \"boundary_structure\": "<<round6(r.boundary)<<",\n"; o<<"    \"upper_context_proxy\": "<<round6(r.upper)<<",\n"; o<<"    \"full_frame_context\": 1.000000,\n"; o<<"    \"environment_penalty\": "<<round6(r.env)<<",\n"; o<<"    \"chroma_penalty\": "<<round6(r.chroma)<<",\n"; o<<"    \"edge_preservation\": "<<round6(r.edgePres)<<",\n"; o<<"    \"distortion_penalty\": "<<round6(r.distort)<<",\n"; o<<"    \"edge_loss\": "<<round6(r.edgeLoss)<<",\n"; o<<"    \"best_restore_passes\": 0\n"; o<<"  }"; return o.str(); }
+struct Support{ int x,y,c; double sigma,scale; uint32_t seed; };
+static std::vector<Support> support_dictionary(int support,int w,int h,uint32_t seed){ std::vector<Support> d; for(int j=0;j<support;j++){ uint32_t s=mix(seed+uint32_t(j)*0x9e3779b9u); Rng rng(s); Support e; e.seed=s; e.x=int(rng.u32()%uint32_t(w)); e.y=int(rng.u32()%uint32_t(h)); e.c=int(rng.u32()%3u); e.sigma=4.0+16.0*rng.next(); e.scale=0.35+0.65*rng.next(); d.push_back(e); } return d; }
+static void apply_sparse_update(std::vector<unsigned char>& cand,const std::vector<Support>& dict,uint32_t seed,int trial,int w,int h,double step,double activeProb,std::vector<int>& active){ std::vector<double> delta(cand.size(),0.0); active.assign(dict.size(),0); for(size_t j=0;j<dict.size();j++){ Rng rng(mix(seed ^ uint32_t(trial*10007) ^ uint32_t(j*7919))); if(rng.next()>activeProb) continue; active[j]=1; const auto& s=dict[j]; double coeff=s.scale*rng.normal(); int rad=std::max(1,int(std::ceil(3.0*s.sigma))); for(int yy=std::max(0,s.y-rad); yy<std::min(h,s.y+rad+1); yy++){ for(int xx=std::max(0,s.x-rad); xx<std::min(w,s.x+rad+1); xx++){ double dx=double(xx-s.x), dy=double(yy-s.y); double g=std::exp(-0.5*(dx*dx+dy*dy)/(s.sigma*s.sigma)); size_t idx=size_t((yy*w+xx)*3+s.c); delta[idx]+=step*255.0*coeff*g; } } }
+ for(size_t i=0;i<cand.size();i++){ int v=int(std::round(double(cand[i])+delta[i])); cand[i]=(unsigned char)std::max(0,std::min(255,v)); } }
+static int analyze_cmd(const std::string& source){ auto f=frame_from_source(source,128,128); Result r=metric(f); std::cout<<"{\n  \"backend\": \"cpp-sparse-gaussian-ffi/0.2.0\",\n  \"source\": \""<<esc(source)<<"\",\n  \"byteLength\": "<<f.size()<<",\n  \"result\": "<<result_json(r)<<"\n}\n"; return 0; }
+static int update_cmd(int argc,char** argv){ if(argc<8){ std::cerr<<"usage: image_metrics_ffi stochastic-update <source> <out-dir> <seed> <trials> <support> <step>\n"; return 2; } std::string source=argv[2]; std::filesystem::path out=argv[3]; uint32_t seed=(uint32_t)std::stoul(argv[4]); int trials=std::stoi(argv[5]); int support=std::stoi(argv[6]); double step=std::stod(argv[7]); int w=128,h=128; std::filesystem::create_directories(out); auto sourceFrame=frame_from_source(source,w,h); auto best=sourceFrame; Result base=metric(best), bestR=base; auto dict=support_dictionary(support,w,h,seed); std::ofstream trace(out/"update_trace.json"); trace<<"[\n"; int accepted=0; for(int t=0;t<trials;t++){ auto cand=best; std::vector<int> active; apply_sparse_update(cand,dict,seed,t,w,h,step,0.35,active); Result cr=metric(cand); bool ok=cr.score>bestR.score; if(ok){ best=cand; bestR=cr; accepted++; for(size_t j=0;j<dict.size();j++) dict[j].scale *= active[j] ? 1.015 : 0.999; } trace<<(t?",\n":"")<<"  {\"trial\": "<<t<<", \"score\": "<<round6(cr.score)<<", \"bestScore\": "<<round6(bestR.score)<<", \"accepted\": "<<(ok?"true":"false")<<"}"; } trace<<"\n]\n"; write_ppm(out/"source.ppm",sourceFrame,w,h); write_ppm(out/"updated.ppm",best,w,h); std::ofstream dictOut(out/"support_dictionary.json"); dictOut<<"[\n"; for(size_t j=0;j<dict.size();j++){ dictOut<<(j?",\n":"")<<"  {\"index\": "<<j<<", \"seed\": "<<dict[j].seed<<", \"x\": "<<dict[j].x<<", \"y\": "<<dict[j].y<<", \"channel\": "<<dict[j].c<<", \"sigma\": "<<round6(dict[j].sigma)<<", \"scale\": "<<round6(dict[j].scale)<<"}"; } dictOut<<"\n]\n"; std::ofstream report(out/"report.json"); report<<"{\n  \"mode\": \"stochastic-update\",\n  \"backend\": \"cpp-sparse-gaussian-ffi/0.2.0\",\n  \"source\": \""<<esc(source)<<"\",\n  \"width\": "<<w<<",\n  \"height\": "<<h<<",\n  \"seed\": "<<seed<<",\n  \"trials\": "<<trials<<",\n  \"support\": "<<support<<",\n  \"step\": "<<step<<",\n  \"accepted\": "<<accepted<<",\n  \"initial_score\": "<<round6(base.score)<<",\n  \"final_score\": "<<round6(bestR.score)<<",\n  \"increase\": "<<round6(bestR.score-base.score)<<",\n  \"result\": "<<result_json(bestR)<<"\n}\n"; std::ofstream summary(out/"update_summary.txt"); summary<<"backend: cpp-sparse-gaussian-ffi/0.2.0\ninitial_score: "<<round6(base.score)<<"\nfinal_score: "<<round6(bestR.score)<<"\nincrease: "<<round6(bestR.score-base.score)<<"\naccepted: "<<accepted<<"/"<<trials<<"\nupdated: updated.ppm\n"; std::cout<<"{\n  \"mode\": \"stochastic-update\",\n  \"outDir\": \""<<esc(out.string())<<"\",\n  \"initial_score\": "<<round6(base.score)<<",\n  \"final_score\": "<<round6(bestR.score)<<",\n  \"increase\": "<<round6(bestR.score-base.score)<<",\n  \"accepted\": "<<accepted<<"\n}\n"; return 0; }
+int main(int argc,char** argv){ if(argc<2){ std::cerr<<"usage: image_metrics_ffi analyze|stochastic-update ...\n"; return 2; } std::string cmd=argv[1]; if(cmd=="analyze" && argc>=3) return analyze_cmd(argv[2]); if(cmd=="stochastic-update") return update_cmd(argc,argv); std::cerr<<"unknown command\n"; return 2; }
