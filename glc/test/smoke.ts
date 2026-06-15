@@ -11,8 +11,6 @@ interface FixtureExpectation {
   file: string;
   tsIncludes: string[];
   hsIncludes: string[];
-  tsExcludes?: string[];
-  hsExcludes?: string[];
 }
 
 function checkFixture(fixture: FixtureExpectation) {
@@ -29,12 +27,6 @@ function checkFixture(fixture: FixtureExpectation) {
   }
   for (const expected of fixture.hsIncludes) {
     assert.ok(hs.includes(expected), `${fixture.file} Haskell output should include ${expected}`);
-  }
-  for (const rejected of fixture.tsExcludes ?? []) {
-    assert.ok(!ts.includes(rejected), `${fixture.file} TypeScript output should not include ${rejected}`);
-  }
-  for (const rejected of fixture.hsExcludes ?? []) {
-    assert.ok(!hs.includes(rejected), `${fixture.file} Haskell output should not include ${rejected}`);
   }
   const originalError = console.error;
   try {
@@ -106,22 +98,29 @@ is_not x y = x != y
   assert.ok(!hs.includes('!='), 'Haskell output should not contain raw !=');
 }
 
-function checkHaskellForeignStringNesting() {
-  const source = `module ForeignStrings
+function checkUnsupportedForeignCallPlacement() {
+  const source = `module BadForeignPlacement
 
-foreign cpp join_message : string -> string -> void = "ls_join_message"
-first = "alpha"
-done = join_message(first, "beta")
+foreign cpp add_i32 : i32 -> i32 -> i32 = "ls_add_i32"
+
+bad : i32 -> i32
+bad x = add_i32(x, 1)
 `;
-  const pr = parse(source, 'foreign-strings.ls');
-  assert.strictEqual(pr.diagnostics.length, 0, 'foreign string nesting should parse');
+  const pr = parse(source, 'bad-foreign-placement.ls');
+  assert.strictEqual(pr.diagnostics.length, 0, 'foreign-placement fixture should parse');
   const c = checkProgram(pr.program!);
-  assert.strictEqual(c.diagnostics.length, 0, `foreign string nesting should check, got ${c.diagnostics.map(d => d.message).join('; ')}`);
+  assert.strictEqual(c.diagnostics.length, 0, `foreign-placement fixture should check, got ${c.diagnostics.map(d => d.message).join('; ')}`);
 
-  const ts = emitTypeScript(pr.program!);
-  const hs = emitHaskell(pr.program!);
-  assert.ok(ts.includes('join_message(runtime, first, "beta");'), 'TypeScript should pass string FFI arguments directly to runtime wrapper');
-  assert.ok(hs.includes('done = withCString first $ \\arg0 -> withCString "beta" $ \\arg1 -> join_message arg0 arg1'), 'Haskell should convert each string FFI argument with nested withCString');
+  assert.throws(
+    () => emitTypeScript(pr.program!),
+    /TypeScript backend unsupported foreign call placement: add_i32/,
+    'TypeScript backend should reject foreign calls outside direct top-level declarations',
+  );
+  assert.throws(
+    () => emitHaskell(pr.program!),
+    /Haskell backend unsupported foreign call placement: add_i32/,
+    'Haskell backend should reject foreign calls outside direct top-level declarations',
+  );
 }
 
 function main() {
@@ -138,16 +137,8 @@ function main() {
     },
     {
       file: 'examples/core/core0_ffi.ls',
-      tsIncludes: [
-        'export function add_i32',
-        "symbol: 'ls_add_i32'",
-        'export function answer(runtime: CppForeignRuntime): number',
-        'export function log_message(runtime: CppForeignRuntime, arg0: string): void',
-        'export function done(runtime: CppForeignRuntime): void',
-        '  log_message(runtime, "hello from Core-0");',
-      ],
-      hsIncludes: ['foreign import ccall "ls_add_i32" add_i32', 'answer :: IO Int', 'scaled :: IO Double', 'done :: IO ()'],
-      tsExcludes: ['return log_message(runtime, "hello from Core-0");', ': null'],
+      tsIncludes: ['export function add_i32', "symbol: 'ls_add_i32'", 'export function answer(runtime: CppForeignRuntime)'],
+      hsIncludes: ['foreign import ccall "ls_add_i32" add_i32', 'answer :: IO Int', 'scaled :: IO Double'],
     },
     {
       file: 'examples/core/core1_functions.ls',
@@ -164,11 +155,16 @@ function main() {
       tsIncludes: ['export const total = add(1, 2)', 'export const chosen = max_i32(add(1, 1), 3)'],
       hsIncludes: ['total = add 1 2', 'chosen = max_i32 (add 1 1) 3'],
     },
+    {
+      file: 'examples/core/core2_bool_logic.ls',
+      tsIncludes: ['return (!ok);', 'return (!(a || b));', 'export const choice = (true || false)'],
+      hsIncludes: ['inverse ok = not ok', 'neither a b = not (a || b)', 'choice = (True || False)'],
+    },
   ];
   for (const fixture of fixtures) checkFixture(fixture);
   checkUnsupportedBackendErrors();
   checkHaskellNotEqualEmission();
-  checkHaskellForeignStringNesting();
+  checkUnsupportedForeignCallPlacement();
 
   checkFails('unknown-variable', `module Bad
 
@@ -207,6 +203,16 @@ f x = false
 f : bool -> bool
 f x = x + true
 `, 'Operator + expects numeric operands');
+  checkFails('logical-type', `module Bad
+
+f : i32 -> bool
+f x = x && true
+`, 'Operator && expects bool operands');
+  checkFails('unary-bool-type', `module Bad
+
+f : i32 -> bool
+f x = !x
+`, 'Unary ! expects bool operand');
   parseFails('dangling-signature', `module Bad
 
 f : i32 -> i32

@@ -172,6 +172,16 @@ function parseExpression(text: string, span: Span): Expression | undefined {
       if (left && right) return { kind: 'BinaryExpression', operator: found.op, left, right, span };
     }
   }
+  if (s.startsWith('!')) {
+    const operand = parseExpression(s.slice(1).trim(), span);
+    if (operand) return { kind: 'UnaryExpression', operator: '!', operand, span };
+    return undefined;
+  }
+  if (s.startsWith('not ')) {
+    const operand = parseExpression(s.slice(4).trim(), span);
+    if (operand) return { kind: 'UnaryExpression', operator: 'not', operand, span };
+    return undefined;
+  }
   if (s === 'true' || s === 'false') return { kind: 'Literal', value: s === 'true', span };
   if (!isNaN(Number(s))) return { kind: 'Literal', value: Number(s), span };
   if (s.startsWith('"') && s.endsWith('"')) return { kind: 'Literal', value: s.slice(1, -1), span };

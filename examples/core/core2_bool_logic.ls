@@ -6,6 +6,12 @@ both a b = a && b
 either : bool -> bool -> bool
 either a b = a || b
 
+inverse : bool -> bool
+inverse ok = !ok
+
+neither : bool -> bool -> bool
+neither a b = not (a || b)
+
 inside : i32 -> bool
 inside x = x > 0 && x < 10
 

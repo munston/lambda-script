@@ -53,15 +53,83 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Add LSC-1 coordination intake document"
+    },
+    {
+      "agent": "edd",
+      "created_at": "2026-06-15T23:56:27.935739+00:00",
+      "file_count": 7,
+      "file_fingerprints": [
+        {
+          "content_length": 2095,
+          "content_sha256": "a1e4926e67802dbc7b6fb3659ca62f0757b4c0b51f31ce6d3b8a38e685bddab3",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/src/core/ast.ts"
+        },
+        {
+          "content_length": 12004,
+          "content_sha256": "82c4d403c8e489d7769bfc70fa07648055e8ddc48642a311aefa07c579758cc2",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/src/parser/parser.ts"
+        },
+        {
+          "content_length": 7731,
+          "content_sha256": "1d18d1d334b40b12e09007956fc3d94171ccd0d4749618aa243007b38aff0743",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/src/core/check.ts"
+        },
+        {
+          "content_length": 3814,
+          "content_sha256": "cadcd9511fb58e3cc58f0c0cd546dba543b0454e4aa5b8844bd6103fa8ee316f",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/src/codegen/typescript.ts"
+        },
+        {
+          "content_length": 6086,
+          "content_sha256": "23f1e64756153cfde05bf5e8eb7bad5db20ef4f89e4a3d6c6b704562624fcef4",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/src/codegen/haskell.ts"
+        },
+        {
+          "content_length": 359,
+          "content_sha256": "72b07a6cfe8858c5bb131f0e5cac77f13188776ab98191ee0e1397e632b3358c",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "examples/core/core2_bool_logic.ls"
+        },
+        {
+          "content_length": 8479,
+          "content_sha256": "2729a38e7b66af97802ed9e2b133da3baadc3243dbdb9aa6b7ca9a0c68559e21",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/test/smoke.ts"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "4497cca2ed3a327380f4981f3c1e38aeeed40b8e524b56147e87c3d779713895",
+      "payload_path": "forks/replay-ledger/payloads/44/4497cca2ed3a327380f4981f3c1e38aeeed40b8e524b56147e87c3d779713895.json",
+      "sequence": 3,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Add unary bool negation and fix Haskell FFI pointer emission"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 3,
+  "next_sequence": 4,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-15T22:58:15.076134+00:00"
+  "updated_at": "2026-06-15T23:56:27.935758+00:00"
 }

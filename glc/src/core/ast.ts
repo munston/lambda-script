@@ -23,6 +23,13 @@ export interface CallExpression {
   span?: Span;
 }
 
+export interface UnaryExpression {
+  kind: 'UnaryExpression';
+  operator: '!' | 'not';
+  operand: Expression;
+  span?: Span;
+}
+
 export interface BinaryExpression {
   kind: 'BinaryExpression';
   operator: string;
@@ -51,6 +58,7 @@ export type Expression =
   | Identifier
   | Literal
   | CallExpression
+  | UnaryExpression
   | BinaryExpression
   | IfExpression
   | LetExpression;

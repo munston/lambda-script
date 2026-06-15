@@ -1,6 +1,6 @@
 import { Program } from './program';
 import { Diagnostic } from './diagnostic';
-import { CallExpression, Expression, ForeignImport, ForeignPrimitiveType, FunctionDeclaration, FunctionSignature } from './ast';
+import { CallExpression, Expression, ForeignImport, ForeignPrimitiveType, FunctionDeclaration, FunctionSignature, UnaryExpression } from './ast';
 
 type TypeName = ForeignPrimitiveType;
 
@@ -92,6 +92,12 @@ function inferExpression(expr: Expression, scope: Scope, diagnostics: Diagnostic
     }
     for (const arg of call.arguments) inferExpression(arg, scope, diagnostics);
     return undefined;
+  }
+  if (expr.kind === 'UnaryExpression') {
+    const unary = expr as UnaryExpression;
+    const operand = inferExpression(unary.operand, scope, diagnostics);
+    if (operand && operand !== 'bool') diagnostics.push({ message: `Unary ${unary.operator} expects bool operand, got ${operand}` });
+    return 'bool';
   }
   if (expr.kind === 'BinaryExpression') {
     const left = inferExpression(expr.left, scope, diagnostics);
