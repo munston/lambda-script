@@ -74,8 +74,69 @@ const plan = buildProvisionPlan(manifest);
 assert.strictEqual(plan.format, 'LS_GIZMO_PROVISION_PLAN_V1');
 assert.strictEqual(plan.import_count, 1);
 assert.strictEqual(plan.command_count, 3);
+assert.strictEqual(plan.imports[0].name, 'lambdascript-core');
 assert.strictEqual(plan.imports[0].source, 'lambdascript/core');
+assert.strictEqual(plan.imports[0].mount, 'toolchains/lambdascript');
+assert.strictEqual(plan.imports[0].mode, 'read-only');
+assert.strictEqual(plan.imports[0].target_ref, 'origin/gadgets/lambdascript/core/main');
+assert.deepStrictEqual(plan.imports[0].allowed_commands, ['forks', 'gizmo', 'glc']);
+assert.strictEqual(plan.imports[0].write_policy, 'deny');
 assert.strictEqual(plan.imports[0].mutable, false);
+
+const defaultReadOnlyManifest = ensureManifestValid({
+  format: 'LS_GIZMO_V1',
+  name: 'readonly-lab',
+  gadgets: {},
+  imports: {
+    core: {
+      from_gizmo: 'lambdascript',
+      from_gadget: 'core',
+      mount: 'toolchains/lambdascript',
+      mode: 'read-only',
+      target_ref: 'origin/gadgets/lambdascript/core/main',
+      allowed_commands: ['gizmo', 'forks'],
+    },
+  },
+});
+const defaultReadOnlyPlan = buildProvisionPlan(defaultReadOnlyManifest);
+assert.strictEqual(defaultReadOnlyPlan.command_count, 2);
+assert.deepStrictEqual(defaultReadOnlyPlan.imports[0].allowed_commands, ['forks', 'gizmo']);
+assert.strictEqual(defaultReadOnlyPlan.imports[0].write_policy, 'deny');
+assert.strictEqual(defaultReadOnlyPlan.imports[0].mutable, false);
+
+const copyOnWriteManifest = ensureManifestValid({
+  format: 'LS_GIZMO_V1',
+  name: 'copy-lab',
+  gadgets: {},
+  imports: {
+    core: {
+      from_gizmo: 'lambdascript',
+      from_gadget: 'core',
+      mount: 'toolchains/lambdascript-copy',
+      mode: 'copy',
+      target_ref: 'origin/gadgets/lambdascript/core/main',
+      allowed_commands: ['gizmo'],
+    },
+  },
+});
+const copyOnWritePlan = buildProvisionPlan(copyOnWriteManifest);
+assert.strictEqual(copyOnWritePlan.imports[0].write_policy, 'copy-on-write');
+assert.strictEqual(copyOnWritePlan.imports[0].mutable, true);
+
+assert.throws(() => ensureManifestValid({
+  format: 'LS_GIZMO_V1',
+  name: 'bad-policy-lab',
+  gadgets: {},
+  imports: {
+    core: {
+      from_gizmo: 'lambdascript',
+      from_gadget: 'core',
+      mount: 'toolchains/lambdascript',
+      mode: 'read-only',
+      write_policy: 'allow-write',
+    },
+  },
+}), /imports.core.write_policy/);
 
 const args = parseArgPairs(['image=sample.png', 'out=out-dir']);
 const commandPlan = buildGadgetCommandPlan(manifest, 'image-metrics', 'analyze', args, false);
