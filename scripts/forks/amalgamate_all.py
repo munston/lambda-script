@@ -13,13 +13,16 @@ Use gadget mode for patches landed through gadget JSON targets:
 
   forks.bat amalgamate-all --gadget lambdascript core --apply
 
-The terminal invariant in either mode is that the selected agent lanes end even
-with the relevant moving base and no direct agent-lane delta remains.
+Gadget mode now performs a replay-materialisation audit before any direct lane
+rewind. The audit reads each selected agent's gadget replay ledger from the
+gadget integration branch, checks payload presence, and verifies that each
+recorded file fingerprint is present on the integration branch.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shutil
 import subprocess
@@ -97,6 +100,13 @@ def run_shell(command: str, cwd: Path, check: bool = True) -> subprocess.Complet
     if check and proc.returncode != 0:
         raise RuntimeError("command failed: " + command)
     return proc
+
+
+def read_text_at_ref(root: Path, ref: str, path: str) -> str | None:
+    proc = forks.git(["show", f"{ref}:{path}"], root, check=False)
+    if proc.returncode != 0:
+        return None
+    return proc.stdout
 
 
 # -------------------------
@@ -294,6 +304,65 @@ def gadget_integration_branch(gizmo: str, gadget: str) -> str:
     return gadget_branches.integration_branch(gizmo, gadget)
 
 
+def gadget_ledger_path(gizmo: str, gadget: str, agent: str) -> str:
+    return f"forks/replay-ledger/gadgets/{gizmo}/{gadget}/{forks.normalize_agent(agent)}.json"
+
+
+def audit_gadget_replay_materialisation(root: Path, gizmo: str, gadget: str, agents: list[str], *, require_ledgers: bool) -> None:
+    base_ref = gadget_base_ref(gizmo, gadget)
+    errors: list[str] = []
+    print(f"gadget replay materialisation audit for {gizmo}/{gadget} at {forks.short_commit(root, base_ref)}")
+    for agent in agents:
+        ledger_path = gadget_ledger_path(gizmo, gadget, agent)
+        raw = read_text_at_ref(root, base_ref, ledger_path)
+        if raw is None:
+            msg = f"{agent}: no gadget replay ledger at {ledger_path}"
+            print(msg)
+            if require_ledgers:
+                errors.append(msg)
+            continue
+        try:
+            ledger = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            errors.append(f"{agent}: invalid ledger JSON: {exc}")
+            continue
+        entries = list(ledger.get("entries", []))
+        print(f"{agent}: ledger entries={len(entries)} path={ledger_path}")
+        for entry in entries:
+            seq = entry.get("sequence")
+            title = entry.get("title", "")
+            payload_path = entry.get("payload_path")
+            if not isinstance(payload_path, str) or not payload_path:
+                errors.append(f"{agent}#{seq}: missing payload_path")
+            elif read_text_at_ref(root, base_ref, payload_path) is None:
+                errors.append(f"{agent}#{seq}: payload missing at {payload_path}")
+            file_count = 0
+            for fp in entry.get("file_fingerprints", []):
+                file_count += 1
+                path = fp.get("path")
+                op = fp.get("op", "upsert")
+                expected = fp.get("content_sha256")
+                if not isinstance(path, str) or not path:
+                    errors.append(f"{agent}#{seq}: malformed file fingerprint path")
+                    continue
+                content = read_text_at_ref(root, base_ref, path)
+                if op in {"delete", "remove"}:
+                    if content is not None:
+                        errors.append(f"{agent}#{seq}: expected deletion but file exists: {path}")
+                    continue
+                if content is None:
+                    errors.append(f"{agent}#{seq}: materialised file missing: {path}")
+                    continue
+                if expected:
+                    actual = hashlib.sha256(content.encode("utf-8")).hexdigest()
+                    if actual != expected:
+                        errors.append(f"{agent}#{seq}: materialised file hash mismatch: {path} expected={expected} actual={actual}")
+            print(f"  #{seq}: files={file_count} title={title}")
+    if errors:
+        raise RuntimeError("gadget replay materialisation audit failed\n" + "\n".join(errors))
+    print("ok gadget replay materialisation audit passed")
+
+
 def gadget_submission_dir(root: Path) -> Path:
     path = root / forks.FORKS_DIR / "gadget-submissions"
     path.mkdir(parents=True, exist_ok=True)
@@ -461,6 +530,8 @@ def gadget_assert_clean(root: Path, gizmo: str, gadget: str, agents: list[str]) 
 def gadget_run(args: argparse.Namespace, root: Path, agents: list[str]) -> int:
     gizmo, gadget = args.gadget
     forks.git(["fetch", "--prune", "origin"], root)
+    if not args.skip_replay_audit:
+        audit_gadget_replay_materialisation(root, gizmo, gadget, agents, require_ledgers=args.require_ledgers)
     if not args.apply:
         print(f"amalgamate-all gadget plan only for {gizmo}/{gadget}; pass --apply to mutate")
         for agent in agents:
@@ -473,6 +544,8 @@ def gadget_run(args: argparse.Namespace, root: Path, agents: list[str]) -> int:
         gadget_final_sync(root, gizmo, gadget, agents)
     if not args.skip_final_assert:
         gadget_assert_clean(root, gizmo, gadget, agents)
+    if not args.skip_replay_audit:
+        audit_gadget_replay_materialisation(root, gizmo, gadget, agents, require_ledgers=args.require_ledgers)
     print("amalgamate-all complete")
     return 0
 
@@ -490,6 +563,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--apply", action="store_true", help="mutate: capture/replay/verify/submit/final-sync")
     parser.add_argument("--skip-final-sync", action="store_true", help="advanced: do not sync target agent lanes to final base")
     parser.add_argument("--skip-final-assert", action="store_true", help="advanced: do not assert that target lanes are clean after amalgamation")
+    parser.add_argument("--skip-replay-audit", action="store_true", help="advanced: skip gadget replay materialisation audit")
+    parser.add_argument("--require-ledgers", action="store_true", help="fail gadget replay audit when a selected agent has no gadget ledger")
     return parser
 
 

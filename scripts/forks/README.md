@@ -22,8 +22,6 @@ Apply:
 forks.bat amalgamate-all --apply
 ```
 
-Repository mode applies replay-ledger-backed JSON work for the repository agent lane, captures any remaining direct lane delta, replays/verifies/submits it, then final-syncs the selected `agents/<name>` lanes to the final `origin/main`.
-
 ## Gadget-agent amalgamation
 
 Gadget mode operates over:
@@ -44,30 +42,32 @@ Apply:
 forks.bat amalgamate-all --gadget lambdascript core --apply
 ```
 
-Use gadget mode for JSON patches landed through gadget targets such as:
+Gadget mode now begins with a non-destructive replay-materialisation audit. The audit reads each selected agent's gadget replay ledger from the gadget integration branch, checks that the payload object exists, and verifies that every recorded file fingerprint is present on the integration branch.
+
+The audit prints each replay entry before any lane is rewound:
 
 ```text
-target.kind: gadget
-target.gizmo: lambdascript
-target.gadget: core
+gadget replay materialisation audit for lambdascript/core
+ed: ledger entries=...
+  #N: files=... title=...
+edd: ledger entries=...
+  #N: files=... title=...
+eddy: ledger entries=...
+  #N: files=... title=...
+ok gadget replay materialisation audit passed
 ```
 
-Gadget mode does two things:
+Use this before accepting claims that a patch was or was not applied. If a replay-ledger entry exists but the corresponding file content is not materialised on the gadget branch, `amalgamate-all` fails before destructive lane sync.
 
-```text
-1. If a gadget-agent lane has direct unique work, capture that lane delta before rewind, rewind the lane to the gadget integration branch, apply the captured patch to the gadget integration branch, verify, and push with freshness protection.
-2. After every selected agent has been visited, sync every selected gadget-agent lane to the final gadget integration branch and assert that the selected lanes are clean.
+Optional stricter mode:
+
+```bat
+forks.bat amalgamate-all --gadget lambdascript core --require-ledgers
 ```
 
-If the recent work was already landed by `ed-land-json.bat`, `edd-land-json.bat`, or `eddy-land-json.bat` to `gadgets/lambdascript/core/main`, gadget mode still matters because it updates:
+This fails if any selected agent has no gadget replay ledger. The default merely reports a missing ledger so that agents with no submitted patch do not block unrelated work.
 
-```text
-gadget-agents/lambdascript/core/ed
-gadget-agents/lambdascript/core/edd
-gadget-agents/lambdascript/core/eddy
-```
-
-to that final gadget branch.
+After all selected agents have been visited, gadget mode final-syncs the selected gadget-agent lanes to the gadget integration branch and repeats the replay-materialisation audit unless `--skip-replay-audit` is given.
 
 ## Important distinction
 
@@ -79,9 +79,7 @@ agents/edd
 agents/eddy
 ```
 
-It does not process gadget-agent lanes.
-
-For the current LambdaScript core work, use:
+For the current LambdaScript core gadget workflow, use:
 
 ```bat
 forks.bat amalgamate-all --gadget lambdascript core --apply
@@ -93,6 +91,6 @@ After a successful apply, no separate sync step is expected for the selected lan
 
 Repository mode leaves selected `agents/<name>` lanes even with `origin/main`.
 
-Gadget mode leaves selected `gadget-agents/<gizmo>/<gadget>/<name>` lanes even with `origin/gadgets/<gizmo>/<gadget>/main`.
+Gadget mode leaves selected `gadget-agents/<gizmo>/<gadget>/<name>` lanes even with `origin/gadgets/<gizmo>/<gadget>/main` and proves the selected agents' replay-ledger entries are materialised on that branch.
 
-`main` is never rewound. Agent lanes may be rewound only after their unique direct work has been captured.
+`main` is never rewound. Agent lanes may be rewound only after their unique direct work has been captured or their replay-backed content has been proven materialised.
