@@ -121,6 +121,17 @@
       "source_head_before_receipt": "a87cf6f341e49689bd9a363af0f66d6fdf54330d",
       "title": "Promote metrics/image-metrics",
       "version": "main-000011"
+    },
+    {
+      "agent": "system",
+      "base_commit": "70217405fa7b640eb091a271b1c8405eecda4235",
+      "created_at": "2026-06-15T08:10:17.324370+00:00",
+      "kind": "gadget_promotion",
+      "number": 12,
+      "receipt": "docs/forks/main-history/patches/main-000012.json",
+      "source_head_before_receipt": "95a0a8fd895a1077a0c80bfe5b064a0294261ee3",
+      "title": "Promote metrics/image-metrics",
+      "version": "main-000012"
     }
   ],
   "format": "LS_MAIN_HISTORY_V1"
