@@ -447,6 +447,32 @@ static std::vector<Atom> make_support(uint32_t seed, int count, int w, int h, do
     return atoms;
 }
 
+static double wrap_angle(double x) {
+    const double tau = 6.28318530717958647692;
+    while (x < 0.0) x += tau;
+    while (x >= tau) x -= tau;
+    return x;
+}
+
+static Atom perturb_atom(const Atom& base, Rng& rng, int w, int h, double step) {
+    Atom a = base;
+    double minDim = double(std::max(1, std::min(w, h)));
+    double posStep = std::max(0.30, 0.55 * a.sigma);
+    a.cx = std::max(0.0, std::min(double(std::max(1, w - 1)), a.cx + posStep * rng.normal()));
+    a.cy = std::max(0.0, std::min(double(std::max(1, h - 1)), a.cy + posStep * rng.normal()));
+    a.sigma = std::max(2.0, std::min(0.35 * minDim, a.sigma * std::exp(0.12 * rng.normal())));
+    a.radialFrequency = std::max(0.45, std::min(18.0, a.radialFrequency * std::exp(0.10 * rng.normal())));
+    a.phase = wrap_angle(a.phase + 0.35 * rng.normal());
+    a.orientation = wrap_angle(a.orientation + 0.28 * rng.normal());
+    if (rng.next() < 0.10) {
+        int delta = rng.next() < 0.5 ? -1 : 1;
+        a.harmonicOrder = std::max(0, std::min(8, a.harmonicOrder + delta));
+    }
+    if (rng.next() < 0.06) a.channel = int(rng.u32() % 3u);
+    a.scale = std::max(step * 0.04, std::min(step * 3.0, a.scale * std::exp(0.08 * rng.normal())));
+    return a;
+}
+
 
 static double bessel_j_int(int order, double x) {
     int m = std::max(0, std::min(8, order));
@@ -509,7 +535,7 @@ static int cmd_analyze(const std::string& source) {
     }
     Metric m = score_frame(f);
     std::cout << "{\n";
-    std::cout << "  \"backend\": \"cpp-bessel-window-sparse-ffi/0.4.0\",\n";
+    std::cout << "  \"backend\": \"cpp-localized-bessel-support-ffi/0.5.0\",\n";
     std::cout << "  \"source\": \"" << json_escape(source) << "\",\n";
     std::cout << "  \"width\": " << f.w << ",\n";
     std::cout << "  \"height\": " << f.h << ",\n";
@@ -550,12 +576,14 @@ static int cmd_update(int argc, char** argv) {
         Frame cand = best;
         int active = 0;
         std::vector<int> activeIdx;
+        std::vector<Atom> proposed = atoms;
         for (int j = 0; j < support; ++j) {
             if (rng.next() < 0.23) {
                 active++;
                 activeIdx.push_back(j);
-                double coeff = atoms[j].scale * rng.normal();
-                apply_atom(cand, atoms[j], coeff);
+                proposed[j] = perturb_atom(atoms[j], rng, original.w, original.h, step);
+                double coeff = proposed[j].scale * rng.normal();
+                apply_atom(cand, proposed[j], coeff);
             }
         }
         Metric cm = score_frame(cand);
@@ -567,7 +595,10 @@ static int cmd_update(int argc, char** argv) {
             bestMetric = cm;
             bestObjective = objective;
             accepted++;
-            for (int j : activeIdx) atoms[j].scale = std::min(step * 3.0, atoms[j].scale * 1.018 + step * 0.001);
+            for (int j : activeIdx) {
+                atoms[j] = proposed[j];
+                atoms[j].scale = std::min(step * 3.0, atoms[j].scale * 1.018 + step * 0.001);
+            }
         } else {
             for (int j : activeIdx) atoms[j].scale = std::max(step * 0.04, atoms[j].scale * 0.992);
         }
@@ -600,13 +631,14 @@ static int cmd_update(int argc, char** argv) {
 
     std::ofstream report(outDir + "/report.json");
     report << "{\n";
-    report << "  \"backend\": \"cpp-bessel-window-sparse-ffi/0.4.0\",\n";
+    report << "  \"backend\": \"cpp-localized-bessel-support-ffi/0.5.0\",\n";
     report << "  \"source\": \"" << json_escape(source) << "\",\n";
     report << "  \"width\": " << original.w << ",\n";
     report << "  \"height\": " << original.h << ",\n";
     report << "  \"seed\": " << seed << ",\n";
     report << "  \"trials\": " << trials << ",\n";
     report << "  \"support\": " << support << ",\n";
+    report << "  \"support_mode\": \"localized_bessel_parameter_vector\",\n";
     report << "  \"step\": " << round6(step) << ",\n";
     report << "  \"accepted\": " << accepted << ",\n";
     report << "  \"mean_abs_pixel_delta\": " << round6(ds.meanAbs) << ",\n";
@@ -621,7 +653,7 @@ static int cmd_update(int argc, char** argv) {
     report << "}\n";
 
     std::ofstream summary(outDir + "/update_summary.txt");
-    summary << "backend: cpp-bessel-window-sparse-ffi/0.4.0\n";
+    summary << "backend: cpp-localized-bessel-support-ffi/0.5.0\n";
     summary << "source: " << source << "\n";
     summary << "width: " << original.w << "\n";
     summary << "height: " << original.h << "\n";
@@ -629,6 +661,7 @@ static int cmd_update(int argc, char** argv) {
     summary << "final_score: " << bestMetric.score << "\n";
     summary << "final_objective: " << bestObjective << "\n";
     summary << "increase: " << bestMetric.score - initial.score << "\n";
+    summary << "support_mode: localized_bessel_parameter_vector\n";
     summary << "accepted: " << accepted << "/" << trials << "\n";
     summary << "mean_abs_pixel_delta: " << ds.meanAbs << "\n";
     summary << "max_abs_pixel_delta: " << ds.maxAbs << "\n";
@@ -636,7 +669,7 @@ static int cmd_update(int argc, char** argv) {
     summary << "outputs: source.bmp updated.bmp delta.bmp delta_overlay.bmp source.ppm updated.ppm delta.ppm delta_overlay.ppm report.json update_trace.json support_dictionary.json\n";
 
     std::cout << "{\n";
-    std::cout << "  \"backend\": \"cpp-bessel-window-sparse-ffi/0.4.0\",\n";
+    std::cout << "  \"backend\": \"cpp-localized-bessel-support-ffi/0.5.0\",\n";
     std::cout << "  \"outDir\": \"" << json_escape(outDir) << "\",\n";
     std::cout << "  \"initial_score\": " << round6(initial.score) << ",\n";
     std::cout << "  \"final_score\": " << round6(bestMetric.score) << ",\n";
