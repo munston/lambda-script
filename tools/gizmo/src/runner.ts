@@ -6,6 +6,7 @@ import { GIZMO_COMMAND_PLAN_FORMAT, GizmoCommandPlan, GizmoManifest } from './ty
 
 const placeholderPattern = /\{([A-Za-z_][A-Za-z0-9_-]*)\}/g;
 const safeArgPattern = /^[^\0\r\n\"&|<>^%]+$/;
+const safeCommandNamePattern = /^[A-Za-z0-9._-]+$/;
 
 function unique(values: string[]): string[] {
   return Array.from(new Set(values)).sort();
@@ -26,6 +27,10 @@ function quoteArg(value: string): string {
 
 function renderTemplate(template: string, args: Record<string, string>): string {
   return template.replace(placeholderPattern, (_full, name: string) => quoteArg(args[name]));
+}
+
+function requireSafeCommandName(value: string): void {
+  if (!safeCommandNamePattern.test(value)) throw new Error(`unsafe imported command name: ${value}`);
 }
 
 export function parseArgPairs(values: string[]): Record<string, string> {
@@ -68,12 +73,42 @@ export function buildGadgetCommandPlan(manifestInput: unknown, gadgetName: strin
     cwd: '.',
     execute,
     missing_args: missing,
-    unused_args: unused,
+    unused_args: [],
+  };
+}
+
+export function buildImportedCommandPlan(manifestInput: unknown, importName: string, commandName: string): GizmoCommandPlan {
+  const manifest = ensureManifestValid(manifestInput) as GizmoManifest;
+  const item = manifest.imports?.[importName];
+  if (!item) throw new Error(`unknown import: ${importName}`);
+  requireSafeCommandName(commandName);
+  const allowed = [...(item.allowed_commands ?? [])].sort();
+  if (!allowed.includes(commandName)) throw new Error(`import ${importName} does not allow command ${commandName}`);
+  const writePolicy = item.write_policy ?? (item.mode === 'copy' ? 'copy-on-write' : 'deny');
+  return {
+    format: GIZMO_COMMAND_PLAN_FORMAT,
+    gizmo: manifest.name,
+    scope: 'import',
+    name: importName,
+    command: commandName,
+    template: commandName,
+    rendered: commandName,
+    args: {},
+    cwd: item.mount,
+    execute: false,
+    missing_args: [],
+    unused_args: [],
+    source: `${item.from_gizmo}/${item.from_gadget}`,
+    mount: item.mount,
+    mode: item.mode,
+    target_ref: item.target_ref,
+    write_policy: writePolicy,
   };
 }
 
 export function executeCommandPlan(plan: GizmoCommandPlan): number {
   if (!plan.execute) return 0;
+  if (plan.scope !== 'gadget') throw new Error('only local gadget command plans may be executed');
   const proc = child_process.spawnSync(plan.rendered, {
     cwd: plan.cwd,
     shell: true,

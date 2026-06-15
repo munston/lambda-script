@@ -119,7 +119,7 @@ export interface GizmoProvisionPlan {
 export interface GizmoCommandPlan {
   format: typeof GIZMO_COMMAND_PLAN_FORMAT;
   gizmo: string;
-  scope: 'gadget';
+  scope: 'gadget' | 'import';
   name: string;
   command: string;
   template: string;
@@ -129,4 +129,9 @@ export interface GizmoCommandPlan {
   execute: boolean;
   missing_args: string[];
   unused_args: string[];
+  source?: string;
+  mount?: string;
+  mode?: string;
+  target_ref?: string;
+  write_policy?: string;
 }

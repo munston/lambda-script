@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 import { buildProvisionPlan, buildStatus, ensureManifestValid, readManifest, validateManifest } from './manifest';
-import { buildGadgetCommandPlan, executeCommandPlan, parseArgPairs } from './runner';
+import { buildGadgetCommandPlan, buildImportedCommandPlan, executeCommandPlan, parseArgPairs } from './runner';
 import { GIZMO_FORMAT, GizmoManifest } from './types';
 
 function usage(): string {
@@ -16,6 +16,7 @@ function usage(): string {
   gizmo branches <manifest.json>
   gizmo provision-plan <manifest.json> [--out <file>]
   gizmo call <manifest.json> <gadget> <command> [--arg name=value ...] [--exec|--exec=true|--exec=false]
+  gizmo import-call <manifest.json> <import> <command> [--exec=false]
 `;
 }
 
@@ -152,6 +153,19 @@ export function runCli(args: string[]): number {
       const plan = buildGadgetCommandPlan(manifest, gadget, commandName, parseArgPairs(callArgs.pairs), callArgs.execute);
       console.log(JSON.stringify(plan, null, 2));
       return executeCommandPlan(plan);
+    }
+    if (command === 'import-call') {
+      const file = args[1];
+      const importName = args[2];
+      const commandName = args[3];
+      if (!file || !importName || !commandName) throw new Error('usage: gizmo import-call <manifest.json> <import> <command> [--exec=false]');
+      const callArgs = collectCallArgs(args.slice(4));
+      if (callArgs.execute) throw new Error('imported command execution is not implemented');
+      if (callArgs.pairs.length > 0) throw new Error('imported command arguments are not implemented');
+      const manifest = ensureManifestValid(readManifest(file));
+      const plan = buildImportedCommandPlan(manifest, importName, commandName);
+      console.log(JSON.stringify(plan, null, 2));
+      return 0;
     }
     throw new Error(`unknown command: ${command}`);
   } catch (error) {
