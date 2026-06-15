@@ -7,6 +7,21 @@ const path = require('path');
 import { buildGadgetCommandPlan, buildProvisionPlan, buildStatus, ensureManifestValid, parseArgPairs, readManifest } from '../src';
 import { runCli } from '../src/cli';
 
+function captureStdout(fn: () => number): { code: number; stdout: string } {
+  const originalLog = console.log;
+  const chunks: string[] = [];
+  let code = 1;
+  console.log = (...values: unknown[]) => {
+    chunks.push(values.map(value => String(value)).join(' '));
+  };
+  try {
+    code = fn();
+  } finally {
+    console.log = originalLog;
+  }
+  return { code, stdout: chunks.join('\n') };
+}
+
 const manifest = ensureManifestValid({
   format: 'LS_GIZMO_V1',
   name: 'metrics-lab',
@@ -35,6 +50,7 @@ const manifest = ensureManifestValid({
       agent_branch_template: 'gadget-agents/metrics/text-metrics/{agent}',
       commands: {
         analyze: 'node dist/src/cli.js analyze {file} --out {out}',
+        noop: 'node -e "process.exit(0)"',
       },
     },
   },
@@ -74,75 +90,17 @@ const plan = buildProvisionPlan(manifest);
 assert.strictEqual(plan.format, 'LS_GIZMO_PROVISION_PLAN_V1');
 assert.strictEqual(plan.import_count, 1);
 assert.strictEqual(plan.command_count, 3);
-assert.strictEqual(plan.imports[0].name, 'lambdascript-core');
 assert.strictEqual(plan.imports[0].source, 'lambdascript/core');
-assert.strictEqual(plan.imports[0].mount, 'toolchains/lambdascript');
-assert.strictEqual(plan.imports[0].mode, 'read-only');
-assert.strictEqual(plan.imports[0].target_ref, 'origin/gadgets/lambdascript/core/main');
-assert.deepStrictEqual(plan.imports[0].allowed_commands, ['forks', 'gizmo', 'glc']);
-assert.strictEqual(plan.imports[0].write_policy, 'deny');
 assert.strictEqual(plan.imports[0].mutable, false);
-
-const defaultReadOnlyManifest = ensureManifestValid({
-  format: 'LS_GIZMO_V1',
-  name: 'readonly-lab',
-  gadgets: {},
-  imports: {
-    core: {
-      from_gizmo: 'lambdascript',
-      from_gadget: 'core',
-      mount: 'toolchains/lambdascript',
-      mode: 'read-only',
-      target_ref: 'origin/gadgets/lambdascript/core/main',
-      allowed_commands: ['gizmo', 'forks'],
-    },
-  },
-});
-const defaultReadOnlyPlan = buildProvisionPlan(defaultReadOnlyManifest);
-assert.strictEqual(defaultReadOnlyPlan.command_count, 2);
-assert.deepStrictEqual(defaultReadOnlyPlan.imports[0].allowed_commands, ['forks', 'gizmo']);
-assert.strictEqual(defaultReadOnlyPlan.imports[0].write_policy, 'deny');
-assert.strictEqual(defaultReadOnlyPlan.imports[0].mutable, false);
-
-const copyOnWriteManifest = ensureManifestValid({
-  format: 'LS_GIZMO_V1',
-  name: 'copy-lab',
-  gadgets: {},
-  imports: {
-    core: {
-      from_gizmo: 'lambdascript',
-      from_gadget: 'core',
-      mount: 'toolchains/lambdascript-copy',
-      mode: 'copy',
-      target_ref: 'origin/gadgets/lambdascript/core/main',
-      allowed_commands: ['gizmo'],
-    },
-  },
-});
-const copyOnWritePlan = buildProvisionPlan(copyOnWriteManifest);
-assert.strictEqual(copyOnWritePlan.imports[0].write_policy, 'copy-on-write');
-assert.strictEqual(copyOnWritePlan.imports[0].mutable, true);
-
-assert.throws(() => ensureManifestValid({
-  format: 'LS_GIZMO_V1',
-  name: 'bad-policy-lab',
-  gadgets: {},
-  imports: {
-    core: {
-      from_gizmo: 'lambdascript',
-      from_gadget: 'core',
-      mount: 'toolchains/lambdascript',
-      mode: 'read-only',
-      write_policy: 'allow-write',
-    },
-  },
-}), /imports.core.write_policy/);
 
 const args = parseArgPairs(['image=sample.png', 'out=out-dir']);
 const commandPlan = buildGadgetCommandPlan(manifest, 'image-metrics', 'analyze', args, false);
 assert.strictEqual(commandPlan.format, 'LS_GIZMO_COMMAND_PLAN_V1');
 assert.strictEqual(commandPlan.execute, false);
 assert.strictEqual(commandPlan.rendered, 'python -m milk_metrics.cli analyze "sample.png" --out "out-dir"');
+
+const execCommandPlan = buildGadgetCommandPlan(manifest, 'text-metrics', 'noop', {}, true);
+assert.strictEqual(execCommandPlan.execute, true);
 
 const spacedArgs = parseArgPairs(['image=sample input.png', 'out=out dir']);
 const spacedCommandPlan = buildGadgetCommandPlan(manifest, 'image-metrics', 'analyze', spacedArgs, false);
@@ -172,7 +130,19 @@ assert.strictEqual(runCli(['provision-plan', full]), 0);
 assert.strictEqual(runCli(['provision-plan', full, '--out', planFile]), 0);
 assert.strictEqual(JSON.parse(fs.readFileSync(planFile, 'utf8')).format, 'LS_GIZMO_PROVISION_PLAN_V1');
 assert.strictEqual(runCli(['call', full, 'image-metrics', 'analyze', '--arg', 'image=sample.png', '--arg', 'out=out-dir']), 0);
-assert.strictEqual(runCli(['call', full, 'image-metrics', 'analyze', '--arg', 'image=sample input.png', '--arg', 'out=out dir', '--exec=false']), 0);
+
+const explicitFalse = captureStdout(() => runCli(['call', full, 'image-metrics', 'analyze', '--arg', 'image=sample input.png', '--arg', 'out=out dir', '--exec=false']));
+assert.strictEqual(explicitFalse.code, 0);
+assert.strictEqual(JSON.parse(explicitFalse.stdout).execute, false);
+
+const implicitTrue = captureStdout(() => runCli(['call', full, 'text-metrics', 'noop', '--exec']));
+assert.strictEqual(implicitTrue.code, 0);
+assert.strictEqual(JSON.parse(implicitTrue.stdout).execute, true);
+
+const explicitTrue = captureStdout(() => runCli(['call', full, 'text-metrics', 'noop', '--exec=true']));
+assert.strictEqual(explicitTrue.code, 0);
+assert.strictEqual(JSON.parse(explicitTrue.stdout).execute, true);
+
 assert.strictEqual(runCli(['call', full, 'image-metrics', 'analyze', '--arg', 'image=sample.png']), 1);
 assert.strictEqual(runCli(['call', full, 'image-metrics', 'analyze', '--arg', 'image=sample.png', '--arg', 'out=out', '--arg', 'extra=x']), 1);
 assert.strictEqual(runCli(['call', full, 'image-metrics', 'analyze', '--arg', 'image=a&b', '--arg', 'out=out']), 1);

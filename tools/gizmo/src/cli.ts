@@ -58,9 +58,12 @@ function printBranches(manifest: GizmoManifest): void {
 
 function parseExecOption(item: string): boolean {
   if (item === '--exec') return true;
-  if (item === '--exec=true') return true;
-  if (item === '--exec=false') return false;
-  throw new Error(`invalid exec option: ${item}`);
+  const prefix = '--exec=';
+  if (!item.startsWith(prefix)) throw new Error(`invalid exec option: ${item}`);
+  const value = item.slice(prefix.length);
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  throw new Error(`invalid exec option value for --exec: ${value}`);
 }
 
 function collectCallArgs(args: string[]): { execute: boolean; pairs: string[] } {
