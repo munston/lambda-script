@@ -1,0 +1,270 @@
+{
+  "agent": "system",
+  "base_commit": "2e808403f59a3b9a6df8d01647e0a213f104a77d",
+  "base_ref": "origin/main",
+  "changed_files": [
+    {
+      "path": "docs/core/C1_BACKEND_COVERAGE.md",
+      "status": "A"
+    },
+    {
+      "path": "docs/core/CORE_1_EXECUTABLE_SLICE_ADMISSION_AUDIT.md",
+      "status": "A"
+    },
+    {
+      "path": "docs/core/CPP_FFI_TENSOR_BRIDGE.md",
+      "status": "A"
+    },
+    {
+      "path": "docs/core/GPT_HASKELL_TARGET.md",
+      "status": "A"
+    },
+    {
+      "path": "docs/core/LSC1_COMPLETION_CONTROL.md",
+      "status": "A"
+    },
+    {
+      "path": "docs/core/RECOGNIZED_HASKELL_SUBSET.md",
+      "status": "A"
+    },
+    {
+      "path": "docs/core/RECOGNIZED_TYPESCRIPT_SUBSET.md",
+      "status": "A"
+    },
+    {
+      "path": "docs/forks/edd-fast-acceptance.md",
+      "status": "A"
+    },
+    {
+      "path": "docs/forks/edd-first-submission-smoke.md",
+      "status": "A"
+    },
+    {
+      "path": "docs/forks/gadget-promotion.md",
+      "status": "M"
+    },
+    {
+      "path": "docs/forks/gizmo-command-calls.md",
+      "status": "M"
+    },
+    {
+      "path": "docs/forks/gizmo-provision-plan.md",
+      "status": "M"
+    },
+    {
+      "path": "docs/forks/pre-land-gadget-refresh.md",
+      "status": "A"
+    },
+    {
+      "path": "docs/forks/replay-ledger.md",
+      "status": "A"
+    },
+    {
+      "path": "docs/forks/replay-plan.md",
+      "status": "A"
+    },
+    {
+      "path": "docs/forks/replay-sync.md",
+      "status": "A"
+    },
+    {
+      "path": "docs/forks/target-ref-json-landing.md",
+      "status": "M"
+    },
+    {
+      "path": "ed-sync-all.bat",
+      "status": "A"
+    },
+    {
+      "path": "edd-sync-all.bat",
+      "status": "A"
+    },
+    {
+      "path": "eddy-sync-all.bat",
+      "status": "A"
+    },
+    {
+      "path": "examples/core/core0_ffi_tensor_handles.ls",
+      "status": "A"
+    },
+    {
+      "path": "examples/core/core0_ffi_typed_buffers.ls",
+      "status": "A"
+    },
+    {
+      "path": "examples/core/core2_bool_logic.ls",
+      "status": "A"
+    },
+    {
+      "path": "examples/gizmos/lambdascript.gizmo.json",
+      "status": "M"
+    },
+    {
+      "path": "examples/gpt/gpt2_local_scalar.ls",
+      "status": "A"
+    },
+    {
+      "path": "forks.bat",
+      "status": "M"
+    },
+    {
+      "path": "forks/replay-ledger/gadgets/lambdascript/core/ed.json",
+      "status": "A"
+    },
+    {
+      "path": "forks/replay-ledger/gadgets/lambdascript/core/edd.json",
+      "status": "A"
+    },
+    {
+      "path": "forks/replay-ledger/gadgets/lambdascript/core/eddy.json",
+      "status": "A"
+    },
+    {
+      "path": "forks/replay-ledger/payloads/93/9391c5b3f6ecc24526b72b2e108ea5636c3c3dc9e4b1d9200357ca3f58f4ba11.json",
+      "status": "A"
+    },
+    {
+      "path": "forks/replay-ledger/payloads/a6/a6ff4f5cc605f3e845f66c13f7c0c152af7208f12b31bd83b9963d1dd581c234.json",
+      "status": "A"
+    },
+    {
+      "path": "forks/replay-ledger/payloads/f2/f2422b32e7b21ff222980f2f3f2778690c96bc2043d585028153b7c7ea2009f2.json",
+      "status": "A"
+    },
+    {
+      "path": "forks/replay-ledger/payloads/f8/f89a7f478ae508be6a35784eb8c6944185410dbd3368e3366519f68db9a3d005.json",
+      "status": "A"
+    },
+    {
+      "path": "glc/package.json",
+      "status": "M"
+    },
+    {
+      "path": "glc/src/codegen/haskell.ts",
+      "status": "M"
+    },
+    {
+      "path": "glc/src/codegen/typescript.ts",
+      "status": "M"
+    },
+    {
+      "path": "glc/src/core/ast.ts",
+      "status": "M"
+    },
+    {
+      "path": "glc/src/core/check.ts",
+      "status": "M"
+    },
+    {
+      "path": "glc/src/parser/parser.ts",
+      "status": "M"
+    },
+    {
+      "path": "glc/test/cpp_ffi_extended_types_smoke.ts",
+      "status": "A"
+    },
+    {
+      "path": "glc/test/cpp_ffi_tensor_bridge_smoke.ts",
+      "status": "A"
+    },
+    {
+      "path": "glc/test/gpt_haskell_smoke.ts",
+      "status": "A"
+    },
+    {
+      "path": "glc/test/smoke.ts",
+      "status": "M"
+    },
+    {
+      "path": "guy-sync-all.bat",
+      "status": "A"
+    },
+    {
+      "path": "scripts/forks/agent_land_json.py",
+      "status": "M"
+    },
+    {
+      "path": "scripts/forks/gadget_promote.py",
+      "status": "M"
+    },
+    {
+      "path": "scripts/forks/import_json_patch.py",
+      "status": "M"
+    },
+    {
+      "path": "scripts/forks/land_json_patch.py",
+      "status": "M"
+    },
+    {
+      "path": "scripts/forks/replay_ledger.py",
+      "status": "A"
+    },
+    {
+      "path": "scripts/forks/replay_plan.py",
+      "status": "A"
+    },
+    {
+      "path": "scripts/forks/replay_sync.py",
+      "status": "A"
+    },
+    {
+      "path": "tools/gizmo/package.json",
+      "status": "M"
+    },
+    {
+      "path": "tools/gizmo/src/cli.ts",
+      "status": "M"
+    },
+    {
+      "path": "tools/gizmo/src/index.ts",
+      "status": "M"
+    },
+    {
+      "path": "tools/gizmo/src/runner.ts",
+      "status": "M"
+    },
+    {
+      "path": "tools/gizmo/src/types.ts",
+      "status": "M"
+    },
+    {
+      "path": "tools/gizmo/src/workspace.ts",
+      "status": "A"
+    },
+    {
+      "path": "tools/gizmo/test/imported_command_plan.ts",
+      "status": "A"
+    },
+    {
+      "path": "tools/gizmo/test/provision_plan_imports.ts",
+      "status": "A"
+    },
+    {
+      "path": "tools/gizmo/test/smoke.ts",
+      "status": "M"
+    },
+    {
+      "path": "tools/gizmo/test/workspace_plan.ts",
+      "status": "A"
+    },
+    {
+      "path": "tools/gizmo/tsconfig.json",
+      "status": "M"
+    }
+  ],
+  "created_at": "2026-06-15T21:13:42.679922+00:00",
+  "format": "LS_MAIN_HISTORY_V1",
+  "kind": "gadget_promotion",
+  "metadata": {
+    "gadget": "core",
+    "gizmo": "lambdascript",
+    "promoted_commits": 25,
+    "target_ref": "origin/gadgets/lambdascript/core/main"
+  },
+  "number": 14,
+  "source_head_before_receipt": "d994fd88bb391b2c52b587351cccf1e6afab27a8",
+  "source_ref": "origin/gadgets/lambdascript/core/main",
+  "source_tree_before_receipt": "d8ea72ceb8e7209b25d6d3603be55001b77ee2a5",
+  "title": "Promote lambdascript/core",
+  "version": "main-000014"
+}
