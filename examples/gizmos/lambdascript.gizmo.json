@@ -1,90 +1,84 @@
-{
-  "format": "LS_GIZMO_V1",
-  "name": "lambdascript",
-  "description": "Development gizmo for the LambdaScript compiler, interchange model, forks tooling, and gizmo tooling.",
-  "gadgets": {
-    "core": {
-      "root": ".",
-      "language": "mixed",
-      "target_ref": "origin/gadgets/lambdascript/core/main",
-      "integration_branch": "gadgets/lambdascript/core/main",
-      "agent_branch_template": "gadget-agents/lambdascript/core/{agent}",
-      "owned_paths": [
-        "glc/",
-        "examples/",
-        "docs/core/",
-        "docs/forks/",
-        "scripts/forks/",
-        "tools/gizmo/",
-        "tools/forks-ts/",
-        "native/forks-core/",
-        "forks/",
-        "forks.bat",
-        "install.bat",
-        "verify.bat",
-        "ed-land-json.bat",
-        "edd-land-json.bat",
-        "eddy-land-json.bat",
-        "guy-land-json.bat",
-        "ed-sync-all.bat",
-        "edd-sync-all.bat",
-        "eddy-sync-all.bat",
-        "guy-sync-all.bat"
-      ],
-      "verification_profiles": {
-        "quick": [
-          "python -m py_compile scripts/forks/forks.py scripts/forks/forks_dispatch.py scripts/forks/submission_object.py scripts/forks/import_json_patch.py scripts/forks/land_json_patch.py scripts/forks/gadget_branches.py scripts/forks/gadget_land_json.py scripts/forks/gadget_verify_profiles.py scripts/forks/gadget_promote.py scripts/forks/ensure_node_toolchains.py scripts/forks/agent_land_json.py scripts/forks/main_history.py scripts/forks/replay_plan.py scripts/forks/replay_sync.py scripts/forks/accelerator.py scripts/forks/amalgamate_all.py"
-        ],
-        "gizmo": [
-          "python scripts/forks/ensure_node_toolchains.py --install --only tools/gizmo",
-          "cd tools/gizmo && npm run build",
-          "cd tools/gizmo && npm test"
-        ],
-        "glc-light": [
-          "python scripts/forks/ensure_node_toolchains.py --install --only glc",
-          "cd glc && npm test"
-        ],
-        "forks-ts": [
-          "python scripts/forks/ensure_node_toolchains.py --install --only tools/forks-ts",
-          "cd tools/forks-ts && npm run build",
-          "cd tools/forks-ts && npm test"
-        ],
-        "full": [
-          "python scripts/forks/ensure_node_toolchains.py --install",
-          "verify.bat"
-        ]
-      },
-      "commands": {
-        "forks": "forks.bat {args}",
-        "glc": "cd glc && npm run glc -- {args}",
-        "gizmo": "cd tools/gizmo && node dist/src/cli.js {args}",
-        "forks-ts": "cd tools/forks-ts && node dist/src/cli.js {args}",
-        "accelerator": "forks.bat accelerator {args}"
-      }
-    },
-    "wavproc": {
-      "root": "tools/wavproc",
-      "language": "mixed",
-      "target_ref": "origin/gadgets/lambdascript/wavproc/main",
-      "integration_branch": "gadgets/lambdascript/wavproc/main",
-      "agent_branch_template": "gadget-agents/lambdascript/wavproc/{agent}",
-      "owned_paths": [
-        "tools/wavproc/",
-        "docs/wavproc/"
-      ],
-      "verification_profiles": {
-        "quick": [
-          "cd tools/wavproc && cabal build"
-        ],
-        "full": [
-          "cd tools/wavproc && cabal build",
-          "cd tools/wavproc && cabal run wavproc -- --help"
-        ]
-      },
-      "commands": {
-        "wavproc": "cd tools/wavproc && cabal run wavproc -- {args}"
-      }
-    }
-  },
-  "imports": {}
+{
+    "format":  "LS_GIZMO_V1",
+    "name":  "lambdascript",
+    "description":  "Development gizmo for the LambdaScript compiler, interchange model, forks tooling, and gizmo tooling.",
+    "gadgets":  {
+                    "core":  {
+                                 "root":  ".",
+                                 "language":  "mixed",
+                                 "target_ref":  "origin/gadgets/lambdascript/core/main",
+                                 "integration_branch":  "gadgets/lambdascript/core/main",
+                                 "agent_branch_template":  "gadget-agents/lambdascript/core/{agent}",
+                                 "owned_paths":  [
+                                                     "glc/",
+                                                     "examples/",
+                                                     "docs/core/",
+                                                     "docs/forks/",
+                                                     "scripts/forks/",
+                                                     "tools/gizmo/",
+                                                     "forks/",
+                                                     "forks.bat",
+                                                     "install.bat",
+                                                     "verify.bat",
+                                                     "ed-land-json.bat",
+                                                     "edd-land-json.bat",
+                                                     "eddy-land-json.bat",
+                                                     "guy-land-json.bat",
+                                                     "ed-sync-all.bat",
+                                                     "edd-sync-all.bat",
+                                                     "eddy-sync-all.bat",
+                                                     "guy-sync-all.bat"
+                                                 ],
+                                 "verification_profiles":  {
+                                                               "quick":  [
+                                                                             "python -m py_compile scripts/forks/forks.py scripts/forks/forks_dispatch.py scripts/forks/submission_object.py scripts/forks/import_json_patch.py scripts/forks/land_json_patch.py scripts/forks/gadget_branches.py scripts/forks/gadget_land_json.py scripts/forks/gadget_verify_profiles.py scripts/forks/gadget_promote.py scripts/forks/ensure_node_toolchains.py scripts/forks/agent_land_json.py scripts/forks/main_history.py scripts/forks/replay_plan.py scripts/forks/replay_sync.py scripts/forks/accelerator.py scripts/forks/amalgamate_all.py"
+                                                                         ],
+                                                               "gizmo":  [
+                                                                             "python scripts/forks/ensure_node_toolchains.py --install --only tools/gizmo",
+                                                                             "cd tools/gizmo \u0026\u0026 npm run build",
+                                                                             "cd tools/gizmo \u0026\u0026 npm test"
+                                                                         ],
+                                                               "glc-light":  [
+                                                                                 "python scripts/forks/ensure_node_toolchains.py --install --only glc",
+                                                                                 "cd glc \u0026\u0026 npm test"
+                                                                             ],
+                                                               "full":  [
+                                                                            "python scripts/forks/ensure_node_toolchains.py --install",
+                                                                            "verify.bat"
+                                                                        ]
+                                                           },
+                                 "commands":  {
+                                                  "forks":  "forks.bat {args}",
+                                                  "glc":  "cd glc \u0026\u0026 npm run glc -- {args}",
+                                                  "gizmo":  "cd tools/gizmo \u0026\u0026 node dist/src/cli.js {args}",
+                                                  "accelerator":  "forks.bat accelerator {args}"
+                                              }
+                             },
+                    "wavproc":  {
+                                    "root":  "tools/wavproc",
+                                    "language":  "mixed",
+                                    "target_ref":  "origin/gadgets/lambdascript/wavproc/main",
+                                    "integration_branch":  "gadgets/lambdascript/wavproc/main",
+                                    "agent_branch_template":  "gadget-agents/lambdascript/wavproc/{agent}",
+                                    "owned_paths":  [
+                                                        "tools/wavproc/",
+                                                        "docs/wavproc/"
+                                                    ],
+                                    "verification_profiles":  {
+                                                                  "quick":  [
+                                                                                "cd tools/wavproc \u0026\u0026 cabal build"
+                                                                            ],
+                                                                  "full":  [
+                                                                               "cd tools/wavproc \u0026\u0026 cabal build",
+                                                                               "cd tools/wavproc \u0026\u0026 cabal run wavproc -- --help"
+                                                                           ]
+                                                              },
+                                    "commands":  {
+                                                     "wavproc":  "cd tools/wavproc \u0026\u0026 cabal run wavproc -- {args}"
+                                                 }
+                                }
+                },
+    "imports":  {
+
+                }
 }
