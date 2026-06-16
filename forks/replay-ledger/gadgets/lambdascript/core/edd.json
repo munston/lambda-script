@@ -283,15 +283,55 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Add read-only forks C++ core and TypeScript wrapper scaffold"
+    },
+    {
+      "agent": "edd",
+      "created_at": "2026-06-16T01:20:37.327287+00:00",
+      "file_count": 3,
+      "file_fingerprints": [
+        {
+          "content_length": 6982,
+          "content_sha256": "5eb8ccf577fbc0b9a576dfa9f166624399485b1313a7fe0ab57f2e6700a8cdd6",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "native/forks-core/src/main.cpp"
+        },
+        {
+          "content_length": 2427,
+          "content_sha256": "b73832694b06294f93b3bda862f7a9d9c87aa21f910dedaaa85432055ed63f0c",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "tools/forks-ts/src/cli.ts"
+        },
+        {
+          "content_length": 1614,
+          "content_sha256": "1f208ba9ba77fc59139273607b237de05fe4c8df8151dce24fd8ade6d433959d",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "tools/forks-ts/test/smoke.ts"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "2b37598f2dda00649ef867e65091728097281af00920e4eb0e416d08796879ba",
+      "payload_path": "forks/replay-ledger/payloads/2b/2b37598f2dda00649ef867e65091728097281af00920e4eb0e416d08796879ba.json",
+      "sequence": 7,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Add forks-core read-only status data shapes (quick profile)"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 7,
+  "next_sequence": 8,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T01:16:42.123471+00:00"
+  "updated_at": "2026-06-16T01:20:37.327312+00:00"
 }

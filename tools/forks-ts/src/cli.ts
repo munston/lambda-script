@@ -3,18 +3,27 @@ import { spawnSync } from 'node:child_process';
 export interface InvocationPlan {
   corePath: string;
   coreArgs: string[];
+  command: string;
+  mutationScope: 'read-only';
 }
 
 export function usage(): string {
   return [
     'Usage:',
-    '  forks-ts [--core-path <forks-core>] status [args...]',
+    '  forks-ts [--core-path <forks-core>] status [--gadget <gizmo> <gadget>]',
     '  forks-ts [--core-path <forks-core>] audit --gadget <gizmo> <gadget>',
     '',
     'This wrapper is intentionally thin. It validates operator-facing shape,',
     'then delegates deterministic filesystem, git, ledger, and audit mechanics',
     'to forks-core.'
   ].join('\n');
+}
+
+function requireGadgetArgs(command: string, rest: string[]): void {
+  const gadgetIdx = rest.indexOf('--gadget');
+  if (gadgetIdx === -1 || !rest[gadgetIdx + 1] || !rest[gadgetIdx + 2]) {
+    throw new Error(`${command} requires --gadget <gizmo> <gadget>`);
+  }
 }
 
 export function planInvocation(args: string[], envCorePath = process.env.FORKS_CORE ?? 'forks-core'): InvocationPlan {
@@ -31,13 +40,9 @@ export function planInvocation(args: string[], envCorePath = process.env.FORKS_C
   if (command !== 'status' && command !== 'audit') {
     throw new Error(`unsupported forks-ts command in read-only scaffold: ${command}`);
   }
-  if (command === 'audit') {
-    const gadgetIdx = rest.indexOf('--gadget');
-    if (gadgetIdx === -1 || !rest[gadgetIdx + 1] || !rest[gadgetIdx + 2]) {
-      throw new Error('audit requires --gadget <gizmo> <gadget>');
-    }
-  }
-  return { corePath, coreArgs: rest };
+  if (command === 'audit') requireGadgetArgs(command, rest);
+  if (command === 'status' && rest.includes('--gadget')) requireGadgetArgs(command, rest);
+  return { corePath, coreArgs: rest, command, mutationScope: 'read-only' };
 }
 
 export function runForksTs(args = process.argv.slice(2)): number {
