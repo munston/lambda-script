@@ -366,15 +366,83 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Make gadget lane alignment explicit on JSON landing"
+    },
+    {
+      "agent": "ed",
+      "created_at": "2026-06-16T00:24:15.854463+00:00",
+      "file_count": 7,
+      "file_fingerprints": [
+        {
+          "content_length": 16476,
+          "content_sha256": "25298d92b866191bff8dc7fa47ffbdb0b5d62654557291d08f39ec0bc1f17455",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/accelerator.py"
+        },
+        {
+          "content_length": 5014,
+          "content_sha256": "9fc86e1c847b979c170bf4157290a2df736c9bf5f98b926a7ba78535fb3e4c28",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/gadget_land_json.py"
+        },
+        {
+          "content_length": 11851,
+          "content_sha256": "dac07b4fa8b3da2fd7681fcbb0895f232be7b8a9e69e150d8859053c39f91999",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/agent_land_json.py"
+        },
+        {
+          "content_length": 4597,
+          "content_sha256": "16f84f3d9d45ed4209851dc3b7114a075e4875e3888b69ac7f0457149f3839ce",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "forks.bat"
+        },
+        {
+          "content_length": 2218,
+          "content_sha256": "7f23e0f40aaa6f8d2e89e67410c6e25b836c6fd3fcaf9f8c891aad4b2a485561",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "examples/gizmos/lambdascript.gizmo.json"
+        },
+        {
+          "content_length": 6015,
+          "content_sha256": "5ff04be3a7f25ce4824aaad0c52578df4e99595328360ab65a0c052ecb31e8d8",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/README.md"
+        },
+        {
+          "content_length": 2838,
+          "content_sha256": "ba071aee0dcf842b76b0edcadcfb957b0a7c52e022bf6f3a576c1cceae0fcc7a",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "docs/forks/ACCELERATOR.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "c7a50be9630559dbc15655e0dd579f4ee90cadd88f65b332883a340a7bb76dad",
+      "payload_path": "forks/replay-ledger/payloads/c7/c7a50be9630559dbc15655e0dd579f4ee90cadd88f65b332883a340a7bb76dad.json",
+      "sequence": 11,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Add accelerator workflow scaffold"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 11,
+  "next_sequence": 12,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T00:10:41.072210+00:00"
+  "updated_at": "2026-06-16T00:24:15.854476+00:00"
 }

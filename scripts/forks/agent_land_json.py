@@ -16,7 +16,7 @@ The patch itself carries its target and transaction policy:
         "gadget": "image-metrics",
         "profile": "quick",
         "promote": true,
-        "sync": true,
+        "sync": false,
         "history": true,
         "repository_sync": true,
         "refresh": true
@@ -24,6 +24,10 @@ The patch itself carries its target and transaction policy:
       "title": "...",
       "files": [...]
     }
+
+Gadget lane sync is intentionally opt-in. Normal parallel-agent operation should
+land replay-backed JSON patches first, then use audited amalgamation to align
+lanes.
 """
 
 from __future__ import annotations
@@ -109,7 +113,7 @@ def resolve_target(payload: dict) -> Target:
         profile=profile,
         full=_bool(target, "full", False),
         promote=_bool(target, "promote", False),
-        sync=_bool(target, "sync", True),
+        sync=_bool(target, "sync", False),
         history=_bool(target, "history", True),
         promote_profile=promote_profile,
         repository_sync=_bool(target, "repository_sync", True),
