@@ -2,6 +2,8 @@
 
 Status: preliminary implementation plan.
 
+Replay status: this advisory Eddy planning note is now carried by an explicit `LS_FORK_JSON_PATCH_V1` submission so gadget replay history can account for it. It does not change compiler semantics, tests, scripts, examples, accelerator state, replay ledgers, or core docs.
+
 The next C1 step should continue concrete compiler completion rather than meta-documentation. If this Haskell multi-string FFI patch lands, the next useful Eddy pass is to begin snapshot-style backend fixture stabilization for existing Core-1 examples.
 
 Planned task:
