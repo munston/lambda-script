@@ -27,11 +27,15 @@
         "ed-sync-all.bat",
         "edd-sync-all.bat",
         "eddy-sync-all.bat",
-        "guy-sync-all.bat"
+        "guy-sync-all.bat",
+        "gadget-creation-ed.bat",
+        "gadget-creation-edd.bat",
+        "gadget-creation-eddy.bat",
+        "gadget-creation-guy.bat"
       ],
       "verification_profiles": {
         "quick": [
-          "python -m py_compile scripts/forks/forks.py scripts/forks/forks_dispatch.py scripts/forks/submission_object.py scripts/forks/import_json_patch.py scripts/forks/land_json_patch.py scripts/forks/gadget_branches.py scripts/forks/gadget_ingest_folder.py scripts/forks/gadget_land_json.py scripts/forks/gadget_verify_profiles.py scripts/forks/gadget_promote.py scripts/forks/ensure_node_toolchains.py scripts/forks/agent_land_json.py scripts/forks/main_history.py scripts/forks/replay_plan.py scripts/forks/replay_sync.py scripts/forks/accelerator.py scripts/forks/amalgamate_all.py"
+          "python -m py_compile scripts/forks/forks.py scripts/forks/forks_dispatch.py scripts/forks/submission_object.py scripts/forks/import_json_patch.py scripts/forks/land_json_patch.py scripts/forks/gadget_branches.py scripts/forks/gadget_land_json.py scripts/forks/gadget_verify_profiles.py scripts/forks/gadget_promote.py scripts/forks/ensure_node_toolchains.py scripts/forks/agent_land_json.py scripts/forks/main_history.py scripts/forks/replay_plan.py scripts/forks/replay_sync.py scripts/forks/accelerator.py scripts/forks/amalgamate_all.py scripts/forks/gadget_ingest_folder.py scripts/forks/gadget_creation_agent.py"
         ],
         "gizmo": [
           "python scripts/forks/ensure_node_toolchains.py --install --only tools/gizmo",
@@ -51,7 +55,34 @@
         "forks": "forks.bat {args}",
         "glc": "cd glc && npm run glc -- {args}",
         "gizmo": "cd tools/gizmo && node dist/src/cli.js {args}",
-        "accelerator": "forks.bat accelerator {args}"
+        "accelerator": "forks.bat accelerator {args}",
+        "gadget-creation-ed": "gadget-creation-ed.bat {args}",
+        "gadget-creation-edd": "gadget-creation-edd.bat {args}",
+        "gadget-creation-eddy": "gadget-creation-eddy.bat {args}",
+        "gadget-creation-guy": "gadget-creation-guy.bat {args}"
+      }
+    },
+    "wavproc": {
+      "root": "tools/wavproc",
+      "language": "mixed",
+      "target_ref": "origin/gadgets/lambdascript/wavproc/main",
+      "integration_branch": "gadgets/lambdascript/wavproc/main",
+      "agent_branch_template": "gadget-agents/lambdascript/wavproc/{agent}",
+      "owned_paths": [
+        "tools/wavproc/",
+        "docs/wavproc/"
+      ],
+      "verification_profiles": {
+        "quick": [
+          "cd tools/wavproc && cabal build"
+        ],
+        "full": [
+          "cd tools/wavproc && cabal build",
+          "cd tools/wavproc && cabal run wavproc -- --help"
+        ]
+      },
+      "commands": {
+        "wavproc": "cd tools/wavproc && cabal run wavproc -- {args}"
       }
     }
   },

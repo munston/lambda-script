@@ -611,15 +611,83 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Add gadget folder ingestion tooling"
+    },
+    {
+      "agent": "edd",
+      "created_at": "2026-06-16T13:13:44.727376+00:00",
+      "file_count": 7,
+      "file_fingerprints": [
+        {
+          "content_length": 4903,
+          "content_sha256": "1575d37db41efd91c8976b4f53c1e617956c2a488262f2e9c5c3d4395210aa61",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/gadget_creation_agent.py"
+        },
+        {
+          "content_length": 106,
+          "content_sha256": "a99536e2cbea4f70e253cfb560abd297d5472db2b9bd7734845ec0cd6d45d667",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "gadget-creation-ed.bat"
+        },
+        {
+          "content_length": 107,
+          "content_sha256": "eca7b6e4cfd945a01ffac474016bc2108511bec793ae85c4b6f4d36ff3c79b0c",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "gadget-creation-edd.bat"
+        },
+        {
+          "content_length": 108,
+          "content_sha256": "2c8cbe12ca1f8bdd752ad1cfd5f69764a6aa6eb9ea32ce57dcb0fb466c524b54",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "gadget-creation-eddy.bat"
+        },
+        {
+          "content_length": 107,
+          "content_sha256": "9114c0232893ecd0282180342214d90111cc877f4c69ddbfa576ef0d92417443",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "gadget-creation-guy.bat"
+        },
+        {
+          "content_length": 1717,
+          "content_sha256": "4e859206e8f31a7a3700215b06b667760ff4cff6a64f2958dd0b4de7ec833ca7",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "docs/forks/gadget-creation-buttons.md"
+        },
+        {
+          "content_length": 3475,
+          "content_sha256": "92a2bd327770b48d1bfa95994c88faeb01d5bdb45e1f933cf8f7e49278b27c6d",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "examples/gizmos/lambdascript.gizmo.json"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "824df9bcf397c9f131390310da2093d8521df260b770176dc97548b81694d0e0",
+      "payload_path": "forks/replay-ledger/payloads/82/824df9bcf397c9f131390310da2093d8521df260b770176dc97548b81694d0e0.json",
+      "sequence": 18,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Add gadget creation batch wrappers"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 18,
+  "next_sequence": 19,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T12:57:20.685927+00:00"
+  "updated_at": "2026-06-16T13:13:44.727395+00:00"
 }

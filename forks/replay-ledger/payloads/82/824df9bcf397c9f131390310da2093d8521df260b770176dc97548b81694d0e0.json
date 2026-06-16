@@ -1,0 +1,66 @@
+{
+  "created_at": "2026-06-16T13:13:44.710406+00:00",
+  "format": "LS_FORK_REPLAY_PAYLOAD_V1",
+  "json_patch_sha256": "824df9bcf397c9f131390310da2093d8521df260b770176dc97548b81694d0e0",
+  "payload": {
+    "agent": "edd",
+    "files": [
+      {
+        "content": "#!/usr/bin/env python3\nr\"\"\"Agent-specific gadget creation wrapper.\n\nThis command is intended to sit behind the root batch wrappers:\n\n    gadget-creation-edd.bat <gizmo> <gadget> <path-to-folder>\n\nIt initializes the gadget branch set when required, ingests the supplied local\nfolder into the selected gadget-agent lane, pushes that lane, and runs the\naudited gadget amalgamation path by default.\n\"\"\"\n\nfrom __future__ import annotations\n\nimport argparse\nimport subprocess\nimport sys\nfrom pathlib import Path\n\nimport forks\n\nVALID_AGENTS = {\"ed\", \"edd\", \"eddy\", \"guy\"}\n\n\ndef repo_rel_or_default(root: Path, source: Path, gadget: str) -> str:\n    try:\n        rel = source.resolve().relative_to(root.resolve())\n        return str(rel).replace(\"\\\\\", \"/\")\n    except ValueError:\n        return f\"projects/{gadget}\"\n\n\ndef run(args: list[str], root: Path) -> int:\n    print(\"> \" + \" \".join(quote_arg(x) for x in args))\n    proc = subprocess.run(args, cwd=str(root), text=True)\n    return int(proc.returncode)\n\n\ndef quote_arg(value: str) -> str:\n    if any(ch.isspace() for ch in value) or '\"' in value:\n        return '\"' + value.replace('\"', '\\\\\"') + '\"'\n    return value\n\n\ndef default_verify_command(dest: str) -> str:\n    win_dest = dest.replace(\"/\", \"\\\\\")\n    return f'if exist \"{win_dest}\" (exit /b 0) else (echo missing {win_dest} & exit /b 1)'\n\n\ndef ingest_script(root: Path) -> Path:\n    path = root / \"scripts\" / \"forks\" / \"gadget_ingest_folder.py\"\n    if not path.exists():\n        raise RuntimeError(f\"missing gadget ingest support: {path}\")\n    return path\n\n\ndef build_parser() -> argparse.ArgumentParser:\n    parser = argparse.ArgumentParser(\n        prog=\"gadget-creation-<agent>.bat\",\n        description=\"Initialize a gizmo/gadget if needed, ingest a local folder into this agent lane, and amalgamate it.\",\n    )\n    parser.add_argument(\"agent\", help=\"configured agent lane: ed, edd, eddy, or guy\")\n    parser.add_argument(\"gizmo\")\n    parser.add_argument(\"gadget\")\n    parser.add_argument(\"source\", help=\"local folder to ingest\")\n    parser.add_argument(\"--dest\", help=\"destination path inside the gadget branch; defaults to repo-relative source path or projects/<gadget>\")\n    parser.add_argument(\"--message\", help=\"commit message for the gadget-agent lane\")\n    parser.add_argument(\"--verify-command\", help=\"verification command for amalgamation; defaults to checking that --dest exists\")\n    parser.add_argument(\"--replace\", action=\"store_true\", help=\"remove the destination before copying the source folder\")\n    parser.add_argument(\"--exclude\", action=\"append\", default=[], help=\"additional glob pattern to exclude; may be repeated\")\n    parser.add_argument(\"--no-default-excludes\", action=\"store_true\", help=\"disable the ingest command's default excludes\")\n    parser.add_argument(\"--follow-symlinks\", action=\"store_true\")\n    parser.add_argument(\"--allow-existing-lane-work\", action=\"store_true\")\n    parser.add_argument(\"--no-amalgamate\", action=\"store_true\", help=\"only ingest and push the gadget-agent lane\")\n    return parser\n\n\ndef main(argv: list[str]) -> int:\n    args = build_parser().parse_args(argv)\n    agent = forks.normalize_agent(args.agent)\n    if agent not in VALID_AGENTS:\n        raise RuntimeError(f\"unsupported agent {agent!r}; expected one of: ed, edd, eddy, guy\")\n\n    root = forks.repo_root()\n    forks.ensure_dirs(root)\n\n    source = Path(args.source)\n    if not source.exists():\n        raise RuntimeError(f\"source folder does not exist: {source}\")\n    if not source.is_dir():\n        raise RuntimeError(f\"source is not a folder: {source}\")\n\n    dest = (args.dest or repo_rel_or_default(root, source, args.gadget)).replace(\"\\\\\", \"/\").strip(\"/\")\n    if not dest:\n        raise RuntimeError(\"destination path is empty\")\n\n    message = args.message or f\"Materialise {args.gizmo}/{args.gadget} from {source.name}\"\n    verify = args.verify_command or default_verify_command(dest)\n\n    command = [\n        sys.executable,\n        str(ingest_script(root)),\n        args.gizmo,\n        args.gadget,\n        agent,\n        \"--init-if-missing\",\n        \"--source\",\n        str(source),\n        \"--dest\",\n        dest,\n        \"--message\",\n        message,\n    ]\n\n    if args.replace:\n        command.append(\"--replace\")\n    if args.no_default_excludes:\n        command.append(\"--no-default-excludes\")\n    if args.follow_symlinks:\n        command.append(\"--follow-symlinks\")\n    if args.allow_existing_lane_work:\n        command.append(\"--allow-existing-lane-work\")\n    for pattern in args.exclude:\n        command.extend([\"--exclude\", pattern])\n    if not args.no_amalgamate:\n        command.extend([\"--amalgamate\", \"--verify-command\", verify])\n\n    return run(command, root)\n\n\nif __name__ == \"__main__\":\n    try:\n        raise SystemExit(main(sys.argv[1:]))\n    except Exception as exc:\n        print(f\"gadget-creation: {exc}\", file=sys.stderr)\n        raise SystemExit(1)\n",
+        "encoding": "utf-8",
+        "op": "upsert",
+        "path": "scripts/forks/gadget_creation_agent.py"
+      },
+      {
+        "content": "@echo off\nsetlocal\ncd /d \"%~dp0\"\npython scripts\\forks\\gadget_creation_agent.py ed %*\nexit /b %ERRORLEVEL%\n",
+        "encoding": "utf-8",
+        "op": "upsert",
+        "path": "gadget-creation-ed.bat"
+      },
+      {
+        "content": "@echo off\nsetlocal\ncd /d \"%~dp0\"\npython scripts\\forks\\gadget_creation_agent.py edd %*\nexit /b %ERRORLEVEL%\n",
+        "encoding": "utf-8",
+        "op": "upsert",
+        "path": "gadget-creation-edd.bat"
+      },
+      {
+        "content": "@echo off\nsetlocal\ncd /d \"%~dp0\"\npython scripts\\forks\\gadget_creation_agent.py eddy %*\nexit /b %ERRORLEVEL%\n",
+        "encoding": "utf-8",
+        "op": "upsert",
+        "path": "gadget-creation-eddy.bat"
+      },
+      {
+        "content": "@echo off\nsetlocal\ncd /d \"%~dp0\"\npython scripts\\forks\\gadget_creation_agent.py guy %*\nexit /b %ERRORLEVEL%\n",
+        "encoding": "utf-8",
+        "op": "upsert",
+        "path": "gadget-creation-guy.bat"
+      },
+      {
+        "content": "# Gadget creation batch wrappers\n\nThe root batch wrappers provide a short path for submitting a local folder as a new or existing independent gadget.\n\n```bat\ngadget-creation-<agent>.bat <gizmo> <gadget> <path-to-folder>\n```\n\nThe supported wrappers are:\n\n```text\ngadget-creation-ed.bat\ngadget-creation-edd.bat\ngadget-creation-eddy.bat\ngadget-creation-guy.bat\n```\n\nThe wrapper initializes the gadget branches if required, copies the supplied folder into the selected gadget-agent lane, commits and pushes that lane, and runs audited gadget amalgamation by default.\n\nExample:\n\n```bat\ngadget-creation-guy.bat moving-pictures centrifuge \"C:\\Users\\guyas\\Desktop\\codebase\\7\\ollama.wires\\projects\\centrifuge\"\n```\n\nIf the source folder is inside the repository root, the destination defaults to the same repository-relative path. If the source folder is outside the repository root, the destination defaults to:\n\n```text\nprojects/<gadget>\n```\n\nYou can override the destination:\n\n```bat\ngadget-creation-guy.bat moving-pictures centrifuge \"C:\\path\\to\\centrifuge\" --dest projects\\centrifuge\n```\n\nThe default amalgamation verifier checks that the destination exists in the replayed gadget worktree. For a stronger project-specific verifier, pass `--verify-command`:\n\n```bat\ngadget-creation-guy.bat moving-pictures centrifuge \"C:\\path\\to\\centrifuge\" --verify-command \"cd projects\\centrifuge && cabal build\"\n```\n\nUse `--replace` when the destination should be removed before copying the source folder.\n\nUse `--no-amalgamate` when the lane should only be populated and pushed; amalgamation can then be run manually:\n\n```bat\nforks.bat amalgamate-all --gadget <gizmo> <gadget> --agents <agent> --apply --verify-command \"<command>\"\n```\n",
+        "encoding": "utf-8",
+        "op": "upsert",
+        "path": "docs/forks/gadget-creation-buttons.md"
+      },
+      {
+        "content": "{\n  \"format\": \"LS_GIZMO_V1\",\n  \"name\": \"lambdascript\",\n  \"description\": \"Development gizmo for the LambdaScript compiler, interchange model, forks tooling, and gizmo tooling.\",\n  \"gadgets\": {\n    \"core\": {\n      \"root\": \".\",\n      \"language\": \"mixed\",\n      \"target_ref\": \"origin/gadgets/lambdascript/core/main\",\n      \"integration_branch\": \"gadgets/lambdascript/core/main\",\n      \"agent_branch_template\": \"gadget-agents/lambdascript/core/{agent}\",\n      \"owned_paths\": [\n        \"glc/\",\n        \"examples/\",\n        \"docs/core/\",\n        \"docs/forks/\",\n        \"scripts/forks/\",\n        \"tools/gizmo/\",\n        \"forks/\",\n        \"forks.bat\",\n        \"install.bat\",\n        \"verify.bat\",\n        \"ed-land-json.bat\",\n        \"edd-land-json.bat\",\n        \"eddy-land-json.bat\",\n        \"guy-land-json.bat\",\n        \"ed-sync-all.bat\",\n        \"edd-sync-all.bat\",\n        \"eddy-sync-all.bat\",\n        \"guy-sync-all.bat\",\n        \"gadget-creation-ed.bat\",\n        \"gadget-creation-edd.bat\",\n        \"gadget-creation-eddy.bat\",\n        \"gadget-creation-guy.bat\"\n      ],\n      \"verification_profiles\": {\n        \"quick\": [\n          \"python -m py_compile scripts/forks/forks.py scripts/forks/forks_dispatch.py scripts/forks/submission_object.py scripts/forks/import_json_patch.py scripts/forks/land_json_patch.py scripts/forks/gadget_branches.py scripts/forks/gadget_land_json.py scripts/forks/gadget_verify_profiles.py scripts/forks/gadget_promote.py scripts/forks/ensure_node_toolchains.py scripts/forks/agent_land_json.py scripts/forks/main_history.py scripts/forks/replay_plan.py scripts/forks/replay_sync.py scripts/forks/accelerator.py scripts/forks/amalgamate_all.py scripts/forks/gadget_ingest_folder.py scripts/forks/gadget_creation_agent.py\"\n        ],\n        \"gizmo\": [\n          \"python scripts/forks/ensure_node_toolchains.py --install --only tools/gizmo\",\n          \"cd tools/gizmo && npm run build\",\n          \"cd tools/gizmo && npm test\"\n        ],\n        \"glc-light\": [\n          \"python scripts/forks/ensure_node_toolchains.py --install --only glc\",\n          \"cd glc && npm test\"\n        ],\n        \"full\": [\n          \"python scripts/forks/ensure_node_toolchains.py --install\",\n          \"verify.bat\"\n        ]\n      },\n      \"commands\": {\n        \"forks\": \"forks.bat {args}\",\n        \"glc\": \"cd glc && npm run glc -- {args}\",\n        \"gizmo\": \"cd tools/gizmo && node dist/src/cli.js {args}\",\n        \"accelerator\": \"forks.bat accelerator {args}\",\n        \"gadget-creation-ed\": \"gadget-creation-ed.bat {args}\",\n        \"gadget-creation-edd\": \"gadget-creation-edd.bat {args}\",\n        \"gadget-creation-eddy\": \"gadget-creation-eddy.bat {args}\",\n        \"gadget-creation-guy\": \"gadget-creation-guy.bat {args}\"\n      }\n    },\n    \"wavproc\": {\n      \"root\": \"tools/wavproc\",\n      \"language\": \"mixed\",\n      \"target_ref\": \"origin/gadgets/lambdascript/wavproc/main\",\n      \"integration_branch\": \"gadgets/lambdascript/wavproc/main\",\n      \"agent_branch_template\": \"gadget-agents/lambdascript/wavproc/{agent}\",\n      \"owned_paths\": [\n        \"tools/wavproc/\",\n        \"docs/wavproc/\"\n      ],\n      \"verification_profiles\": {\n        \"quick\": [\n          \"cd tools/wavproc && cabal build\"\n        ],\n        \"full\": [\n          \"cd tools/wavproc && cabal build\",\n          \"cd tools/wavproc && cabal run wavproc -- --help\"\n        ]\n      },\n      \"commands\": {\n        \"wavproc\": \"cd tools/wavproc && cabal run wavproc -- {args}\"\n      }\n    }\n  },\n  \"imports\": {}\n}\n",
+        "encoding": "utf-8",
+        "op": "upsert",
+        "path": "examples/gizmos/lambdascript.gizmo.json"
+      }
+    ],
+    "format": "LS_FORK_JSON_PATCH_V1",
+    "summary": "Add root gadget-creation-<agent>.bat wrappers that initialise if needed, ingest a local folder into the selected gadget-agent lane, and amalgamate through the existing audited gadget path.",
+    "target": {
+      "gadget": "core",
+      "gizmo": "lambdascript",
+      "history": true,
+      "kind": "gadget",
+      "profile": "quick",
+      "promote": false,
+      "refresh": true,
+      "repository_sync": false,
+      "sync": false
+    },
+    "title": "Add gadget creation batch wrappers"
+  }
+}
