@@ -323,15 +323,41 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Add forks-core read-only status data shapes (quick profile)"
+    },
+    {
+      "agent": "edd",
+      "created_at": "2026-06-16T01:39:33.439294+00:00",
+      "file_count": 1,
+      "file_fingerprints": [
+        {
+          "content_length": 10556,
+          "content_sha256": "21e2a1d6c27b1e7850eec22ff846493b99f392414f62b4410d77e9d71dc74c44",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "native/forks-core/src/main.cpp"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "a9a1abad01b3fd7a0ac9ff9f38583fc90ea884c0323731037d755fccb745bb82",
+      "payload_path": "forks/replay-ledger/payloads/a9/a9a1abad01b3fd7a0ac9ff9f38583fc90ea884c0323731037d755fccb745bb82.json",
+      "sequence": 8,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Add forks-core read-only git ref inspection"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 8,
+  "next_sequence": 9,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T01:20:37.327312+00:00"
+  "updated_at": "2026-06-16T01:39:33.439308+00:00"
 }
