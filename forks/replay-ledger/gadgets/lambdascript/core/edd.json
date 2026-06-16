@@ -679,15 +679,55 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Add gadget creation batch wrappers"
+    },
+    {
+      "agent": "edd",
+      "created_at": "2026-06-16T14:57:15.434298+00:00",
+      "file_count": 3,
+      "file_fingerprints": [
+        {
+          "content_length": 6361,
+          "content_sha256": "23a198105b75d690257a220140ff990ebcbec9d3640b3b9b5d51ea876ffd5459",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/gadget_creation_agent.py"
+        },
+        {
+          "content_length": 6419,
+          "content_sha256": "4eeeda1d42481fece98a00e60f9015894ddef91df3755344e1f26bf724da5a95",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/gadget_amalgamate_safe.py"
+        },
+        {
+          "content_length": 1345,
+          "content_sha256": "27c29c03fa8dd64e57ebc2a8d96f17eb0a77418a51bdb78458b06ee63750c04b",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "docs/forks/safe-gadget-creation.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "9cd2f717ab611b84f40807442a98d4f7f07cfd448754fab3a57d4bf03df9ed10",
+      "payload_path": "forks/replay-ledger/payloads/9c/9cd2f717ab611b84f40807442a98d4f7f07cfd448754fab3a57d4bf03df9ed10.json",
+      "sequence": 19,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Make gadget creation ingest-only and add safe gadget amalgamation"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 19,
+  "next_sequence": 20,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T13:13:44.727395+00:00"
+  "updated_at": "2026-06-16T14:57:15.434313+00:00"
 }

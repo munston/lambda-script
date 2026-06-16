@@ -5,9 +5,10 @@ This command is intended to sit behind the root batch wrappers:
 
     gadget-creation-edd.bat <gizmo> <gadget> <path-to-folder>
 
-It initializes the gadget branch set when required, ingests the supplied local
-folder into the selected gadget-agent lane, pushes that lane, and runs the
-audited gadget amalgamation path by default.
+It initializes the gadget branch set when required and ingests the supplied local
+folder into the selected gadget-agent lane. Amalgamation is deliberately opt-in:
+pass --amalgamate when the lane should also be applied to the gadget integration
+branch.
 """
 
 from __future__ import annotations
@@ -54,10 +55,17 @@ def ingest_script(root: Path) -> Path:
     return path
 
 
+def safe_amalgamate_script(root: Path) -> Path:
+    path = root / "scripts" / "forks" / "gadget_amalgamate_safe.py"
+    if not path.exists():
+        raise RuntimeError(f"missing safe gadget amalgamation support: {path}")
+    return path
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="gadget-creation-<agent>.bat",
-        description="Initialize a gizmo/gadget if needed, ingest a local folder into this agent lane, and amalgamate it.",
+        description="Initialize a gizmo/gadget if needed and ingest a local folder into this agent lane.",
     )
     parser.add_argument("agent", help="configured agent lane: ed, edd, eddy, or guy")
     parser.add_argument("gizmo")
@@ -65,13 +73,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("source", help="local folder to ingest")
     parser.add_argument("--dest", help="destination path inside the gadget branch; defaults to repo-relative source path or projects/<gadget>")
     parser.add_argument("--message", help="commit message for the gadget-agent lane")
-    parser.add_argument("--verify-command", help="verification command for amalgamation; defaults to checking that --dest exists")
+    parser.add_argument("--verify-command", help="verification command for optional amalgamation; defaults to checking that --dest exists")
     parser.add_argument("--replace", action="store_true", help="remove the destination before copying the source folder")
     parser.add_argument("--exclude", action="append", default=[], help="additional glob pattern to exclude; may be repeated")
     parser.add_argument("--no-default-excludes", action="store_true", help="disable the ingest command's default excludes")
     parser.add_argument("--follow-symlinks", action="store_true")
     parser.add_argument("--allow-existing-lane-work", action="store_true")
-    parser.add_argument("--no-amalgamate", action="store_true", help="only ingest and push the gadget-agent lane")
+    parser.add_argument("--amalgamate", action="store_true", help="after ingesting, safely apply the lane to the gadget integration branch")
+    parser.add_argument("--no-amalgamate", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--skip-replay-audit", action="store_true", help="pass through to safe amalgamation when --amalgamate is used")
     return parser
 
 
@@ -97,7 +107,16 @@ def main(argv: list[str]) -> int:
     message = args.message or f"Materialise {args.gizmo}/{args.gadget} from {source.name}"
     verify = args.verify_command or default_verify_command(dest)
 
-    command = [
+    print("gadget creation")
+    print(f"  agent: {agent}")
+    print(f"  gizmo/gadget: {args.gizmo}/{args.gadget}")
+    print(f"  source: {source}")
+    print(f"  dest: {dest}")
+    print(f"  amalgamate: {'yes' if args.amalgamate else 'no'}")
+    if args.amalgamate:
+        print(f"  verify-command: {verify}")
+
+    ingest = [
         sys.executable,
         str(ingest_script(root)),
         args.gizmo,
@@ -113,19 +132,40 @@ def main(argv: list[str]) -> int:
     ]
 
     if args.replace:
-        command.append("--replace")
+        ingest.append("--replace")
     if args.no_default_excludes:
-        command.append("--no-default-excludes")
+        ingest.append("--no-default-excludes")
     if args.follow_symlinks:
-        command.append("--follow-symlinks")
+        ingest.append("--follow-symlinks")
     if args.allow_existing_lane_work:
-        command.append("--allow-existing-lane-work")
+        ingest.append("--allow-existing-lane-work")
     for pattern in args.exclude:
-        command.extend(["--exclude", pattern])
-    if not args.no_amalgamate:
-        command.extend(["--amalgamate", "--verify-command", verify])
+        ingest.extend(["--exclude", pattern])
 
-    return run(command, root)
+    code = run(ingest, root)
+    if code != 0:
+        return code
+
+    if not args.amalgamate:
+        print("ingest complete; amalgamation skipped by default")
+        print(f"run safe amalgamation explicitly when ready: python scripts\\forks\\gadget_amalgamate_safe.py --gadget {args.gizmo} {args.gadget} --agents {agent} --apply --verify-command <command>")
+        return 0
+
+    amalgamate = [
+        sys.executable,
+        str(safe_amalgamate_script(root)),
+        "--gadget",
+        args.gizmo,
+        args.gadget,
+        "--agents",
+        agent,
+        "--apply",
+        "--verify-command",
+        verify,
+    ]
+    if args.skip_replay_audit:
+        amalgamate.append("--skip-replay-audit")
+    return run(amalgamate, root)
 
 
 if __name__ == "__main__":
