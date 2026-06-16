@@ -10,6 +10,7 @@ import { segmentImageToDir, importLabelsToDir, trainPatchClassifierToDir, segmen
 import { cartoonifyOptimizeToDir } from './cartoonify_optimizer';
 import { deepCartoonifyToDir } from './deep_cartoonify';
 import { cartoonStyleProfileToDir, cartoonNegativeProfileToDir, styleConditionedCartoonifyToDir } from './style_conditioned_cartoonify';
+import { trainStyleModelToDir } from './style_model_training';
 function usage(): string { return [
   'Usage:',
   '  image-metrics version',
@@ -29,10 +30,11 @@ function usage(): string { return [
   '  image-metrics cartoon-style-profile <target> --out <dir> [--source image]',
   '  image-metrics cartoon-negative-profile <clean> <distorted> --out <dir>',
   '  image-metrics style-conditioned-cartoonify <image> <style_profile.json> --out <dir> [--negative-profile negative_profile.json] [--seed n] [--layers n] [--trials n] [--strength x]',
+  '  image-metrics train-style-model <source> <target> --out <dir> [--negative image] [--seed n] [--epochs n] [--trials n] [--strength x]',
   '  image-metrics image-parametric-demo --out <dir> [images...]'
 ].join('\n'); }
 function argValue(args: string[], name: string, fallback: string): string { const i = args.indexOf(name); return i >= 0 && args[i + 1] ? args[i + 1] : fallback; }
-const VALUE_FLAGS = ['--out','--seed','--trials','--support','--step','--shallow-strength','--deep-strength','--smoothness-weight','--edge-weight','--complexity-weight','--grid','--image-id','--source-tool','--feature','--label','--strength','--layers','--tries','--metric','--depth','--patience','--threshold','--source','--negative-profile'];
+const VALUE_FLAGS = ['--out','--seed','--trials','--support','--step','--shallow-strength','--deep-strength','--smoothness-weight','--edge-weight','--complexity-weight','--grid','--image-id','--source-tool','--feature','--label','--strength','--layers','--tries','--metric','--depth','--patience','--threshold','--source','--negative-profile','--negative','--epochs'];
 function positional(args: string[], start = 1): string[] { const out: string[] = []; for (let i = start; i < args.length; i++) { if (VALUE_FLAGS.includes(args[i])) { i++; continue; } if (!args[i].startsWith('--')) out.push(args[i]); } return out; }
 function runParametric(outDir: string, images: string[]): any { fs.mkdirSync(outDir, { recursive: true }); const paths = images.length ? images : ['synthetic://a','synthetic://b']; const records = paths.map((p, i) => ({ path: p, report: analyzeImageToDir({ imagePath: p, outDir: path.join(outDir, `analysis_${i}`) }) })); const result = { mode: 'image-parametric-demo', backend: backendVersion(), imagePaths: records.map(r => r.path), nativeScores: records.map(r => Number((r.report as any).score || 0)), capabilityNote: 'feature extraction and parametric image metric smoke path' }; fs.writeFileSync(path.join(outDir, 'image_parametric_report.json'), JSON.stringify(result, null, 2)); fs.writeFileSync(path.join(outDir, 'image_parametric_summary.txt'), `backend: ${result.backend}\nimages: ${result.imagePaths.length}\n`); return result; }
 export function runCli(args: string[]): number {
@@ -56,6 +58,7 @@ export function runCli(args: string[]): number {
     if (command === 'cartoon-style-profile') { const xs = positional(args,1); if (!xs.length) throw new Error('cartoon-style-profile requires a target image'); const src = argValue(args,'--source',''); console.log(JSON.stringify(cartoonStyleProfileToDir({ targetPath: xs[0], sourcePath: src || undefined, outDir: argValue(args,'--out','runs/cartoon-style-profile') }), null, 2)); return 0; }
     if (command === 'cartoon-negative-profile') { const xs = positional(args,1); if (xs.length < 2) throw new Error('cartoon-negative-profile requires clean and distorted image paths'); console.log(JSON.stringify(cartoonNegativeProfileToDir({ cleanPath: xs[0], distortedPath: xs[1], outDir: argValue(args,'--out','runs/cartoon-negative-profile') }), null, 2)); return 0; }
     if (command === 'style-conditioned-cartoonify') { const xs = positional(args,1); if (xs.length < 2) throw new Error('style-conditioned-cartoonify requires image and style_profile.json'); const neg = argValue(args,'--negative-profile',''); console.log(JSON.stringify(styleConditionedCartoonifyToDir({ imagePath: xs[0], styleProfilePath: xs[1], negativeProfilePath: neg || undefined, outDir: argValue(args,'--out','runs/style-conditioned-cartoonify'), seed: Number(argValue(args,'--seed','20260616')), layers: Number(argValue(args,'--layers','3')), trials: Number(argValue(args,'--trials','8')), strength: Number(argValue(args,'--strength','0.75')) }), null, 2)); return 0; }
+    if (command === 'train-style-model') { const xs = positional(args,1); if (xs.length < 2) throw new Error('train-style-model requires source and target image paths'); const neg = argValue(args,'--negative',''); console.log(JSON.stringify(trainStyleModelToDir({ sourcePath: xs[0], targetPath: xs[1], negativePath: neg || undefined, outDir: argValue(args,'--out','runs/train-style-model'), seed: Number(argValue(args,'--seed','20260616')), epochs: Number(argValue(args,'--epochs','3')), trials: Number(argValue(args,'--trials','8')), strength: Number(argValue(args,'--strength','0.75')) }), null, 2)); return 0; }
     if (command === 'image-parametric-demo') { console.log(JSON.stringify(runParametric(argValue(args,'--out','runs/image-parametric-demo'), positional(args,1)), null, 2)); return 0; }
     console.error(usage()); return 1;
   } catch (err) { console.error(err instanceof Error ? err.message : String(err)); return 1; }
