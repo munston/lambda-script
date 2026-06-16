@@ -1,0 +1,66 @@
+{
+  "created_at": "2026-06-16T01:16:42.104202+00:00",
+  "format": "LS_FORK_REPLAY_PAYLOAD_V1",
+  "json_patch_sha256": "68141ecae7cd990a75e8311351a747fecbe7dd4128325218a00c2d0d8245c838",
+  "payload": {
+    "agent": "edd",
+    "files": [
+      {
+        "content": "{\n  \"format\": \"LS_GIZMO_V1\",\n  \"name\": \"lambdascript\",\n  \"description\": \"Development gizmo for the LambdaScript compiler, interchange model, forks tooling, and gizmo tooling.\",\n  \"gadgets\": {\n    \"core\": {\n      \"root\": \".\",\n      \"language\": \"mixed\",\n      \"target_ref\": \"origin/gadgets/lambdascript/core/main\",\n      \"integration_branch\": \"gadgets/lambdascript/core/main\",\n      \"agent_branch_template\": \"gadget-agents/lambdascript/core/{agent}\",\n      \"owned_paths\": [\n        \"glc/\",\n        \"examples/\",\n        \"docs/core/\",\n        \"docs/forks/\",\n        \"scripts/forks/\",\n        \"tools/gizmo/\",\n        \"tools/forks-ts/\",\n        \"native/forks-core/\",\n        \"forks/\",\n        \"forks.bat\",\n        \"install.bat\",\n        \"verify.bat\",\n        \"ed-land-json.bat\",\n        \"edd-land-json.bat\",\n        \"eddy-land-json.bat\",\n        \"guy-land-json.bat\",\n        \"ed-sync-all.bat\",\n        \"edd-sync-all.bat\",\n        \"eddy-sync-all.bat\",\n        \"guy-sync-all.bat\"\n      ],\n      \"verification_profiles\": {\n        \"quick\": [\n          \"python -m py_compile scripts/forks/forks.py scripts/forks/forks_dispatch.py scripts/forks/submission_object.py scripts/forks/import_json_patch.py scripts/forks/land_json_patch.py scripts/forks/gadget_branches.py scripts/forks/gadget_land_json.py scripts/forks/gadget_verify_profiles.py scripts/forks/gadget_promote.py scripts/forks/ensure_node_toolchains.py scripts/forks/agent_land_json.py scripts/forks/main_history.py scripts/forks/replay_plan.py scripts/forks/replay_sync.py scripts/forks/accelerator.py scripts/forks/amalgamate_all.py\"\n        ],\n        \"gizmo\": [\n          \"python scripts/forks/ensure_node_toolchains.py --install --only tools/gizmo\",\n          \"cd tools/gizmo && npm run build\",\n          \"cd tools/gizmo && npm test\"\n        ],\n        \"glc-light\": [\n          \"python scripts/forks/ensure_node_toolchains.py --install --only glc\",\n          \"cd glc && npm test\"\n        ],\n        \"forks-ts\": [\n          \"python scripts/forks/ensure_node_toolchains.py --install --only tools/forks-ts\",\n          \"cd tools/forks-ts && npm run build\",\n          \"cd tools/forks-ts && npm test\"\n        ],\n        \"full\": [\n          \"python scripts/forks/ensure_node_toolchains.py --install\",\n          \"verify.bat\"\n        ]\n      },\n      \"commands\": {\n        \"forks\": \"forks.bat {args}\",\n        \"glc\": \"cd glc && npm run glc -- {args}\",\n        \"gizmo\": \"cd tools/gizmo && node dist/src/cli.js {args}\",\n        \"forks-ts\": \"cd tools/forks-ts && node dist/src/cli.js {args}\",\n        \"accelerator\": \"forks.bat accelerator {args}\"\n      }\n    }\n  },\n  \"imports\": {}\n}\n",
+        "encoding": "utf-8",
+        "op": "upsert",
+        "path": "examples/gizmos/lambdascript.gizmo.json"
+      },
+      {
+        "content": "{\n  \"name\": \"lambda-forks-ts\",\n  \"version\": \"0.1.0\",\n  \"private\": true,\n  \"type\": \"commonjs\",\n  \"scripts\": {\n    \"build\": \"node ./node_modules/typescript/bin/tsc -p tsconfig.json\",\n    \"test\": \"npm run build --silent && node dist/test/smoke.js\",\n    \"forks-ts\": \"npm run build --silent && node dist/src/cli.js\"\n  },\n  \"devDependencies\": {\n    \"@types/node\": \"^24.0.0\",\n    \"typescript\": \"^5.8.0\"\n  }\n}\n",
+        "encoding": "utf-8",
+        "op": "upsert",
+        "path": "tools/forks-ts/package.json"
+      },
+      {
+        "content": "{\n  \"compilerOptions\": {\n    \"target\": \"ES2020\",\n    \"module\": \"commonjs\",\n    \"moduleResolution\": \"node\",\n    \"rootDir\": \".\",\n    \"outDir\": \"dist\",\n    \"strict\": true,\n    \"esModuleInterop\": false,\n    \"skipLibCheck\": true,\n    \"types\": [\n      \"node\"\n    ]\n  },\n  \"include\": [\n    \"src/**/*.ts\",\n    \"test/**/*.ts\"\n  ]\n}\n",
+        "encoding": "utf-8",
+        "op": "upsert",
+        "path": "tools/forks-ts/tsconfig.json"
+      },
+      {
+        "content": "import { spawnSync } from 'node:child_process';\n\nexport interface InvocationPlan {\n  corePath: string;\n  coreArgs: string[];\n}\n\nexport function usage(): string {\n  return [\n    'Usage:',\n    '  forks-ts [--core-path <forks-core>] status [args...]',\n    '  forks-ts [--core-path <forks-core>] audit --gadget <gizmo> <gadget>',\n    '',\n    'This wrapper is intentionally thin. It validates operator-facing shape,',\n    'then delegates deterministic filesystem, git, ledger, and audit mechanics',\n    'to forks-core.'\n  ].join('\\n');\n}\n\nexport function planInvocation(args: string[], envCorePath = process.env.FORKS_CORE ?? 'forks-core'): InvocationPlan {\n  const rest = [...args];\n  let corePath = envCorePath;\n  if (rest[0] === '--core-path') {\n    const configured = rest[1];\n    if (!configured) throw new Error('missing value for --core-path');\n    corePath = configured;\n    rest.splice(0, 2);\n  }\n  const command = rest[0];\n  if (!command) throw new Error('missing command');\n  if (command !== 'status' && command !== 'audit') {\n    throw new Error(`unsupported forks-ts command in read-only scaffold: ${command}`);\n  }\n  if (command === 'audit') {\n    const gadgetIdx = rest.indexOf('--gadget');\n    if (gadgetIdx === -1 || !rest[gadgetIdx + 1] || !rest[gadgetIdx + 2]) {\n      throw new Error('audit requires --gadget <gizmo> <gadget>');\n    }\n  }\n  return { corePath, coreArgs: rest };\n}\n\nexport function runForksTs(args = process.argv.slice(2)): number {\n  let plan: InvocationPlan;\n  try {\n    plan = planInvocation(args);\n  } catch (err) {\n    console.error(err instanceof Error ? err.message : String(err));\n    console.error(usage());\n    return 1;\n  }\n\n  const result = spawnSync(plan.corePath, plan.coreArgs, {\n    encoding: 'utf8',\n    stdio: ['ignore', 'pipe', 'pipe'],\n  });\n\n  if (result.error) {\n    console.error(`failed to run forks-core at ${plan.corePath}: ${result.error.message}`);\n    return 1;\n  }\n  if (result.stdout) process.stdout.write(result.stdout);\n  if (result.stderr) process.stderr.write(result.stderr);\n  return result.status ?? 1;\n}\n\nif (require.main === module) {\n  process.exit(runForksTs());\n}\n",
+        "encoding": "utf-8",
+        "op": "upsert",
+        "path": "tools/forks-ts/src/cli.ts"
+      },
+      {
+        "content": "import assert from 'node:assert/strict';\nimport { planInvocation } from '../src/cli';\n\nconst status = planInvocation(['--core-path', 'C:/tools/forks-core.exe', 'status']);\nassert.strictEqual(status.corePath, 'C:/tools/forks-core.exe');\nassert.deepStrictEqual(status.coreArgs, ['status']);\n\nconst audit = planInvocation(['audit', '--gadget', 'lambdascript', 'core'], 'forks-core-test');\nassert.strictEqual(audit.corePath, 'forks-core-test');\nassert.deepStrictEqual(audit.coreArgs, ['audit', '--gadget', 'lambdascript', 'core']);\n\nassert.throws(\n  () => planInvocation(['agent-land']),\n  /unsupported forks-ts command in read-only scaffold: agent-land/,\n  'read-only wrapper should reject mutating commands at this stage',\n);\n\nassert.throws(\n  () => planInvocation(['audit', '--gadget', 'lambdascript']),\n  /audit requires --gadget <gizmo> <gadget>/,\n  'audit should require complete gadget identity',\n);\n\nconsole.log('forks-ts read-only scaffold smoke passed');\n",
+        "encoding": "utf-8",
+        "op": "upsert",
+        "path": "tools/forks-ts/test/smoke.ts"
+      },
+      {
+        "content": "cmake_minimum_required(VERSION 3.16)\nproject(forks_core LANGUAGES CXX)\n\nset(CMAKE_CXX_STANDARD 17)\nset(CMAKE_CXX_STANDARD_REQUIRED ON)\n\nadd_executable(forks-core src/main.cpp)\n",
+        "encoding": "utf-8",
+        "op": "upsert",
+        "path": "native/forks-core/CMakeLists.txt"
+      },
+      {
+        "content": "\\\n#include <iostream>\n#include <string>\n#include <vector>\n\nnamespace {\n\nstruct Args {\n  std::vector<std::string> values;\n};\n\nvoid print_usage() {\n  std::cerr\n    << \"Usage:\\n\"\n    << \"  forks-core status\\n\"\n    << \"  forks-core audit --gadget <gizmo> <gadget>\\n\";\n}\n\nstd::string json_escape(const std::string& text) {\n  std::string out;\n  for (char ch : text) {\n    if (ch == '\\\\') out += \"\\\\\\\\\";\n    else if (ch == '\"') out += \"\\\\\\\"\";\n    else if (ch == '\\n') out += \"\\\\n\";\n    else out += ch;\n  }\n  return out;\n}\n\nvoid print_status() {\n  std::cout\n    << \"{\\n\"\n    << \"  \\\"format\\\": \\\"FORKS_CORE_STATUS_V0\\\",\\n\"\n    << \"  \\\"command\\\": \\\"status\\\",\\n\"\n    << \"  \\\"mutation_scope\\\": \\\"read-only\\\",\\n\"\n    << \"  \\\"mutates\\\": false,\\n\"\n    << \"  \\\"implemented\\\": false,\\n\"\n    << \"  \\\"expected_facts\\\": [\\n\"\n    << \"    \\\"integration_ref\\\",\\n\"\n    << \"    \\\"agent_refs\\\",\\n\"\n    << \"    \\\"ahead_behind\\\",\\n\"\n    << \"    \\\"replay_ledger_entries\\\",\\n\"\n    << \"    \\\"expected_mutations\\\"\\n\"\n    << \"  ]\\n\"\n    << \"}\\n\";\n}\n\nint audit_gadget(const Args& args) {\n  std::string gizmo;\n  std::string gadget;\n  for (size_t i = 1; i < args.values.size(); ++i) {\n    if (args.values[i] == \"--gadget\" && i + 2 < args.values.size()) {\n      gizmo = args.values[i + 1];\n      gadget = args.values[i + 2];\n      break;\n    }\n  }\n  if (gizmo.empty() || gadget.empty()) {\n    std::cerr << \"audit requires --gadget <gizmo> <gadget>\\n\";\n    return 1;\n  }\n  std::cout\n    << \"{\\n\"\n    << \"  \\\"format\\\": \\\"FORKS_CORE_AUDIT_V0\\\",\\n\"\n    << \"  \\\"command\\\": \\\"audit\\\",\\n\"\n    << \"  \\\"mutation_scope\\\": \\\"read-only\\\",\\n\"\n    << \"  \\\"mutates\\\": false,\\n\"\n    << \"  \\\"implemented\\\": false,\\n\"\n    << \"  \\\"gadget\\\": {\\n\"\n    << \"    \\\"gizmo\\\": \\\"\" << json_escape(gizmo) << \"\\\",\\n\"\n    << \"    \\\"gadget\\\": \\\"\" << json_escape(gadget) << \"\\\"\\n\"\n    << \"  },\\n\"\n    << \"  \\\"expected_facts\\\": [\\n\"\n    << \"    \\\"payload_presence\\\",\\n\"\n    << \"    \\\"latest_writer_per_path\\\",\\n\"\n    << \"    \\\"strict_mismatches\\\",\\n\"\n    << \"    \\\"advisory_mismatches\\\",\\n\"\n    << \"    \\\"materialisation_result\\\"\\n\"\n    << \"  ]\\n\"\n    << \"}\\n\";\n  return 0;\n}\n\n} // namespace\n\nint main(int argc, char** argv) {\n  Args args;\n  for (int i = 1; i < argc; ++i) args.values.push_back(argv[i]);\n  if (args.values.empty()) {\n    print_usage();\n    return 1;\n  }\n\n  const std::string command = args.values[0];\n  if (command == \"status\") {\n    print_status();\n    return 0;\n  }\n  if (command == \"audit\") {\n    return audit_gadget(args);\n  }\n\n  std::cerr << \"unsupported forks-core command in read-only scaffold: \" << command << \"\\n\";\n  print_usage();\n  return 1;\n}\n",
+        "encoding": "utf-8",
+        "op": "upsert",
+        "path": "native/forks-core/src/main.cpp"
+      }
+    ],
+    "format": "LS_FORK_JSON_PATCH_V1",
+    "summary": "Adds the first non-mutating C++/TypeScript forks replacement scaffold following docs/forks/FORKS_CPP_TS_MIGRATION_PLAN.md.",
+    "target": {
+      "gadget": "core",
+      "gizmo": "lambdascript",
+      "history": true,
+      "kind": "gadget",
+      "profile": "quick",
+      "promote": false,
+      "refresh": true,
+      "repository_sync": false,
+      "sync": false
+    },
+    "title": "Add read-only forks C++ core and TypeScript wrapper scaffold"
+  }
+}

@@ -16,6 +16,8 @@
         "docs/forks/",
         "scripts/forks/",
         "tools/gizmo/",
+        "tools/forks-ts/",
+        "native/forks-core/",
         "forks/",
         "forks.bat",
         "install.bat",
@@ -42,6 +44,11 @@
           "python scripts/forks/ensure_node_toolchains.py --install --only glc",
           "cd glc && npm test"
         ],
+        "forks-ts": [
+          "python scripts/forks/ensure_node_toolchains.py --install --only tools/forks-ts",
+          "cd tools/forks-ts && npm run build",
+          "cd tools/forks-ts && npm test"
+        ],
         "full": [
           "python scripts/forks/ensure_node_toolchains.py --install",
           "verify.bat"
@@ -51,6 +58,7 @@
         "forks": "forks.bat {args}",
         "glc": "cd glc && npm run glc -- {args}",
         "gizmo": "cd tools/gizmo && node dist/src/cli.js {args}",
+        "forks-ts": "cd tools/forks-ts && node dist/src/cli.js {args}",
         "accelerator": "forks.bat accelerator {args}"
       }
     }

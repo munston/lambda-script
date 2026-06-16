@@ -215,15 +215,83 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Add forks C++ TypeScript migration plan"
+    },
+    {
+      "agent": "edd",
+      "created_at": "2026-06-16T01:16:42.123451+00:00",
+      "file_count": 7,
+      "file_fingerprints": [
+        {
+          "content_length": 2626,
+          "content_sha256": "da63abc05bed049fc56657c0e615e68d71a65c8ad38ff1f12585610315893893",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "examples/gizmos/lambdascript.gizmo.json"
+        },
+        {
+          "content_length": 402,
+          "content_sha256": "492c059b5ccf1cb9267b9e8a8d3d6642ae8e0ace242a84fa566567b0624fbc62",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "tools/forks-ts/package.json"
+        },
+        {
+          "content_length": 323,
+          "content_sha256": "b39243b67d11c41bab37d14638cbd0808ddaab3b8775f1b4b01235af7d934812",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "tools/forks-ts/tsconfig.json"
+        },
+        {
+          "content_length": 2136,
+          "content_sha256": "24401b1b30fbe6f17297aaac29c8b612e8a3ac86458b0cf20b71a8b4ee348672",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "tools/forks-ts/src/cli.ts"
+        },
+        {
+          "content_length": 961,
+          "content_sha256": "27a30b1613c6735694af43c326cd59f522442dd97ae0f6917eb0f1a9c394f587",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "tools/forks-ts/test/smoke.ts"
+        },
+        {
+          "content_length": 176,
+          "content_sha256": "f8962d44fa7a8c9efde77e77f7ae2b178c63501c200aa3d2d0fd1db9abcfea9f",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "native/forks-core/CMakeLists.txt"
+        },
+        {
+          "content_length": 2601,
+          "content_sha256": "73b1d4727a910db956305b407e332597e5ec13bf2fdcc58a7f1bc729141eaa4e",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "native/forks-core/src/main.cpp"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "68141ecae7cd990a75e8311351a747fecbe7dd4128325218a00c2d0d8245c838",
+      "payload_path": "forks/replay-ledger/payloads/68/68141ecae7cd990a75e8311351a747fecbe7dd4128325218a00c2d0d8245c838.json",
+      "sequence": 6,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Add read-only forks C++ core and TypeScript wrapper scaffold"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 6,
+  "next_sequence": 7,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T01:12:11.197398+00:00"
+  "updated_at": "2026-06-16T01:16:42.123471+00:00"
 }

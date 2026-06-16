@@ -1,0 +1,15 @@
+{
+  "name": "lambda-forks-ts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "build": "node ./node_modules/typescript/bin/tsc -p tsconfig.json",
+    "test": "npm run build --silent && node dist/test/smoke.js",
+    "forks-ts": "npm run build --silent && node dist/src/cli.js"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.8.0"
+  }
+}
