@@ -580,15 +580,76 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Warn on advisory agent-note replay drift"
+    },
+    {
+      "agent": "ed",
+      "created_at": "2026-06-16T01:01:30.383908+00:00",
+      "file_count": 6,
+      "file_fingerprints": [
+        {
+          "content_length": 9628,
+          "content_sha256": "96129fc33a77e9f7e1f24b31f52a046e59dc9ee71acbe27514a1c584210f808c",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/agent_land_json.py"
+        },
+        {
+          "content_length": 226,
+          "content_sha256": "662081629bd8c1d2ddab536cadc17e4f163cc43d3044181201ab54038ab97cca",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "ed-land-json.bat"
+        },
+        {
+          "content_length": 228,
+          "content_sha256": "ad6ed49962427597fceb3a67d6505f1f6bd6b3d3daccd156eb0511a80a8b87e3",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "edd-land-json.bat"
+        },
+        {
+          "content_length": 230,
+          "content_sha256": "8025cd997275d4302455e3f070986cb0006715644a6fac9376665346c7cd41c8",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "eddy-land-json.bat"
+        },
+        {
+          "content_length": 228,
+          "content_sha256": "062bfc57c3dca4694c32adb4b2c488a64d94d38472a9c305ba75b23d0dc3aaed",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "guy-land-json.bat"
+        },
+        {
+          "content_length": 3271,
+          "content_sha256": "d0d0f1afa262e621aff7444f1c2e4cddd16d5c53be94ec43886931afff555a5d",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/README.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "7b5cb5f2b2992c65a44bbba676cd3803e28450161b29c80f51a084f5e9b58617",
+      "payload_path": "forks/replay-ledger/payloads/7b/7b5cb5f2b2992c65a44bbba676cd3803e28450161b29c80f51a084f5e9b58617.json",
+      "sequence": 16,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Make agent land buttons lane-local only"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 16,
+  "next_sequence": 17,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T00:46:40.861629+00:00"
+  "updated_at": "2026-06-16T01:01:30.383921+00:00"
 }
