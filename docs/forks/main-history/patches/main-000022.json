@@ -1,0 +1,134 @@
+{
+  "agent": "system",
+  "base_commit": "a7ce8b5b536746792261e3859d41e9117a88e77f",
+  "base_ref": "origin/main",
+  "changed_files": [
+    {
+      "path": "docs/forks/ACCELERATOR.md",
+      "status": "A"
+    },
+    {
+      "path": "examples/core/core2_bool_logic.ls",
+      "status": "M"
+    },
+    {
+      "path": "examples/gizmos/lambdascript.gizmo.json",
+      "status": "M"
+    },
+    {
+      "path": "forks.bat",
+      "status": "M"
+    },
+    {
+      "path": "forks/accelerators/lambdascript/core/lsc1.json",
+      "status": "A"
+    },
+    {
+      "path": "forks/replay-ledger/gadgets/lambdascript/core/ed.json",
+      "status": "M"
+    },
+    {
+      "path": "forks/replay-ledger/gadgets/lambdascript/core/edd.json",
+      "status": "M"
+    },
+    {
+      "path": "forks/replay-ledger/gadgets/lambdascript/core/eddy.json",
+      "status": "M"
+    },
+    {
+      "path": "forks/replay-ledger/payloads/03/039b970781169402c18cc87c1e63058265406ff793247c672eac07528d6edb86.json",
+      "status": "A"
+    },
+    {
+      "path": "forks/replay-ledger/payloads/12/12dc84a7783591afaea97151c2d8f10ff50f87e996b941ed99cfafa35ade4646.json",
+      "status": "A"
+    },
+    {
+      "path": "forks/replay-ledger/payloads/1b/1b01e3041ccb1e3b45ef46000e47770b8e043959d6c295f4aa568025eb5b6481.json",
+      "status": "A"
+    },
+    {
+      "path": "forks/replay-ledger/payloads/21/214951aa54e22aa782b4a3ff6670b1734caf0484f7875b07e6ef32be817b62ea.json",
+      "status": "A"
+    },
+    {
+      "path": "forks/replay-ledger/payloads/3e/3ee0035ff57c3be589b75fbe9ba16df1a27bac4b48162c5b3ce1fcef4169a992.json",
+      "status": "A"
+    },
+    {
+      "path": "forks/replay-ledger/payloads/54/54b8b79332a29fdac954d0b4ae02bf11d38fe8cdfcd95f548dd8998eac07714e.json",
+      "status": "A"
+    },
+    {
+      "path": "forks/replay-ledger/payloads/7b/7b7a5bd7cdb1893cbcdbba9fc935d618ca69505d84479232399c33a85036d237.json",
+      "status": "A"
+    },
+    {
+      "path": "forks/replay-ledger/payloads/c7/c7a50be9630559dbc15655e0dd579f4ee90cadd88f65b332883a340a7bb76dad.json",
+      "status": "A"
+    },
+    {
+      "path": "glc/src/codegen/typescript.ts",
+      "status": "M"
+    },
+    {
+      "path": "glc/src/core/ast.ts",
+      "status": "M"
+    },
+    {
+      "path": "glc/src/parser/parser.ts",
+      "status": "M"
+    },
+    {
+      "path": "glc/test/smoke.ts",
+      "status": "M"
+    },
+    {
+      "path": "glc/test/snapshots/core1_let.hs.snap",
+      "status": "A"
+    },
+    {
+      "path": "glc/test/snapshots/core1_let.ts.snap",
+      "status": "A"
+    },
+    {
+      "path": "scripts/forks/README.md",
+      "status": "M"
+    },
+    {
+      "path": "scripts/forks/accelerator.py",
+      "status": "A"
+    },
+    {
+      "path": "scripts/forks/agent_land_json.py",
+      "status": "M"
+    },
+    {
+      "path": "scripts/forks/amalgamate_all.py",
+      "status": "M"
+    },
+    {
+      "path": "scripts/forks/forks_dispatch.py",
+      "status": "A"
+    },
+    {
+      "path": "scripts/forks/gadget_land_json.py",
+      "status": "M"
+    }
+  ],
+  "created_at": "2026-06-16T00:54:12.810029+00:00",
+  "format": "LS_MAIN_HISTORY_V1",
+  "kind": "gadget_promotion",
+  "metadata": {
+    "gadget": "core",
+    "gizmo": "lambdascript",
+    "promoted_commits": 8,
+    "target_ref": "origin/gadgets/lambdascript/core/main"
+  },
+  "number": 22,
+  "source_head_before_receipt": "4882c3583452ec398d4b0026a2f3ed41d61184cb",
+  "source_ref": "origin/gadgets/lambdascript/core/main",
+  "source_tree_before_receipt": "29b1201b1d133061192ac42e4d62f46b9d73603d",
+  "title": "Promote lambdascript/core",
+  "version": "main-000022"
+}
