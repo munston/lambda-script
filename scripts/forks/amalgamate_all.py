@@ -565,7 +565,7 @@ def apply_gadget_patch_to_integration(root: Path, gizmo: str, gadget: str, agent
     remove_worktree(root, work)
     forks.git(["worktree", "add", "--detach", str(work), base_ref], root)
     try:
-        proc = subprocess.run(["git", "apply", "--binary", "-"], cwd=str(work), input=submission["patch"], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = subprocess.run(["git", "apply", "--3way", "--binary", "-"], cwd=str(work), input=submission["patch"], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         print(proc.stdout, end="")
         print(proc.stderr, end="", file=sys.stderr)
         if proc.returncode != 0:

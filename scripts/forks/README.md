@@ -110,3 +110,7 @@ Gadget amalgamation final sync now uses guarded force-with-lease alignment for c
 ## Remote-first gadget lanes
 
 Gadget-mode planning, capture, apply, final assert, and final sync are remote-first. After `git fetch`, the tool prefers `origin/gadget-agents/<gizmo>/<gadget>/<agent>` over any same-named local branch. This prevents a stale local branch from hiding submitted remote lane work during amalgamation.
+
+## Three-way gadget lane patch application
+
+Captured gadget lane deltas are applied to the current gadget integration worktree with `git apply --3way --binary`. This is required when an agent lane was based on an older integration commit and its replay ledger changed while the integration branch also gained newer replay entries. Plain `git apply` can reject those ledger hunks even when the lane's unique work is otherwise safe to incorporate.

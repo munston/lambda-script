@@ -780,15 +780,48 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Prefer remote gadget lanes during amalgamation"
+    },
+    {
+      "agent": "ed",
+      "created_at": "2026-06-16T01:33:56.910849+00:00",
+      "file_count": 2,
+      "file_fingerprints": [
+        {
+          "content_length": 32939,
+          "content_sha256": "c41f1503bc2d5f6efdf8c65dd68f0ce6b5fc157ff2dafc1b4f448e4358e735bb",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/amalgamate_all.py"
+        },
+        {
+          "content_length": 4921,
+          "content_sha256": "e3688ad2cfd6d857ea4fa6729b011189d931291d743be92ae45b4da6945b6232",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/README.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "24eebf1ea54db1c2f9f1e27a992907162e64d913f75bc2903afc718d31d00a3a",
+      "payload_path": "forks/replay-ledger/payloads/24/24eebf1ea54db1c2f9f1e27a992907162e64d913f75bc2903afc718d31d00a3a.json",
+      "sequence": 21,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Apply captured gadget lane patches with three-way merge"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 21,
+  "next_sequence": 22,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T01:31:44.782358+00:00"
+  "updated_at": "2026-06-16T01:33:56.910865+00:00"
 }
