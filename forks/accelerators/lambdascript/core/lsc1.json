@@ -1,0 +1,326 @@
+{
+  "agents": [
+    "ed",
+    "edd",
+    "eddy"
+  ],
+  "created_at": "2026-06-16T00:28:58.034861+00:00",
+  "cursor": {
+    "slot": 1
+  },
+  "format": "LS_FORK_ACCELERATOR_V1",
+  "gadget": "core",
+  "gizmo": "lambdascript",
+  "global_objective": "Reach the first compiler completion stage",
+  "name": "lsc1",
+  "rules": [
+    "Each agent keeps a distinct responsibility track.",
+    "For every turn, each agent maintains current implementation, next-slot complete plan, and plus-two lookahead.",
+    "Compile or verification failures enter an attempt loop for the same slot.",
+    "A slot advances only after every active agent has an accepted patch or is explicitly marked skipped.",
+    "JSON landing records replay history; lane propagation belongs to audited amalgamation."
+  ],
+  "slots": [
+    {
+      "agents": {
+        "ed": {
+          "accepted": null,
+          "attempts": [],
+          "lookahead": "Turn accelerator state into the normal coordination artifact used at the start and end of each implementation turn.",
+          "notes": "This track should avoid compiler semantics except where tooling verification requires awareness of compiler smoke profiles.",
+          "owned_paths": [
+            "scripts/forks/",
+            "docs/forks/",
+            "forks/",
+            "forks.bat",
+            "examples/gizmos/lambdascript.gizmo.json"
+          ],
+          "patch_goal": "Fix long-argument forwarding in forks.bat and commit the initial accelerator state so other agents can consume the staged plan.",
+          "plan": "Submit the wrapper/state patch, verify Python tooling still compiles, then use audited gadget amalgamation to propagate the accelerator scaffold and state to the agent lanes.",
+          "responsibility": "Forks/gadget/accelerator operational tooling: preserve replay evidence, make lane propagation explicit, and keep the operator workflow auditable."
+        },
+        "edd": {
+          "accepted": null,
+          "attempts": [],
+          "lookahead": "Prepare the next slice of admitted compiler surface after boolean logic, with expected/got diagnostics and fixture-level evidence.",
+          "notes": "Avoid expanding backend parity work except by defining the semantic contract backends must consume.",
+          "owned_paths": [
+            "glc/src/core/",
+            "glc/src/parser/",
+            "examples/core/",
+            "docs/core/"
+          ],
+          "patch_goal": "Consolidate front-end behaviour around recently admitted boolean/unary constructs and improve parse/check diagnostic informativeness without broad backend ownership.",
+          "plan": "Read current parser, AST, checker, examples, and smoke assertions. Submit a focused patch only where front-end/checker behaviour or diagnostic text is directly implicated.",
+          "responsibility": "Compiler front-end and checking surface: syntax, AST, type checking, and diagnostic quality for admitted Core-1 language features."
+        },
+        "eddy": {
+          "accepted": null,
+          "attempts": [],
+          "lookahead": "Prepare backend coverage for the next compiler-surface slice selected by the accelerator, with clear unsupported cases where required.",
+          "notes": "Use tests to expose backend contract failures, but avoid redefining the language surface independently.",
+          "owned_paths": [
+            "glc/src/codegen/",
+            "glc/test/",
+            "docs/agents/eddy/"
+          ],
+          "patch_goal": "Keep backend output aligned with the admitted Core-1 surface and ensure smoke/snapshot tests prove the parity contract.",
+          "plan": "Read current backend emitters and smoke fixtures. Submit a focused backend/test patch for any remaining parity or error-surface gap without taking parser/checker ownership.",
+          "responsibility": "Backend parity and test evidence: TypeScript/Haskell emission, unsupported-expression failures, smoke tests, and snapshots."
+        }
+      },
+      "index": 1,
+      "objective": "Stabilise the first compiler completion surface, preserve operational evidence, and establish non-overlapping agent lanes.",
+      "status": "open"
+    },
+    {
+      "agents": {
+        "ed": {
+          "accepted": null,
+          "attempts": [],
+          "lookahead": "Prepare an operator-level command that prints the full C1 lane health packet.",
+          "notes": "",
+          "owned_paths": [
+            "scripts/forks/",
+            "docs/forks/",
+            "forks/accelerators/"
+          ],
+          "patch_goal": "",
+          "plan": "Extend accelerator reporting so each slot can summarise accepted replay entries and outstanding lanes before advance.",
+          "responsibility": "Operational acceptance gate and replay/amalgamation evidence."
+        },
+        "edd": {
+          "accepted": null,
+          "attempts": [],
+          "lookahead": "Identify the next admitted expression/function construct requiring parser/checker work.",
+          "notes": "",
+          "owned_paths": [
+            "glc/src/core/",
+            "glc/src/parser/",
+            "examples/core/",
+            "docs/core/"
+          ],
+          "patch_goal": "",
+          "plan": "Define and implement the next narrow diagnostic improvement for parse/check errors, keeping message codes and source locations stable where available.",
+          "responsibility": "Front-end diagnostic acceptance criteria."
+        },
+        "eddy": {
+          "accepted": null,
+          "attempts": [],
+          "lookahead": "Identify backend snapshot or parity risks for the construct after next.",
+          "notes": "",
+          "owned_paths": [
+            "glc/src/codegen/",
+            "glc/test/",
+            "docs/agents/eddy/"
+          ],
+          "patch_goal": "",
+          "plan": "Add or revise smoke/snapshot coverage for the next accepted front-end surface, keeping backend unsupported failures explicit.",
+          "responsibility": "Backend acceptance criteria and evidence snapshots."
+        }
+      },
+      "index": 2,
+      "objective": "Move from current stabilisation into a documented C1 acceptance gate with per-agent deliverables and verification evidence.",
+      "status": "open"
+    },
+    {
+      "agents": {
+        "ed": {
+          "accepted": null,
+          "attempts": [],
+          "lookahead": "Add accelerator affordances for path-collision review, slot packets, and accepted/skipped transition summaries.",
+          "notes": "",
+          "owned_paths": [
+            "scripts/forks/",
+            "docs/forks/",
+            "forks/accelerators/"
+          ],
+          "patch_goal": "",
+          "plan": "",
+          "responsibility": "Cross-agent planning and collision detection."
+        },
+        "edd": {
+          "accepted": null,
+          "attempts": [],
+          "lookahead": "Propose the next minimal admitted syntax/typechecking slice after current boolean and function-surface work.",
+          "notes": "",
+          "owned_paths": [
+            "glc/src/core/",
+            "glc/src/parser/",
+            "examples/core/",
+            "docs/core/"
+          ],
+          "patch_goal": "",
+          "plan": "",
+          "responsibility": "Future language-surface expansion."
+        },
+        "eddy": {
+          "accepted": null,
+          "attempts": [],
+          "lookahead": "Propose the backend evidence required for the next admitted syntax/typechecking slice.",
+          "notes": "",
+          "owned_paths": [
+            "glc/src/codegen/",
+            "glc/test/",
+            "docs/agents/eddy/"
+          ],
+          "patch_goal": "",
+          "plan": "",
+          "responsibility": "Future backend/test expansion."
+        }
+      },
+      "index": 3,
+      "objective": "Prepare the next compiler completion stride after C1 stabilisation without letting agents collapse into the same subproblem.",
+      "status": "open"
+    },
+    {
+      "agents": {
+        "ed": {
+          "accepted": null,
+          "attempts": [],
+          "lookahead": "",
+          "notes": "",
+          "owned_paths": [],
+          "patch_goal": "",
+          "plan": "",
+          "responsibility": ""
+        },
+        "edd": {
+          "accepted": null,
+          "attempts": [],
+          "lookahead": "",
+          "notes": "",
+          "owned_paths": [],
+          "patch_goal": "",
+          "plan": "",
+          "responsibility": ""
+        },
+        "eddy": {
+          "accepted": null,
+          "attempts": [],
+          "lookahead": "",
+          "notes": "",
+          "owned_paths": [],
+          "patch_goal": "",
+          "plan": "",
+          "responsibility": ""
+        }
+      },
+      "index": 4,
+      "objective": "",
+      "status": "open"
+    },
+    {
+      "agents": {
+        "ed": {
+          "accepted": null,
+          "attempts": [],
+          "lookahead": "",
+          "notes": "",
+          "owned_paths": [],
+          "patch_goal": "",
+          "plan": "",
+          "responsibility": ""
+        },
+        "edd": {
+          "accepted": null,
+          "attempts": [],
+          "lookahead": "",
+          "notes": "",
+          "owned_paths": [],
+          "patch_goal": "",
+          "plan": "",
+          "responsibility": ""
+        },
+        "eddy": {
+          "accepted": null,
+          "attempts": [],
+          "lookahead": "",
+          "notes": "",
+          "owned_paths": [],
+          "patch_goal": "",
+          "plan": "",
+          "responsibility": ""
+        }
+      },
+      "index": 5,
+      "objective": "",
+      "status": "open"
+    },
+    {
+      "agents": {
+        "ed": {
+          "accepted": null,
+          "attempts": [],
+          "lookahead": "",
+          "notes": "",
+          "owned_paths": [],
+          "patch_goal": "",
+          "plan": "",
+          "responsibility": ""
+        },
+        "edd": {
+          "accepted": null,
+          "attempts": [],
+          "lookahead": "",
+          "notes": "",
+          "owned_paths": [],
+          "patch_goal": "",
+          "plan": "",
+          "responsibility": ""
+        },
+        "eddy": {
+          "accepted": null,
+          "attempts": [],
+          "lookahead": "",
+          "notes": "",
+          "owned_paths": [],
+          "patch_goal": "",
+          "plan": "",
+          "responsibility": ""
+        }
+      },
+      "index": 6,
+      "objective": "",
+      "status": "open"
+    },
+    {
+      "agents": {
+        "ed": {
+          "accepted": null,
+          "attempts": [],
+          "lookahead": "",
+          "notes": "",
+          "owned_paths": [],
+          "patch_goal": "",
+          "plan": "",
+          "responsibility": ""
+        },
+        "edd": {
+          "accepted": null,
+          "attempts": [],
+          "lookahead": "",
+          "notes": "",
+          "owned_paths": [],
+          "patch_goal": "",
+          "plan": "",
+          "responsibility": ""
+        },
+        "eddy": {
+          "accepted": null,
+          "attempts": [],
+          "lookahead": "",
+          "notes": "",
+          "owned_paths": [],
+          "patch_goal": "",
+          "plan": "",
+          "responsibility": ""
+        }
+      },
+      "index": 7,
+      "objective": "",
+      "status": "open"
+    }
+  ],
+  "updated_at": "2026-06-16T00:28:58.034861+00:00"
+}

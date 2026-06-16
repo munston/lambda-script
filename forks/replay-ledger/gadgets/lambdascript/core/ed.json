@@ -434,15 +434,48 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Add accelerator workflow scaffold"
+    },
+    {
+      "agent": "ed",
+      "created_at": "2026-06-16T00:32:57.431536+00:00",
+      "file_count": 2,
+      "file_fingerprints": [
+        {
+          "content_length": 4693,
+          "content_sha256": "b741fd210183b09903f0521ee9315eaeb54cba34bb63cec5c1206b4351b1e592",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "forks.bat"
+        },
+        {
+          "content_length": 11299,
+          "content_sha256": "411cfa2ec63b152d4dbabaee9a6fbcc70d54dc989a9f8a53d6bca50716e7afc5",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "forks/accelerators/lambdascript/core/lsc1.json"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "039b970781169402c18cc87c1e63058265406ff793247c672eac07528d6edb86",
+      "payload_path": "forks/replay-ledger/payloads/03/039b970781169402c18cc87c1e63058265406ff793247c672eac07528d6edb86.json",
+      "sequence": 12,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Track initial accelerator state and fix forks.bat forwarding"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 12,
+  "next_sequence": 13,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T00:24:15.854476+00:00"
+  "updated_at": "2026-06-16T00:32:57.431549+00:00"
 }
