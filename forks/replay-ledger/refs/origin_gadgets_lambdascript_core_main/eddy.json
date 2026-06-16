@@ -25,13 +25,51 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Document native backend migration strategy"
+    },
+    {
+      "agent": "eddy",
+      "created_at": "2026-06-16T02:42:10.401604+00:00",
+      "file_count": 3,
+      "file_fingerprints": [
+        {
+          "content_length": 9064,
+          "content_sha256": "254f1df44a2b22d5067c9e8aa2f7c551f5632afa21a2c773236817c7c82563ef",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "tools/native_forks/submission_object_inspect.cpp"
+        },
+        {
+          "content_length": 510,
+          "content_sha256": "d6afa6dcfa1ac0c8f0fc1cead0f57f66c52dd572a5236bd09bff33a320297b70",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "tools/native_forks/build_submission_object_inspect.bat"
+        },
+        {
+          "content_length": 1285,
+          "content_sha256": "d2601c7939ec993769399305a566d6e1cc224dde495bc8a4dff74a7b41c42564",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "tools/native_forks/README.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "3ab96100c59b39c42e0beed8904492fb1b6f6e0e7b06e082bcae7156e7a0ff8e",
+      "payload_path": "forks/replay-ledger/payloads/3a/3ab96100c59b39c42e0beed8904492fb1b6f6e0e7b06e082bcae7156e7a0ff8e.json",
+      "sequence": 2,
+      "target": {
+        "kind": "ref",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Add native submission object inspector scaffold"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 2,
+  "next_sequence": 3,
   "target": {
     "kind": "ref",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T01:46:10.647552+00:00"
+  "updated_at": "2026-06-16T02:42:10.401618+00:00"
 }
