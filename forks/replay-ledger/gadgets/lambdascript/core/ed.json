@@ -333,15 +333,48 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Fix gadget replay audit for superseded files"
+    },
+    {
+      "agent": "ed",
+      "created_at": "2026-06-16T00:10:41.072188+00:00",
+      "file_count": 2,
+      "file_fingerprints": [
+        {
+          "content_length": 5014,
+          "content_sha256": "9fc86e1c847b979c170bf4157290a2df736c9bf5f98b926a7ba78535fb3e4c28",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/gadget_land_json.py"
+        },
+        {
+          "content_length": 4030,
+          "content_sha256": "3063e2b032902002125b1dea58411ff1e82cc123106469c75e72c1e40713f2fb",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/README.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "54b8b79332a29fdac954d0b4ae02bf11d38fe8cdfcd95f548dd8998eac07714e",
+      "payload_path": "forks/replay-ledger/payloads/54/54b8b79332a29fdac954d0b4ae02bf11d38fe8cdfcd95f548dd8998eac07714e.json",
+      "sequence": 10,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Make gadget lane alignment explicit on JSON landing"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 10,
+  "next_sequence": 11,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-15T23:36:54.849799+00:00"
+  "updated_at": "2026-06-16T00:10:41.072210+00:00"
 }

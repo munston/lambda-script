@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-"""Land a JSON patch to a gadget integration branch and sync gadget agent lanes."""
+"""Land a JSON patch to a gadget integration branch without implicit lane sync.
+
+This command records replay history and advances the gadget integration target.
+It deliberately does not force-align gadget-agent lanes by default. Lane
+propagation belongs to an explicit sync/amalgamation command so that operators
+and agents can inspect outstanding replay evidence before destructive alignment.
+
+Use --align-lanes only for manual repair or an explicitly requested immediate
+sync.
+"""
 
 from __future__ import annotations
 
@@ -52,7 +61,7 @@ def force_align_branch(root: Path, branch: str, source_ref: str) -> None:
 
 
 def force_align_gadget_lanes(root: Path, gizmo: str, gadget: str, source_ref: str) -> None:
-    print("syncing gadget integration and agent lanes")
+    print("explicitly syncing gadget integration and agent lanes")
     force_align_branch(root, gadget_branches.integration_branch(gizmo, gadget), source_ref)
     for agent in gadget_branches.AGENTS:
         force_align_branch(root, gadget_branches.gadget_agent_branch(agent, gizmo, gadget), source_ref)
@@ -83,8 +92,11 @@ def cmd_land(args: argparse.Namespace) -> int:
 
     root = forks.repo_root()
     fetch(root)
-    if getattr(args, "align_lanes", True):
+    if args.align_lanes:
         force_align_gadget_lanes(root, args.gizmo, args.gadget, target)
+    else:
+        print("skipped gadget-agent lane alignment")
+        print("run amalgamate-all --gadget ... --apply, gadget-sync-all, or pass --align-lanes explicitly")
 
     print("gadget status")
     status_args = SimpleNamespace(gizmo=args.gizmo, gadget=args.gadget, json=False)
@@ -97,8 +109,19 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--require-file", action="store_true")
     parser.add_argument("--full", action="store_true", help="use the full manifest verification profile, or verify.bat fallback")
     parser.add_argument("--profile", help="manifest verification profile to run before submit; defaults to quick")
-    parser.add_argument("--no-align-lanes", action="store_false", dest="align_lanes", help="do not force-align gadget lanes after a successful landing")
-    parser.set_defaults(align_lanes=True)
+    parser.add_argument(
+        "--align-lanes",
+        action="store_true",
+        dest="align_lanes",
+        help="explicitly force-align gadget-agent lanes after a successful landing",
+    )
+    parser.add_argument(
+        "--no-align-lanes",
+        action="store_false",
+        dest="align_lanes",
+        help="compatibility option; this is now the default",
+    )
+    parser.set_defaults(align_lanes=False)
     parser.add_argument("gizmo")
     parser.add_argument("gadget")
     parser.add_argument("agent")

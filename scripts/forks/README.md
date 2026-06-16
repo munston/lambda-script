@@ -22,6 +22,35 @@ Apply:
 forks.bat amalgamate-all --apply
 ```
 
+## Gadget JSON landing
+
+Gadget JSON landing records replay history and advances the gadget integration branch. It must not silently force-align every gadget-agent lane, because that masks whether propagation happened through the intended amalgamation stage.
+
+Default landing:
+
+```bat
+python scripts\forks\gadget_land_json.py --require-file lambdascript core edd "<patch>.json"
+```
+
+Default behaviour:
+
+```text
+append the submitting agent's replay ledger
+materialise the patch on origin/gadgets/<gizmo>/<gadget>/main
+leave gadget-agent lanes untouched
+print gadget status
+```
+
+Explicit repair/alignment is still available, but it must be requested:
+
+```bat
+python scripts\forks\gadget_land_json.py --require-file --align-lanes lambdascript core edd "<patch>.json"
+```
+
+Use `--align-lanes` only when the operator intentionally wants immediate lane force-alignment. The normal collaborative workflow should leave lane propagation to gadget amalgamation.
+
+`--no-align-lanes` remains accepted for compatibility and is now the default.
+
 ## Gadget-agent amalgamation
 
 Gadget mode operates over:
