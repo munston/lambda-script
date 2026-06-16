@@ -1,0 +1,90 @@
+{
+  "agent": "edd",
+  "created_at": "2026-06-16T12:19:00.014541+00:00",
+  "entries": [
+    {
+      "agent": "edd",
+      "created_at": "2026-06-16T12:19:00.014622+00:00",
+      "file_count": 8,
+      "file_fingerprints": [
+        {
+          "content_length": 927,
+          "content_sha256": "58df84c018a0e3e1c885ae7c73ce260ac301a97a98ed46c6e26bbe543a4c1336",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "examples/gizmos/audio-lab.gizmo.json"
+        },
+        {
+          "content_length": 2226,
+          "content_sha256": "68f57572eb8aef0a8a9b2da66b62c307ad0f96f5edbeabf087c6a269506cc024",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "docs/wavproc/audio-lab-initialization.md"
+        },
+        {
+          "content_length": 1195,
+          "content_sha256": "c5c1ee8287df2fcb4b4689903131a666bd3c0d823528a7765f37648dd5cc6691",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "tools/wavproc/README.md"
+        },
+        {
+          "content_length": 348,
+          "content_sha256": "bc9a3e53db295911088e797b2cc77ffc84a7217795d87d5ba2c9ac0bf592a95e",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "tools/wavproc/wavproc.cabal"
+        },
+        {
+          "content_length": 8121,
+          "content_sha256": "2dda9e23340b1dac1a3a626ee0e0cea375073c37f161a1880c0a66f8abfca302",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "tools/wavproc/src/Main.hs"
+        },
+        {
+          "content_length": 2899,
+          "content_sha256": "b2fff6da44c873cda32e409516324170ba584c2e3ef9d911a1259abd22c36335",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "tools/wavproc/src/Audio/Features.hs"
+        },
+        {
+          "content_length": 12620,
+          "content_sha256": "623b19519d2bedbbdb8d3c54368ac6257378d27a33e149241836aeff66887e49",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "tools/wavproc/src/Data/WAVE.hs"
+        },
+        {
+          "content_length": 5168,
+          "content_sha256": "da54b4b6eef88bedfa9246a217fed46cafd29b0839f1c7fa091fedffc06e824b",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "tools/wavproc/src/Learn/Model.hs"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "25d21d3d7123eddb541b8644a73e30e414e04a247ffc6f27ab8bb6f4f6c1a60b",
+      "payload_path": "forks/replay-ledger/payloads/25/25d21d3d7123eddb541b8644a73e30e414e04a247ffc6f27ab8bb6f4f6c1a60b.json",
+      "sequence": 1,
+      "target": {
+        "gadget": "wavproc",
+        "gizmo": "audio-lab",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/audio-lab/wavproc/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/audio-lab/wavproc/main",
+      "title": "Initialise audio-lab wavproc Haskell package"
+    }
+  ],
+  "format": "LS_FORK_REPLAY_LEDGER_V1",
+  "next_sequence": 2,
+  "target": {
+    "gadget": "wavproc",
+    "gizmo": "audio-lab",
+    "kind": "gadget",
+    "target_ref": "origin/gadgets/audio-lab/wavproc/main"
+  },
+  "updated_at": "2026-06-16T12:19:00.014638+00:00"
+}

@@ -1,0 +1,32 @@
+{
+  "format": "LS_GIZMO_V1",
+  "name": "audio-lab",
+  "description": "Independent audio processing and classifier development gizmo.",
+  "gadgets": {
+    "wavproc": {
+      "root": "tools/wavproc",
+      "language": "mixed",
+      "target_ref": "origin/gadgets/audio-lab/wavproc/main",
+      "integration_branch": "gadgets/audio-lab/wavproc/main",
+      "agent_branch_template": "gadget-agents/audio-lab/wavproc/{agent}",
+      "owned_paths": [
+        "tools/wavproc/",
+        "docs/wavproc/",
+        "examples/gizmos/audio-lab.gizmo.json"
+      ],
+      "verification_profiles": {
+        "quick": [
+          "cd tools/wavproc && cabal build"
+        ],
+        "full": [
+          "cd tools/wavproc && cabal build",
+          "cd tools/wavproc && cabal run wavproc -- --help"
+        ]
+      },
+      "commands": {
+        "wavproc": "cd tools/wavproc && cabal run wavproc -- {args}"
+      }
+    }
+  },
+  "imports": {}
+}
