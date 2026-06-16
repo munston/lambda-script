@@ -427,15 +427,41 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Add read-only materialisation length audit to forks-core"
+    },
+    {
+      "agent": "edd",
+      "created_at": "2026-06-16T11:55:00.998956+00:00",
+      "file_count": 1,
+      "file_fingerprints": [
+        {
+          "content_length": 3342,
+          "content_sha256": "1fd39dc3e60345357c69e7ed3b1b5bb415a61f1489b923266101ed1cfc294463",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "examples/gizmos/lambdascript.gizmo.json"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "56f70a34e6fdf6dcb788b4f12c1752410bb976c4eac75d4d47d7ced8d7c2e101",
+      "payload_path": "forks/replay-ledger/payloads/56/56f70a34e6fdf6dcb788b4f12c1752410bb976c4eac75d4d47d7ced8d7c2e101.json",
+      "sequence": 12,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Register wavproc gadget in lambdascript gizmo"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 12,
+  "next_sequence": 13,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T04:53:34.129555+00:00"
+  "updated_at": "2026-06-16T11:55:00.998968+00:00"
 }

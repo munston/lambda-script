@@ -61,6 +61,29 @@
         "forks-ts": "cd tools/forks-ts && node dist/src/cli.js {args}",
         "accelerator": "forks.bat accelerator {args}"
       }
+    },
+    "wavproc": {
+      "root": "tools/wavproc",
+      "language": "mixed",
+      "target_ref": "origin/gadgets/lambdascript/wavproc/main",
+      "integration_branch": "gadgets/lambdascript/wavproc/main",
+      "agent_branch_template": "gadget-agents/lambdascript/wavproc/{agent}",
+      "owned_paths": [
+        "tools/wavproc/",
+        "docs/wavproc/"
+      ],
+      "verification_profiles": {
+        "quick": [
+          "cd tools/wavproc && cabal build"
+        ],
+        "full": [
+          "cd tools/wavproc && cabal build",
+          "cd tools/wavproc && cabal run wavproc -- --help"
+        ]
+      },
+      "commands": {
+        "wavproc": "cd tools/wavproc && cabal run wavproc -- {args}"
+      }
     }
   },
   "imports": {}
