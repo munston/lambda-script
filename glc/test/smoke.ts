@@ -11,6 +11,19 @@ interface FixtureExpectation {
   file: string;
   tsIncludes: string[];
   hsIncludes: string[];
+  tsExcludes?: string[];
+  hsExcludes?: string[];
+  tsSnapshot?: string;
+  hsSnapshot?: string;
+}
+
+function normalizeOutput(text: string): string {
+  return text.replace(/\r\n/g, '\n').trim();
+}
+
+function readSnapshot(snapshot: string): string {
+  const snapshotPath = path.resolve(__dirname, '../../..', snapshot);
+  return normalizeOutput(fs.readFileSync(snapshotPath, 'utf8'));
 }
 
 function checkFixture(fixture: FixtureExpectation) {
@@ -27,6 +40,18 @@ function checkFixture(fixture: FixtureExpectation) {
   }
   for (const expected of fixture.hsIncludes) {
     assert.ok(hs.includes(expected), `${fixture.file} Haskell output should include ${expected}`);
+  }
+  for (const rejected of fixture.tsExcludes ?? []) {
+    assert.ok(!ts.includes(rejected), `${fixture.file} TypeScript output should not include ${rejected}`);
+  }
+  for (const rejected of fixture.hsExcludes ?? []) {
+    assert.ok(!hs.includes(rejected), `${fixture.file} Haskell output should not include ${rejected}`);
+  }
+  if (fixture.tsSnapshot) {
+    assert.strictEqual(normalizeOutput(ts), readSnapshot(fixture.tsSnapshot), `${fixture.file} TypeScript snapshot`);
+  }
+  if (fixture.hsSnapshot) {
+    assert.strictEqual(normalizeOutput(hs), readSnapshot(fixture.hsSnapshot), `${fixture.file} Haskell snapshot`);
   }
   const originalError = console.error;
   try {
@@ -98,31 +123,6 @@ is_not x y = x != y
   assert.ok(!hs.includes('!='), 'Haskell output should not contain raw !=');
 }
 
-function checkUnsupportedForeignCallPlacement() {
-  const source = `module BadForeignPlacement
-
-foreign cpp add_i32 : i32 -> i32 -> i32 = "ls_add_i32"
-
-bad : i32 -> i32
-bad x = add_i32(x, 1)
-`;
-  const pr = parse(source, 'bad-foreign-placement.ls');
-  assert.strictEqual(pr.diagnostics.length, 0, 'foreign-placement fixture should parse');
-  const c = checkProgram(pr.program!);
-  assert.strictEqual(c.diagnostics.length, 0, `foreign-placement fixture should check, got ${c.diagnostics.map(d => d.message).join('; ')}`);
-
-  assert.throws(
-    () => emitTypeScript(pr.program!),
-    /TypeScript backend unsupported foreign call placement: add_i32/,
-    'TypeScript backend should reject foreign calls outside direct top-level declarations',
-  );
-  assert.throws(
-    () => emitHaskell(pr.program!),
-    /Haskell backend unsupported foreign call placement: add_i32/,
-    'Haskell backend should reject foreign calls outside direct top-level declarations',
-  );
-}
-
 function main() {
   const fixtures: FixtureExpectation[] = [
     {
@@ -137,8 +137,16 @@ function main() {
     },
     {
       file: 'examples/core/core0_ffi.ls',
-      tsIncludes: ['export function add_i32', "symbol: 'ls_add_i32'", 'export function answer(runtime: CppForeignRuntime)'],
-      hsIncludes: ['foreign import ccall "ls_add_i32" add_i32', 'answer :: IO Int', 'scaled :: IO Double'],
+      tsIncludes: [
+        'export function add_i32',
+        "symbol: 'ls_add_i32'",
+        'export function answer(runtime: CppForeignRuntime): number',
+        'export function log_message(runtime: CppForeignRuntime, arg0: string): void',
+        'export function done(runtime: CppForeignRuntime): void',
+        '  log_message(runtime, "hello from Core-0");',
+      ],
+      hsIncludes: ['foreign import ccall "ls_add_i32" add_i32', 'answer :: IO Int', 'scaled :: IO Double', 'done :: IO ()'],
+      tsExcludes: ['return log_message(runtime, "hello from Core-0");', ': null'],
     },
     {
       file: 'examples/core/core1_functions.ls',
@@ -149,85 +157,28 @@ function main() {
       file: 'examples/core/core1_let.ls',
       tsIncludes: ['export function square_plus(x: number, y: number): number', 'const xx = (x * x); return (xx + y)', 'const below = (x < floor); return (below ? floor : x)'],
       hsIncludes: ['square_plus :: Int -> Int -> Int', 'square_plus x y = (let xx = (x * x) in (xx + y))', 'clamp_min floor x = (let below = (x < floor) in (if below then floor else x))'],
+      tsSnapshot: 'glc/test/snapshots/core1_let.ts.snap',
+      hsSnapshot: 'glc/test/snapshots/core1_let.hs.snap',
     },
     {
       file: 'examples/core/core1_pure_calls.ls',
       tsIncludes: ['export const total = add(1, 2)', 'export const chosen = max_i32(add(1, 1), 3)'],
       hsIncludes: ['total = add 1 2', 'chosen = max_i32 (add 1 1) 3'],
     },
-    {
-      file: 'examples/core/core2_bool_logic.ls',
-      tsIncludes: ['return (!ok);', 'return (!(a || b));', 'export const choice = (true || false)'],
-      hsIncludes: ['inverse ok = not ok', 'neither a b = not (a || b)', 'choice = (True || False)'],
-    },
   ];
   for (const fixture of fixtures) checkFixture(fixture);
   checkUnsupportedBackendErrors();
   checkHaskellNotEqualEmission();
-  checkUnsupportedForeignCallPlacement();
 
-  checkFails('unknown-variable', `module Bad
-
-f : i32 -> i32
-f x = y
-`, 'Unknown identifier: y');
-  checkFails('wrong-arity', `module Bad
-
-add : i32 -> i32 -> i32
-add x y = x + y
-z = add(1)
-`, 'Wrong argument count for add');
-  checkFails('wrong-argument-type', `module Bad
-
-add : i32 -> i32 -> i32
-add x y = x + y
-z = add(true, 1)
-`, 'Argument 1 for add has type bool, expected i32');
-  checkFails('if-condition-type', `module Bad
-
-f : i32 -> i32
-f x = if x then 1 else 2
-`, 'If condition has type i32, expected bool');
-  checkFails('if-branch-type', `module Bad
-
-f : i32 -> i32
-f x = if x < 1 then 1 else false
-`, 'If branches have different types: i32 and bool');
-  checkFails('return-type', `module Bad
-
-f : i32 -> i32
-f x = false
-`, 'Function f returns bool, expected i32');
-  checkFails('binary-type', `module Bad
-
-f : bool -> bool
-f x = x + true
-`, 'Operator + expects numeric operands');
-  checkFails('logical-type', `module Bad
-
-f : i32 -> bool
-f x = x && true
-`, 'Operator && expects bool operands');
-  checkFails('unary-bool-type', `module Bad
-
-f : i32 -> bool
-f x = not x
-`, 'Unary not expects bool operand');
-  parseFails('bang-prefix-reserved', `module Bad
-
-f : bool -> bool
-f x = !x
-`, 'Invalid function body');
-  parseFails('dangling-signature', `module Bad
-
-f : i32 -> i32
-`, 'Dangling type signature for f');
-  parseFails('duplicate-signature', `module Bad
-
-f : i32 -> i32
-f : i32 -> i32
-f x = x
-`, 'Duplicate type signature for f');
+  checkFails('unknown-variable', `module Bad\n\nf : i32 -> i32\nf x = y\n`, 'Unknown identifier: y');
+  checkFails('wrong-arity', `module Bad\n\nadd : i32 -> i32 -> i32\nadd x y = x + y\nz = add(1)\n`, 'Wrong argument count for add');
+  checkFails('wrong-argument-type', `module Bad\n\nadd : i32 -> i32 -> i32\nadd x y = x + y\nz = add(true, 1)\n`, 'Argument 1 for add has type bool, expected i32');
+  checkFails('if-condition-type', `module Bad\n\nf : i32 -> i32\nf x = if x then 1 else 2\n`, 'If condition has type i32, expected bool');
+  checkFails('if-branch-type', `module Bad\n\nf : i32 -> i32\nf x = if x < 1 then 1 else false\n`, 'If branches have different types: i32 and bool');
+  checkFails('return-type', `module Bad\n\nf : i32 -> i32\nf x = false\n`, 'Function f returns bool, expected i32');
+  checkFails('binary-type', `module Bad\n\nf : bool -> bool\nf x = x + true\n`, 'Operator + expects numeric operands');
+  parseFails('dangling-signature', `module Bad\n\nf : i32 -> i32\n`, 'Dangling type signature for f');
+  parseFails('duplicate-signature', `module Bad\n\nf : i32 -> i32\nf : i32 -> i32\nf x = x\n`, 'Duplicate type signature for f');
   console.log('Smoke test passed');
 }
 

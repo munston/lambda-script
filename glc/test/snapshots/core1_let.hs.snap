@@ -1,0 +1,7 @@
+-- Module: Core1Let
+
+square_plus :: Int -> Int -> Int
+square_plus x y = (let xx = (x * x) in (xx + y))
+
+clamp_min :: Int -> Int -> Int
+clamp_min floor x = (let below = (x < floor) in (if below then floor else x))

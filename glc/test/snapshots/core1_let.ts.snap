@@ -1,0 +1,9 @@
+// Module: Core1Let
+
+export function square_plus(x: number, y: number): number {
+  return (() => { const xx = (x * x); return (xx + y); })();
+}
+
+export function clamp_min(floor: number, x: number): number {
+  return (() => { const below = (x < floor); return (below ? floor : x); })();
+}

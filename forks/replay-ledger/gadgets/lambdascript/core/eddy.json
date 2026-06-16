@@ -300,15 +300,55 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Snapshot Core1 function backend output"
+    },
+    {
+      "agent": "eddy",
+      "created_at": "2026-06-16T00:53:24.733141+00:00",
+      "file_count": 3,
+      "file_fingerprints": [
+        {
+          "content_length": 8497,
+          "content_sha256": "8f0f84eb4d0a4b10bfd26059b53ffd26226548f9b95ed663cb5ff336eb2b486d",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/test/smoke.ts"
+        },
+        {
+          "content_length": 288,
+          "content_sha256": "43a8893116e3e5c778e49466c68a5804e7d4487ae4815104f19a4603c7a55f80",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/test/snapshots/core1_let.ts.snap"
+        },
+        {
+          "content_length": 213,
+          "content_sha256": "7b6e1ad4f4176c26b95fe1c9833e5c8e0ae87f401f4120a095b98ef71d2b6129",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/test/snapshots/core1_let.hs.snap"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "3ee0035ff57c3be589b75fbe9ba16df1a27bac4b48162c5b3ce1fcef4169a992",
+      "payload_path": "forks/replay-ledger/payloads/3e/3ee0035ff57c3be589b75fbe9ba16df1a27bac4b48162c5b3ce1fcef4169a992.json",
+      "sequence": 9,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Snapshot Core1 let backend output"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 9,
+  "next_sequence": 10,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-15T23:58:27.361457+00:00"
+  "updated_at": "2026-06-16T00:53:24.733159+00:00"
 }
