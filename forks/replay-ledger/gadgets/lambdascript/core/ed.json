@@ -846,15 +846,48 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Include guy in default gadget amalgamation lanes"
+    },
+    {
+      "agent": "ed",
+      "created_at": "2026-06-16T01:52:13.728113+00:00",
+      "file_count": 2,
+      "file_fingerprints": [
+        {
+          "content_length": 396,
+          "content_sha256": "2839aa0636539c2c9ca0f97d5cb7d5bbdaea469ec4f3539e89c2001285a1dc1d",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "amalgamate-lambdascript-core.bat"
+        },
+        {
+          "content_length": 805,
+          "content_sha256": "61487ef112d65ca02b8c4ddfda3a34627cc3b112ce79445d092637a5985c6d7a",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "docs/forks/LAMBDASCRIPT_CORE_AMALGAMATE_BUTTON.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "aed7e5e1c87ab7c03cfe98b9b58ceda8dfca256c1717e311c6f7027fb215cc87",
+      "payload_path": "forks/replay-ledger/payloads/ae/aed7e5e1c87ab7c03cfe98b9b58ceda8dfca256c1717e311c6f7027fb215cc87.json",
+      "sequence": 23,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Add simple LambdaScript core amalgamation button"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 23,
+  "next_sequence": 24,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T01:38:11.893615+00:00"
+  "updated_at": "2026-06-16T01:52:13.728130+00:00"
 }
