@@ -547,15 +547,48 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Replace forks.bat argument routing with Python dispatcher"
+    },
+    {
+      "agent": "ed",
+      "created_at": "2026-06-16T00:46:40.861598+00:00",
+      "file_count": 2,
+      "file_fingerprints": [
+        {
+          "content_length": 30896,
+          "content_sha256": "bf075becbe00ccbb5a6b71c338fb65f45427341cdc2e30da65577568b4895ae8",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/amalgamate_all.py"
+        },
+        {
+          "content_length": 3483,
+          "content_sha256": "adbaa38d6bba430d81dd7ae943188b717c4d05e3e62f6d64a1b3553168672bd6",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/README.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "12dc84a7783591afaea97151c2d8f10ff50f87e996b941ed99cfafa35ade4646",
+      "payload_path": "forks/replay-ledger/payloads/12/12dc84a7783591afaea97151c2d8f10ff50f87e996b941ed99cfafa35ade4646.json",
+      "sequence": 15,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Warn on advisory agent-note replay drift"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 15,
+  "next_sequence": 16,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T00:40:01.843877+00:00"
+  "updated_at": "2026-06-16T00:46:40.861629+00:00"
 }

@@ -333,7 +333,28 @@ def should_replace_latest(current: dict[str, Any] | None, candidate: dict[str, A
     return tuple(candidate.get("sort_key", ("", "", 0, 0))) > tuple(current.get("sort_key", ("", "", 0, 0)))
 
 
-def audit_gadget_replay_materialisation(root: Path, gizmo: str, gadget: str, agents: list[str], *, require_ledgers: bool) -> None:
+def is_advisory_agent_doc_path(path: str) -> bool:
+    """Return true for per-agent notes that should warn rather than block sync.
+
+    Agent notes are useful coordination artefacts, but they can be superseded by
+    later lane discussion or manual note correction. A mismatch here should be
+    visible, because replay evidence is imperfect, but it should not block
+    propagation of verified compiler/tooling state. Core docs, forks docs, code,
+    tests, examples, scripts, ledgers, and accelerator state remain strict.
+    """
+    normal = path.replace("\\", "/")
+    return normal.startswith("docs/agents/")
+
+
+def audit_gadget_replay_materialisation(
+    root: Path,
+    gizmo: str,
+    gadget: str,
+    agents: list[str],
+    *,
+    require_ledgers: bool,
+    strict_agent_docs: bool,
+) -> None:
     """Audit replay materialisation without treating superseded history as failure.
 
     Replay ledgers are historical. A file may be updated by later replay entries,
@@ -344,9 +365,14 @@ def audit_gadget_replay_materialisation(root: Path, gizmo: str, gadget: str, age
     2. For each replay-touched file path, final branch content matches the latest
        non-delete replay fingerprint touching that path across the selected
        agents' ledgers, ordered by replay entry timestamp plus sequence.
+
+    Per-agent planning notes under docs/agents/ are advisory. Hash drift in those
+    files is reported as a warning by default. Pass --strict-agent-docs to make
+    such drift fatal.
     """
     base_ref = gadget_base_ref(gizmo, gadget)
     errors: list[str] = []
+    warnings: list[str] = []
     latest_by_path: dict[str, dict[str, Any]] = {}
     fallback_order = 0
 
@@ -409,23 +435,44 @@ def audit_gadget_replay_materialisation(root: Path, gizmo: str, gadget: str, age
         op = info.get("op", "upsert")
         content = read_text_at_ref(root, base_ref, path)
         label = f"{info.get('agent')}#{info.get('sequence')}: {path}"
+        advisory = is_advisory_agent_doc_path(path)
         if op in {"delete", "remove"}:
             if content is not None:
-                errors.append(f"{label}: expected latest operation to delete file, but it exists")
+                msg = f"{label}: expected latest operation to delete file, but it exists"
+                if advisory and not strict_agent_docs:
+                    warnings.append(msg)
+                    print(f"  warning {msg}")
+                else:
+                    errors.append(msg)
             else:
                 print(f"  ok deleted {label}")
             continue
         if content is None:
-            errors.append(f"{label}: latest replay-touched file missing")
+            msg = f"{label}: latest replay-touched file missing"
+            if advisory and not strict_agent_docs:
+                warnings.append(msg)
+                print(f"  warning {msg}")
+            else:
+                errors.append(msg)
             continue
         expected = info.get("content_sha256")
         if expected:
             actual = hashlib.sha256(content.encode("utf-8")).hexdigest()
             if actual != expected:
-                errors.append(f"{label}: final file hash mismatch expected={expected} actual={actual}")
+                msg = f"{label}: final file hash mismatch expected={expected} actual={actual}"
+                if advisory and not strict_agent_docs:
+                    warnings.append(msg)
+                    print(f"  warning {msg}")
+                    continue
+                errors.append(msg)
                 continue
         created = info.get("created_at", "")
         print(f"  ok {label} created_at={created}")
+
+    if warnings:
+        print("gadget replay materialisation audit warnings")
+        for warning in warnings:
+            print(f"  {warning}")
 
     if errors:
         raise RuntimeError("gadget replay materialisation audit failed\n" + "\n".join(errors))
@@ -599,7 +646,7 @@ def gadget_run(args: argparse.Namespace, root: Path, agents: list[str]) -> int:
     gizmo, gadget = args.gadget
     forks.git(["fetch", "--prune", "origin"], root)
     if not args.skip_replay_audit:
-        audit_gadget_replay_materialisation(root, gizmo, gadget, agents, require_ledgers=args.require_ledgers)
+        audit_gadget_replay_materialisation(root, gizmo, gadget, agents, require_ledgers=args.require_ledgers, strict_agent_docs=args.strict_agent_docs)
     if not args.apply:
         print(f"amalgamate-all gadget plan only for {gizmo}/{gadget}; pass --apply to mutate")
         for agent in agents:
@@ -613,7 +660,7 @@ def gadget_run(args: argparse.Namespace, root: Path, agents: list[str]) -> int:
     if not args.skip_final_assert:
         gadget_assert_clean(root, gizmo, gadget, agents)
     if not args.skip_replay_audit:
-        audit_gadget_replay_materialisation(root, gizmo, gadget, agents, require_ledgers=args.require_ledgers)
+        audit_gadget_replay_materialisation(root, gizmo, gadget, agents, require_ledgers=args.require_ledgers, strict_agent_docs=args.strict_agent_docs)
     print("amalgamate-all complete")
     return 0
 
