@@ -351,16 +351,23 @@ def should_replace_latest(current: dict[str, Any] | None, candidate: dict[str, A
 
 
 def is_advisory_agent_doc_path(path: str) -> bool:
-    """Return true for per-agent notes that should warn rather than block sync.
+    """Return true for advisory planning/inventory notes that warn rather than block sync.
 
     Agent notes are useful coordination artefacts, but they can be superseded by
     later lane discussion or manual note correction. A mismatch here should be
     visible, because replay evidence is imperfect, but it should not block
-    propagation of verified compiler/tooling state. Core docs, forks docs, code,
-    tests, examples, scripts, ledgers, and accelerator state remain strict.
+    propagation of verified compiler/tooling state.
+
+    The Python tooling migration inventory is also advisory during the current
+    native-tooling transition. It records planning state, not compiler behavior.
+    Code, tests, examples, scripts, replay ledgers, accelerator state, and
+    non-inventory core documents remain strict.
     """
     normal = path.replace("\\", "/")
-    return normal.startswith("docs/agents/")
+    return (
+        normal.startswith("docs/agents/")
+        or normal == "docs/core/PYTHON_TOOLING_MIGRATION_INVENTORY.md"
+    )
 
 
 def audit_gadget_replay_materialisation(

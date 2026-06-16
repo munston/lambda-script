@@ -124,3 +124,7 @@ ed edd eddy guy
 ```
 
 `guy` is the operator/local working lane. Normal gadget amalgamation should keep it synced to the final gadget integration branch unless it has unique unamalgamated work, in which case the same guarded capture/apply path is used before final sync.
+
+## Advisory migration-inventory drift
+
+`docs/core/PYTHON_TOOLING_MIGRATION_INVENTORY.md` is warning-only in replay materialisation audit during the native-tooling transition. It is a planning inventory rather than compiler/runtime state. This exception is intentionally narrow: code, tests, scripts, examples, replay ledgers, accelerator state, and non-inventory core documents remain strict.

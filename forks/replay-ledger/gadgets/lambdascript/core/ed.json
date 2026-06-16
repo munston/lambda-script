@@ -919,15 +919,48 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Add generic amalgamation button defaulting to all targets"
+    },
+    {
+      "agent": "ed",
+      "created_at": "2026-06-16T03:43:04.289549+00:00",
+      "file_count": 2,
+      "file_fingerprints": [
+        {
+          "content_length": 33223,
+          "content_sha256": "75accefd3c8699b6964cdf236e735db14c4ef6838ef4c28cef73a159e63f0dc0",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/amalgamate_all.py"
+        },
+        {
+          "content_length": 5691,
+          "content_sha256": "59b3e09399227e63a0121cd24b7a65860e47f552799468c11f843dd313aa6e86",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/README.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "2a1edc342e1414f474180a083b03035d1f6451e1ef47f46f498a1deccbaacbd8",
+      "payload_path": "forks/replay-ledger/payloads/2a/2a1edc342e1414f474180a083b03035d1f6451e1ef47f46f498a1deccbaacbd8.json",
+      "sequence": 25,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Warn on Python tooling migration inventory replay drift"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 25,
+  "next_sequence": 26,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T02:20:12.141248+00:00"
+  "updated_at": "2026-06-16T03:43:04.289561+00:00"
 }
