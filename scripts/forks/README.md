@@ -2,71 +2,25 @@
 
 Repository tooling for coordinating side-lane agent branches and gadget-agent lanes.
 
-## Batch dispatch
+## Repository-agent amalgamation
 
-`forks.bat` is intentionally minimal. It changes to the repository root and forwards the original command line to:
-
-```bat
-python scripts\forks\forks_dispatch.py %*
-```
-
-The Python dispatcher performs subcommand routing. This avoids the Windows batch `%1` through `%9` forwarding limit and preserves long commands.
-
-## Agent JSON landing buttons
-
-The agent buttons are lane-local:
-
-```bat
-ed-land-json.bat patch.json
-edd-land-json.bat patch.json
-eddy-land-json.bat patch.json
-guy-land-json.bat patch.json
-```
-
-Each button lands the JSON patch only to that agent's gadget-agent branch:
+Repository mode operates over:
 
 ```text
-gadget-agents/<gizmo>/<gadget>/<agent>
+agents/<agent> -> origin/main
 ```
 
-The patch's `target` still selects the gizmo, gadget, and verification profile, but the hardcoded button ignores patch requests to promote, sync, or align lanes. This is deliberate. Agent submissions should accumulate as lane-local diffs. Audited gadget amalgamation is the only normal path that propagates those diffs to the shared gadget integration branch and then to other agent lanes.
-
-The lane-local landing output states:
-
-```text
-scope=agent-lane-only
-sync=False promote=False amalgamate=False
-```
-
-## Gadget JSON landing
-
-Direct gadget JSON landing is still available for operator/tooling repair:
+Plan:
 
 ```bat
-python scripts\forks\gadget_land_json.py --require-file lambdascript core ed "<patch>.json"
+forks.bat amalgamate-all
 ```
 
-This advances `origin/gadgets/<gizmo>/<gadget>/main`. It does not align agent lanes unless `--align-lanes` is explicitly passed.
-
-Normal agent patches should use the agent buttons, not direct gadget landing.
-
-## Accelerator planning
-
-An accelerator is a tracked staged workflow template for parallel agent development. It keeps each agent on a continuous development sequence while making overlap visible before patches collide.
-
-Create an accelerator:
+Apply:
 
 ```bat
-forks.bat accelerator init lambdascript core lsc1 --agents ed edd eddy --slots 7 --objective "Reach the first compiler completion stage"
+forks.bat amalgamate-all --apply
 ```
-
-Print the packet for a working turn:
-
-```bat
-forks.bat accelerator packet lambdascript core lsc1 edd
-```
-
-The accelerator is non-destructive. It never lands patches, rewinds lanes, promotes branches, or syncs agents. It coordinates the work that is then consumed through JSON landing and audited gadget amalgamation.
 
 ## Gadget-agent amalgamation
 
@@ -88,8 +42,63 @@ Apply:
 forks.bat amalgamate-all --gadget lambdascript core --apply
 ```
 
-Gadget mode begins with a non-destructive replay-materialisation audit. The audit reads each selected agent's gadget replay ledger from the gadget integration branch, checks that every payload object exists, and verifies final materialisation using timestamped last-writer-wins semantics.
+Gadget mode now begins with a non-destructive replay-materialisation audit. The audit reads each selected agent's gadget replay ledger from the gadget integration branch, checks that every payload object exists, and verifies final materialisation using timestamped last-writer-wins semantics: historical entries may be superseded across agents, so final file content is checked against the latest replay fingerprint touching each path.
 
-Per-agent planning notes under `docs/agents/` are warning-only by default; pass `--strict-agent-docs` to make them fatal.
+The audit prints each replay entry before any lane is rewound:
 
-After a successful apply, the selected `gadget-agents/<gizmo>/<gadget>/<name>` lanes are even with `origin/gadgets/<gizmo>/<gadget>/main`.
+```text
+gadget replay materialisation audit for lambdascript/core
+ed: ledger entries=...
+  #N: files=... title=...
+edd: ledger entries=...
+  #N: files=... title=...
+eddy: ledger entries=...
+  #N: files=... title=...
+ok gadget replay materialisation audit passed
+```
+
+Use this before accepting claims that a patch was or was not applied. If a replay-ledger payload is missing, or if the final branch content does not match the latest timestamped replay fingerprint for a strict touched path, `amalgamate-all` fails before destructive lane sync. Per-agent planning notes under `docs/agents/` are warning-only by default; pass `--strict-agent-docs` to make them fatal.
+
+Optional stricter mode:
+
+```bat
+forks.bat amalgamate-all --gadget lambdascript core --require-ledgers
+```
+
+This fails if any selected agent has no gadget replay ledger. The default merely reports a missing ledger so that agents with no submitted patch do not block unrelated work.
+
+After all selected agents have been visited, gadget mode final-syncs the selected gadget-agent lanes to the gadget integration branch and repeats the replay-materialisation audit unless `--skip-replay-audit` is given.
+
+## Important distinction
+
+`forks.bat amalgamate-all --apply` without `--gadget` only processes repository lanes:
+
+```text
+agents/ed
+agents/edd
+agents/eddy
+```
+
+For the current LambdaScript core gadget workflow, use:
+
+```bat
+forks.bat amalgamate-all --gadget lambdascript core --apply
+```
+
+## Terminal invariant
+
+After a successful apply, no separate sync step is expected for the selected lane family.
+
+Repository mode leaves selected `agents/<name>` lanes even with `origin/main`.
+
+Gadget mode leaves selected `gadget-agents/<gizmo>/<gadget>/<name>` lanes even with `origin/gadgets/<gizmo>/<gadget>/main` and proves the selected agents' replay-ledger entries are materialised on that branch.
+
+`main` is never rewound. Agent lanes may be rewound only after their unique direct work has been captured or their replay-backed content has been proven materialised.
+
+## Advisory agent-note drift
+
+Per-agent planning notes under `docs/agents/` are coordination artefacts. If their replay fingerprint drifts from the materialised file, gadget amalgamation prints a warning by default and continues. Use `--strict-agent-docs` when those notes must be treated as strict replay material.
+
+## Strict agent-doc flag compatibility
+
+`amalgamate-all` treats `--strict-agent-docs` as optional. Internal callers that construct an argument namespace without that attribute default to warning-only handling for `docs/agents/` drift.

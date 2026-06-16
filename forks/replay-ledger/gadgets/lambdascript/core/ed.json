@@ -681,15 +681,48 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Pilot lane-local landing for Ed only"
+    },
+    {
+      "agent": "ed",
+      "created_at": "2026-06-16T01:25:47.675808+00:00",
+      "file_count": 2,
+      "file_fingerprints": [
+        {
+          "content_length": 30934,
+          "content_sha256": "fd83e6992c3f159606c76fa6151770ae7527a1c6a00c487415bc3d75b320b027",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/amalgamate_all.py"
+        },
+        {
+          "content_length": 3719,
+          "content_sha256": "4ae291ebb5859b62467301d4788afb0b889a64e67897b2eda9928dab4c269ba0",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/README.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "0001db5734d5adea5fbf85f752771f64f01194053031e9cdb26721b95a1ef633",
+      "payload_path": "forks/replay-ledger/payloads/00/0001db5734d5adea5fbf85f752771f64f01194053031e9cdb26721b95a1ef633.json",
+      "sequence": 18,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Default strict agent docs flag in amalgamate"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 18,
+  "next_sequence": 19,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T01:21:31.451605+00:00"
+  "updated_at": "2026-06-16T01:25:47.675823+00:00"
 }

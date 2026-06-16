@@ -646,7 +646,7 @@ def gadget_run(args: argparse.Namespace, root: Path, agents: list[str]) -> int:
     gizmo, gadget = args.gadget
     forks.git(["fetch", "--prune", "origin"], root)
     if not args.skip_replay_audit:
-        audit_gadget_replay_materialisation(root, gizmo, gadget, agents, require_ledgers=args.require_ledgers, strict_agent_docs=args.strict_agent_docs)
+        audit_gadget_replay_materialisation(root, gizmo, gadget, agents, require_ledgers=args.require_ledgers, strict_agent_docs=getattr(args, "strict_agent_docs", False))
     if not args.apply:
         print(f"amalgamate-all gadget plan only for {gizmo}/{gadget}; pass --apply to mutate")
         for agent in agents:
@@ -660,7 +660,7 @@ def gadget_run(args: argparse.Namespace, root: Path, agents: list[str]) -> int:
     if not args.skip_final_assert:
         gadget_assert_clean(root, gizmo, gadget, agents)
     if not args.skip_replay_audit:
-        audit_gadget_replay_materialisation(root, gizmo, gadget, agents, require_ledgers=args.require_ledgers, strict_agent_docs=args.strict_agent_docs)
+        audit_gadget_replay_materialisation(root, gizmo, gadget, agents, require_ledgers=args.require_ledgers, strict_agent_docs=getattr(args, "strict_agent_docs", False))
     print("amalgamate-all complete")
     return 0
 
