@@ -6,5 +6,5 @@ if "%~1"=="" (
   echo usage: ed-land-json.bat path\to\targeted_patch.json
   exit /b 1
 )
-python scripts\forks\agent_land_json.py ed "%~1"
+python scripts\forks\agent_land_json.py --lane-local-only ed "%~1"
 exit /b %errorlevel%

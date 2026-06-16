@@ -641,15 +641,55 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Make agent land buttons lane-local only"
+    },
+    {
+      "agent": "ed",
+      "created_at": "2026-06-16T01:21:31.451592+00:00",
+      "file_count": 3,
+      "file_fingerprints": [
+        {
+          "content_length": 16710,
+          "content_sha256": "788c4b601bbc85d07c74194ff5631339c7ca9232d984c20d23a2c89341728b5e",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/agent_land_json.py"
+        },
+        {
+          "content_length": 244,
+          "content_sha256": "e259862d926ff6c7bf1545c86bcf47f578aac6ded1e6657dccfd70334a7429e2",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "ed-land-json.bat"
+        },
+        {
+          "content_length": 819,
+          "content_sha256": "1a08b76c1ef2b182c8eb6d1ec17c57623c0a8bd96a96baa156168a22d20f7d2f",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "docs/forks/AGENT_LANE_LOCAL_LANDING_PILOT.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "4119ffa9b50198adab69deda5e385844077168641a0c95314d943a47372f0833",
+      "payload_path": "forks/replay-ledger/payloads/41/4119ffa9b50198adab69deda5e385844077168641a0c95314d943a47372f0833.json",
+      "sequence": 17,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Pilot lane-local landing for Ed only"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 17,
+  "next_sequence": 18,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T01:01:30.383921+00:00"
+  "updated_at": "2026-06-16T01:21:31.451605+00:00"
 }
