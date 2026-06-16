@@ -375,15 +375,41 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Add read-only replay ledger payload audit to forks-core"
+    },
+    {
+      "agent": "edd",
+      "created_at": "2026-06-16T02:00:55.686465+00:00",
+      "file_count": 1,
+      "file_fingerprints": [
+        {
+          "content_length": 21971,
+          "content_sha256": "8613b1dd378ff025ff5bed5949a41609a0a38a97ebfceee7b3232ebed1d5a827",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "native/forks-core/src/main.cpp"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "42419a44ddd52666f666556be2be704592952692cf5b6cd27511fb2845c439e4",
+      "payload_path": "forks/replay-ledger/payloads/42/42419a44ddd52666f666556be2be704592952692cf5b6cd27511fb2845c439e4.json",
+      "sequence": 10,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Add latest-writer-per-path audit to forks-core"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 10,
+  "next_sequence": 11,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T01:46:30.998382+00:00"
+  "updated_at": "2026-06-16T02:00:55.686481+00:00"
 }

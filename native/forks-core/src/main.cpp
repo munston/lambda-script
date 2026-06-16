@@ -54,6 +54,20 @@ struct AgentLane {
   std::string error;
 };
 
+struct LatestWriter {
+  std::string agent;
+  std::string path;
+  int sequence = 0;
+  std::string created_at;
+  std::string payload_path;
+  std::string json_patch_sha256;
+  std::string title;
+  std::string op;
+  std::string encoding;
+  std::string content_sha256;
+  int content_length = 0;
+};
+
 struct LedgerProbe {
   std::string agent;
   std::string ledger_path;
@@ -63,6 +77,7 @@ struct LedgerProbe {
   int payload_present = 0;
   int payload_missing = 0;
   std::vector<std::string> missing_payload_paths;
+  std::vector<LatestWriter> latest_writers;
   std::string error;
 };
 
@@ -80,6 +95,7 @@ struct CommandPlan {
   RefProbe integration;
   std::vector<AgentLane> lanes;
   std::vector<LedgerProbe> ledgers;
+  std::vector<LatestWriter> latest_writers_by_path;
   std::vector<ExpectedMutation> expected_mutations;
 };
 
@@ -164,6 +180,36 @@ int count_occurrences(const std::string& text, const std::string& needle) {
   }
 }
 
+size_t find_matching_delimiter(const std::string& text, size_t start, char open_ch, char close_ch) {
+  int depth = 0;
+  bool in_string = false;
+  bool escaped = false;
+  for (size_t i = start; i < text.size(); ++i) {
+    const char ch = text[i];
+    if (in_string) {
+      if (escaped) {
+        escaped = false;
+      } else if (ch == '\\') {
+        escaped = true;
+      } else if (ch == '"') {
+        in_string = false;
+      }
+      continue;
+    }
+    if (ch == '"') {
+      in_string = true;
+      continue;
+    }
+    if (ch == open_ch) {
+      depth++;
+    } else if (ch == close_ch) {
+      depth--;
+      if (depth == 0) return i;
+    }
+  }
+  return std::string::npos;
+}
+
 std::vector<std::string> extract_json_string_values(const std::string& text, const std::string& key) {
   std::vector<std::string> values;
   size_t pos = 0;
@@ -177,6 +223,7 @@ std::vector<std::string> extract_json_string_values(const std::string& text, con
     if (first_quote == std::string::npos) return values;
     std::string value;
     bool escaped = false;
+    bool closed = false;
     for (size_t i = first_quote + 1; i < text.size(); ++i) {
       const char ch = text[i];
       if (escaped) {
@@ -191,12 +238,71 @@ std::vector<std::string> extract_json_string_values(const std::string& text, con
       if (ch == '"') {
         values.push_back(value);
         pos = i + 1;
+        closed = true;
         break;
       }
       value.push_back(ch);
-      if (i + 1 == text.size()) return values;
+    }
+    if (!closed) return values;
+  }
+}
+
+std::string extract_json_string_value(const std::string& text, const std::string& key) {
+  const std::vector<std::string> values = extract_json_string_values(text, key);
+  if (values.empty()) return "";
+  return values[0];
+}
+
+int extract_json_int_value(const std::string& text, const std::string& key) {
+  const std::string quoted_key = "\"" + key + "\"";
+  const size_t pos = text.find(quoted_key);
+  if (pos == std::string::npos) return 0;
+  const size_t colon = text.find(':', pos + quoted_key.size());
+  if (colon == std::string::npos) return 0;
+  size_t start = colon + 1;
+  while (start < text.size() && (text[start] == ' ' || text[start] == '\n' || text[start] == '\r' || text[start] == '\t')) start++;
+  size_t end = start;
+  while (end < text.size() && text[end] >= '0' && text[end] <= '9') end++;
+  if (end == start) return 0;
+  return std::stoi(text.substr(start, end - start));
+}
+
+std::vector<std::string> extract_json_objects_in_array(const std::string& text, const std::string& key) {
+  std::vector<std::string> objects;
+  const std::string quoted_key = "\"" + key + "\"";
+  const size_t key_pos = text.find(quoted_key);
+  if (key_pos == std::string::npos) return objects;
+  const size_t array_start = text.find('[', key_pos + quoted_key.size());
+  if (array_start == std::string::npos) return objects;
+  const size_t array_end = find_matching_delimiter(text, array_start, '[', ']');
+  if (array_end == std::string::npos) return objects;
+  size_t pos = array_start + 1;
+  while (pos < array_end) {
+    const size_t object_start = text.find('{', pos);
+    if (object_start == std::string::npos || object_start > array_end) return objects;
+    const size_t object_end = find_matching_delimiter(text, object_start, '{', '}');
+    if (object_end == std::string::npos || object_end > array_end) return objects;
+    objects.push_back(text.substr(object_start, object_end - object_start + 1));
+    pos = object_end + 1;
+  }
+  return objects;
+}
+
+bool writer_is_newer_or_equal(const LatestWriter& candidate, const LatestWriter& current) {
+  if (!candidate.created_at.empty() && !current.created_at.empty() && candidate.created_at != current.created_at) {
+    return candidate.created_at > current.created_at;
+  }
+  return candidate.sequence >= current.sequence;
+}
+
+void upsert_latest_writer(std::vector<LatestWriter>& writers, const LatestWriter& candidate) {
+  for (LatestWriter& writer : writers) {
+    if (writer.path == candidate.path) {
+      if (writer_is_newer_or_equal(candidate, writer)) writer = candidate;
+      return;
     }
   }
+  writers.push_back(candidate);
 }
 
 GadgetTarget make_gadget_target(const std::string& gizmo, const std::string& gadget) {
@@ -281,15 +387,38 @@ LedgerProbe inspect_replay_ledger(const GadgetTarget& target, const std::string&
   probe.ledger_exists = true;
   std::string text;
   if (!read_text_file(probe.ledger_path, text, probe.error)) return probe;
-  probe.entry_count = count_occurrences(text, "\"format\": \"LS_FORK_REPLAY_LEDGER_ENTRY_V1\"");
-  const std::vector<std::string> payloads = extract_json_string_values(text, "payload_path");
-  probe.payload_count = static_cast<int>(payloads.size());
-  for (const std::string& payload : payloads) {
-    if (fs::exists(payload)) {
-      probe.payload_present++;
-    } else {
-      probe.payload_missing++;
-      probe.missing_payload_paths.push_back(payload);
+  const std::vector<std::string> entries = extract_json_objects_in_array(text, "entries");
+  probe.entry_count = static_cast<int>(entries.size());
+  for (const std::string& entry : entries) {
+    const std::string payload = extract_json_string_value(entry, "payload_path");
+    if (!payload.empty()) {
+      probe.payload_count++;
+      if (fs::exists(payload)) {
+        probe.payload_present++;
+      } else {
+        probe.payload_missing++;
+        probe.missing_payload_paths.push_back(payload);
+      }
+    }
+    const int sequence = extract_json_int_value(entry, "sequence");
+    const std::string created_at = extract_json_string_value(entry, "created_at");
+    const std::string patch_hash = extract_json_string_value(entry, "json_patch_sha256");
+    const std::string title = extract_json_string_value(entry, "title");
+    const std::vector<std::string> fingerprints = extract_json_objects_in_array(entry, "file_fingerprints");
+    for (const std::string& fingerprint : fingerprints) {
+      LatestWriter writer;
+      writer.agent = agent;
+      writer.sequence = sequence;
+      writer.created_at = created_at;
+      writer.payload_path = payload;
+      writer.json_patch_sha256 = patch_hash;
+      writer.title = title;
+      writer.path = extract_json_string_value(fingerprint, "path");
+      writer.op = extract_json_string_value(fingerprint, "op");
+      writer.encoding = extract_json_string_value(fingerprint, "encoding");
+      writer.content_sha256 = extract_json_string_value(fingerprint, "content_sha256");
+      writer.content_length = extract_json_int_value(fingerprint, "content_length");
+      if (!writer.path.empty()) upsert_latest_writer(probe.latest_writers, writer);
     }
   }
   return probe;
@@ -321,7 +450,11 @@ CommandPlan build_readonly_plan(const std::string& command, const GadgetTarget& 
   plan.integration = probe_ref(target.integration_ref);
   for (const std::string& agent : kDefaultAgents) {
     plan.lanes.push_back(inspect_agent_lane(target, plan.integration, agent));
-    if (include_ledgers) plan.ledgers.push_back(inspect_replay_ledger(target, agent));
+    if (include_ledgers) {
+      LedgerProbe ledger = inspect_replay_ledger(target, agent);
+      for (const LatestWriter& writer : ledger.latest_writers) upsert_latest_writer(plan.latest_writers_by_path, writer);
+      plan.ledgers.push_back(ledger);
+    }
   }
   return plan;
 }
@@ -369,12 +502,38 @@ void print_lanes(const std::vector<AgentLane>& lanes) {
   std::cout << "  ],\n";
 }
 
+void print_latest_writer(const LatestWriter& writer, const std::string& indent) {
+  std::cout
+    << indent << "{\n"
+    << indent << "  \"agent\": " << json_string(writer.agent) << ",\n"
+    << indent << "  \"path\": " << json_string(writer.path) << ",\n"
+    << indent << "  \"sequence\": " << writer.sequence << ",\n"
+    << indent << "  \"created_at\": " << json_string(writer.created_at) << ",\n"
+    << indent << "  \"payload_path\": " << json_string(writer.payload_path) << ",\n"
+    << indent << "  \"json_patch_sha256\": " << json_string(writer.json_patch_sha256) << ",\n"
+    << indent << "  \"title\": " << json_string(writer.title) << ",\n"
+    << indent << "  \"op\": " << json_string(writer.op) << ",\n"
+    << indent << "  \"encoding\": " << json_string(writer.encoding) << ",\n"
+    << indent << "  \"content_sha256\": " << json_string(writer.content_sha256) << ",\n"
+    << indent << "  \"content_length\": " << writer.content_length << "\n"
+    << indent << "}";
+}
+
 void print_missing_payloads(const std::vector<std::string>& paths) {
   std::cout << "      \"missing_payload_paths\": [\n";
   for (size_t i = 0; i < paths.size(); ++i) {
     std::cout << "        " << json_string(paths[i]) << (i + 1 < paths.size() ? "," : "") << "\n";
   }
   std::cout << "      ],\n";
+}
+
+void print_latest_writers_array(const std::string& key, const std::vector<LatestWriter>& writers, const std::string& item_indent) {
+  std::cout << "  \"" << key << "\": [\n";
+  for (size_t i = 0; i < writers.size(); ++i) {
+    print_latest_writer(writers[i], item_indent);
+    std::cout << (i + 1 < writers.size() ? "," : "") << "\n";
+  }
+  std::cout << "  ],\n";
 }
 
 void print_ledgers(const std::vector<LedgerProbe>& ledgers) {
@@ -391,7 +550,13 @@ void print_ledgers(const std::vector<LedgerProbe>& ledgers) {
       << "      \"payload_present\": " << ledger.payload_present << ",\n"
       << "      \"payload_missing\": " << ledger.payload_missing << ",\n";
     print_missing_payloads(ledger.missing_payload_paths);
+    std::cout << "      \"latest_writers\": [\n";
+    for (size_t j = 0; j < ledger.latest_writers.size(); ++j) {
+      print_latest_writer(ledger.latest_writers[j], "        ");
+      std::cout << (j + 1 < ledger.latest_writers.size() ? "," : "") << "\n";
+    }
     std::cout
+      << "      ],\n"
       << "      \"error\": " << json_string(ledger.error) << "\n"
       << "    }" << (i + 1 < ledgers.size() ? "," : "") << "\n";
   }
@@ -409,7 +574,10 @@ void print_plan_json(const std::string& format, const CommandPlan& plan, const s
   std::cout << ",\n";
   print_ref_probe("integration", plan.integration, true);
   print_lanes(plan.lanes);
-  if (include_ledgers) print_ledgers(plan.ledgers);
+  if (include_ledgers) {
+    print_ledgers(plan.ledgers);
+    print_latest_writers_array("latest_writers_by_path", plan.latest_writers_by_path, "    ");
+  }
   std::cout << "  \"facts\": [\n";
   for (size_t i = 0; i < facts.size(); ++i) {
     std::cout << "    " << json_string(facts[i]) << (i + 1 < facts.size() ? "," : "") << "\n";
@@ -425,7 +593,7 @@ int status_command(const Args& args) {
   if (!parse_gadget_args(args, 1, target, error)) {
     std::cout
       << "{\n"
-      << "  \"format\": \"FORKS_CORE_STATUS_V3\",\n"
+      << "  \"format\": \"FORKS_CORE_STATUS_V4\",\n"
       << "  \"command\": \"status\",\n"
       << "  \"mutation_scope\": \"read-only\",\n"
       << "  \"mutates\": false,\n"
@@ -436,7 +604,7 @@ int status_command(const Args& args) {
     return 0;
   }
   const CommandPlan plan = build_readonly_plan("status", target, false);
-  print_plan_json("FORKS_CORE_STATUS_V3", plan, {
+  print_plan_json("FORKS_CORE_STATUS_V4", plan, {
     "integration_ref",
     "agent_refs",
     "ahead_behind",
@@ -453,12 +621,13 @@ int audit_command(const Args& args) {
     return 1;
   }
   const CommandPlan plan = build_readonly_plan("audit", target, true);
-  print_plan_json("FORKS_CORE_AUDIT_V3", plan, {
+  print_plan_json("FORKS_CORE_AUDIT_V4", plan, {
     "integration_ref",
     "agent_refs",
     "ahead_behind",
     "ledger_file_presence",
     "payload_object_presence",
+    "latest_writer_per_path",
     "expected_mutations"
   }, true);
   return 0;
