@@ -300,6 +300,23 @@ def gadget_lane_branch(agent: str, gizmo: str, gadget: str) -> str:
     return gadget_branches.gadget_agent_branch(agent, gizmo, gadget)
 
 
+def gadget_lane_ref(root: Path, agent: str, gizmo: str, gadget: str) -> str | None:
+    """Return the remote gadget-agent lane ref after fetch.
+
+    Gadget coordination is remote-first. A stale local branch must not hide an
+    agent's submitted remote lane work. Local branches are only a fallback when a
+    remote branch is absent, which is useful for pre-existing local-only repair
+    cases but not for normal agent submission flow.
+    """
+    branch = gadget_lane_branch(agent, gizmo, gadget)
+    remote = remote_ref(branch)
+    if forks.ref_exists(root, remote):
+        return remote
+    if forks.ref_exists(root, branch):
+        return branch
+    return None
+
+
 def gadget_integration_branch(gizmo: str, gadget: str) -> str:
     return gadget_branches.integration_branch(gizmo, gadget)
 
@@ -577,7 +594,7 @@ def apply_gadget_patch_to_integration(root: Path, gizmo: str, gadget: str, agent
 def gadget_plan_agent(root: Path, gizmo: str, gadget: str, agent: str, args: argparse.Namespace) -> None:
     base_ref = gadget_base_ref(gizmo, gadget)
     branch = gadget_lane_branch(agent, gizmo, gadget)
-    ref = ref_for_branch(root, branch)
+    ref = gadget_lane_ref(root, agent, gizmo, gadget)
     if not ref:
         print(f"{agent}: missing gadget lane {branch}; final sync will create it")
         return
@@ -597,7 +614,7 @@ def gadget_apply_agent(root: Path, gizmo: str, gadget: str, agent: str, args: ar
     base_ref = gadget_base_ref(gizmo, gadget)
     forks.ref_exists(root, base_ref) or (_ for _ in ()).throw(RuntimeError(f"missing gadget integration ref: {base_ref}"))
     branch = gadget_lane_branch(agent, gizmo, gadget)
-    ref = ref_for_branch(root, branch)
+    ref = gadget_lane_ref(root, agent, gizmo, gadget)
     if not ref:
         print(f"{agent}: missing gadget lane {branch}; final sync will create it")
         return
@@ -654,7 +671,7 @@ def gadget_assert_clean(root: Path, gizmo: str, gadget: str, agents: list[str]) 
     bad = []
     for agent in agents:
         branch = gadget_lane_branch(agent, gizmo, gadget)
-        ref = ref_for_branch(root, branch)
+        ref = gadget_lane_ref(root, agent, gizmo, gadget)
         if not ref:
             bad.append(f"{branch}: missing")
             continue

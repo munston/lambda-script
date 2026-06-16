@@ -747,15 +747,48 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Use force-with-lease for final gadget lane sync"
+    },
+    {
+      "agent": "ed",
+      "created_at": "2026-06-16T01:31:44.782346+00:00",
+      "file_count": 2,
+      "file_fingerprints": [
+        {
+          "content_length": 32929,
+          "content_sha256": "1b8a50259584b1d198f7e26ce93c2173861e00297d2cb10cd5b9f71b3ed7a51a",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/amalgamate_all.py"
+        },
+        {
+          "content_length": 4474,
+          "content_sha256": "b8e65862533c2e09570270e71afd1c0365ae80b92c5e5813998428acc9750ca2",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/README.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "3f8cc7e5f1b6b0f20ea3ae2cd57fadba9a5f14b831af071a4d502c68b3f319dd",
+      "payload_path": "forks/replay-ledger/payloads/3f/3f8cc7e5f1b6b0f20ea3ae2cd57fadba9a5f14b831af071a4d502c68b3f319dd.json",
+      "sequence": 20,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Prefer remote gadget lanes during amalgamation"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 20,
+  "next_sequence": 21,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T01:28:55.106813+00:00"
+  "updated_at": "2026-06-16T01:31:44.782358+00:00"
 }

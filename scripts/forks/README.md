@@ -106,3 +106,7 @@ Per-agent planning notes under `docs/agents/` are coordination artefacts. If the
 ## Final gadget lane sync
 
 Gadget amalgamation final sync now uses guarded force-with-lease alignment for consumed agent lanes. A lane may be behind the final gadget integration branch after its work has been captured and incorporated. Final sync intentionally moves that lane to the final integration commit, but only after checking that no unique lane work remains and that the remote tip still matches the expected value.
+
+## Remote-first gadget lanes
+
+Gadget-mode planning, capture, apply, final assert, and final sync are remote-first. After `git fetch`, the tool prefers `origin/gadget-agents/<gizmo>/<gadget>/<agent>` over any same-named local branch. This prevents a stale local branch from hiding submitted remote lane work during amalgamation.
