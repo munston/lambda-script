@@ -45,6 +45,7 @@ def dispatch(argv: list[str]) -> int:
         "gadget-status": ("scripts/forks/gadget_branches.py", ["status"]),
         "gadget-sync": ("scripts/forks/gadget_branches.py", ["sync"]),
         "gadget-sync-all": ("scripts/forks/gadget_branches.py", ["sync-all"]),
+        "gadget-ingest-folder": ("scripts/forks/gadget_ingest_folder.py", []),
         "gadget-land-json": ("scripts/forks/gadget_land_json.py", []),
         "gadget-land-json-file": ("scripts/forks/gadget_land_json.py", ["--require-file"]),
         "gadget-promote": ("scripts/forks/gadget_promote.py", []),

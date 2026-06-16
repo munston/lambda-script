@@ -564,15 +564,62 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Support first materialisation for new independent gadgets"
+    },
+    {
+      "agent": "edd",
+      "created_at": "2026-06-16T12:57:20.685913+00:00",
+      "file_count": 4,
+      "file_fingerprints": [
+        {
+          "content_length": 13240,
+          "content_sha256": "672413e7a952ba24ed40562da3c89b7ae83da13989513e48c51e10bef8aab88c",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/gadget_ingest_folder.py"
+        },
+        {
+          "content_length": 3392,
+          "content_sha256": "7ce6deccbb08a107370257884495c1df3f02f5c1ca22d1748a3a2891f0942344",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/forks_dispatch.py"
+        },
+        {
+          "content_length": 2320,
+          "content_sha256": "1694600fb1e71813c95a54d4d1d50b35f6236a7228ef7740cc99627a5f6f658c",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "examples/gizmos/lambdascript.gizmo.json"
+        },
+        {
+          "content_length": 4036,
+          "content_sha256": "8f0b16e43218dae43ebd424a0e74225982700538e78af71f41830c0072d1edac",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "docs/forks/gadget-folder-ingest.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "746254bbac248d3ce87ca4976a023c3f0a20480670c7836c0dbe780e03dc87c5",
+      "payload_path": "forks/replay-ledger/payloads/74/746254bbac248d3ce87ca4976a023c3f0a20480670c7836c0dbe780e03dc87c5.json",
+      "sequence": 17,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Add gadget folder ingestion tooling"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 17,
+  "next_sequence": 18,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T12:23:03.173089+00:00"
+  "updated_at": "2026-06-16T12:57:20.685927+00:00"
 }
