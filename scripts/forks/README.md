@@ -114,3 +114,13 @@ Gadget-mode planning, capture, apply, final assert, and final sync are remote-fi
 ## Three-way gadget lane patch application
 
 Captured gadget lane deltas are applied to the current gadget integration worktree with `git apply --3way --binary`. This is required when an agent lane was based on an older integration commit and its replay ledger changed while the integration branch also gained newer replay entries. Plain `git apply` can reject those ledger hunks even when the lane's unique work is otherwise safe to incorporate.
+
+## Default gadget agents
+
+`amalgamate-all` now includes `guy` in the default selected agent set:
+
+```text
+ed edd eddy guy
+```
+
+`guy` is the operator/local working lane. Normal gadget amalgamation should keep it synced to the final gadget integration branch unless it has unique unamalgamated work, in which case the same guarded capture/apply path is used before final sync.

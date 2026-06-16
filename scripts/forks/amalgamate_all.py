@@ -36,7 +36,7 @@ import replay_plan
 import replay_sync
 import submission_object
 
-DEFAULT_AGENTS = ("ed", "edd", "eddy")
+DEFAULT_AGENTS = ("ed", "edd", "eddy", "guy")
 WORK_ROOT = "amalgamate-all"
 GADGET_SUBMISSION_FORMAT = "LS_FORK_GADGET_DIRECT_SUBMISSION_V1"
 
