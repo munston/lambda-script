@@ -3,9 +3,10 @@
 
 This wrapper preserves the existing direct-lane capture semantics while changing
 the dangerous ordering in the old gadget path. It captures the gadget-agent lane,
-applies the captured patch to the gadget integration branch, runs the declared
-verifier, pushes the integration branch, and only then rewinds/syncs the source
-lane.
+applies the captured patch to the gadget integration branch, optionally runs an
+explicit verifier, pushes the integration branch, and only then rewinds/syncs the
+source lane. Transport is language-neutral by default: no Haskell, Node, Python,
+or project-specific build command is run unless --verify-command is supplied.
 
 This prevents a failed verifier from erasing the visible agent lane.
 """
@@ -22,10 +23,11 @@ import forks
 DEFAULT_AGENTS = ("ed", "edd", "eddy", "guy")
 
 
-def describe_verify(command: str) -> None:
-    print(f"VERIFY COMMAND: {command}")
-    if command.strip().lower() == "verify.bat":
-        print("warning: using default verify.bat; pass --verify-command for gadget-local verification", file=sys.stderr)
+def describe_verify(command: str | None) -> None:
+    if command:
+        print(f"VERIFY COMMAND: {command}")
+    else:
+        print("VERIFY COMMAND: <none; transport-only>")
 
 
 def safe_plan_agent(root: Path, gizmo: str, gadget: str, agent: str, args: argparse.Namespace) -> None:
@@ -41,7 +43,10 @@ def safe_plan_agent(root: Path, gizmo: str, gadget: str, agent: str, args: argpa
     if state in {"ahead-only", "diverged"}:
         print(f"  will capture direct gadget lane delta from {ref}")
         print(f"  will apply captured delta to {amalgamate_all.gadget_integration_branch(gizmo, gadget)}")
-        print(f"  will verify with: {args.verify_command}")
+        if args.verify_command:
+            print(f"  will verify with: {args.verify_command}")
+        else:
+            print("  will perform transport-only validation; no project build/test command")
         print("  will sync source lane only after the integration push succeeds")
     else:
         print("  no direct gadget lane delta; final sync will align this lane to gadget integration")
@@ -129,7 +134,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--gadget", nargs=2, required=True, metavar=("GIZMO", "GADGET"))
     parser.add_argument("--agents", nargs="+", default=list(DEFAULT_AGENTS), help="agent lanes to inspect; default: ed edd eddy guy")
-    parser.add_argument("--verify-command", default="verify.bat", help="verification command run in the replayed gadget candidate")
+    parser.add_argument("--verify-command", default=None, help="optional verification command run in the replayed gadget candidate; omitted means transport-only")
     parser.add_argument("--apply", action="store_true", help="mutate: capture/apply/verify/push/sync")
     parser.add_argument("--skip-final-sync", action="store_true")
     parser.add_argument("--skip-final-assert", action="store_true")

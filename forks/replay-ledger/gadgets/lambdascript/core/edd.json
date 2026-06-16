@@ -719,15 +719,55 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Make gadget creation ingest-only and add safe gadget amalgamation"
+    },
+    {
+      "agent": "edd",
+      "created_at": "2026-06-16T15:05:54.813103+00:00",
+      "file_count": 3,
+      "file_fingerprints": [
+        {
+          "content_length": 6200,
+          "content_sha256": "d0e80953e3594c2a40b38d6111f16a9259a74480d568c1c128716aed5400992c",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/gadget_creation_agent.py"
+        },
+        {
+          "content_length": 6673,
+          "content_sha256": "5d3791abc447bcccceea66a21ca570490a7c5e8e55622826023cabff486ea441",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/gadget_amalgamate_safe.py"
+        },
+        {
+          "content_length": 1892,
+          "content_sha256": "b79f8f90b508635ebee7e896a683dd95bb8696af5714fed7bcfd3a4bd658ad53",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "docs/forks/safe-gadget-creation.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "fb03fff6ed7a97b752b659c5cc00ef1f23ca6356b21bab5d12533bb66d49131b",
+      "payload_path": "forks/replay-ledger/payloads/fb/fb03fff6ed7a97b752b659c5cc00ef1f23ca6356b21bab5d12533bb66d49131b.json",
+      "sequence": 20,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Make gadget creation transport-only by default"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 20,
+  "next_sequence": 21,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T14:57:15.434313+00:00"
+  "updated_at": "2026-06-16T15:05:54.813114+00:00"
 }

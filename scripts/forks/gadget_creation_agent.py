@@ -43,11 +43,6 @@ def quote_arg(value: str) -> str:
     return value
 
 
-def default_verify_command(dest: str) -> str:
-    win_dest = dest.replace("/", "\\")
-    return f'if exist "{win_dest}" (exit /b 0) else (echo missing {win_dest} & exit /b 1)'
-
-
 def ingest_script(root: Path) -> Path:
     path = root / "scripts" / "forks" / "gadget_ingest_folder.py"
     if not path.exists():
@@ -73,7 +68,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("source", help="local folder to ingest")
     parser.add_argument("--dest", help="destination path inside the gadget branch; defaults to repo-relative source path or projects/<gadget>")
     parser.add_argument("--message", help="commit message for the gadget-agent lane")
-    parser.add_argument("--verify-command", help="verification command for optional amalgamation; defaults to checking that --dest exists")
+    parser.add_argument("--verify-command", help="optional verification command for explicit amalgamation; omitted means transport-only validation")
     parser.add_argument("--replace", action="store_true", help="remove the destination before copying the source folder")
     parser.add_argument("--exclude", action="append", default=[], help="additional glob pattern to exclude; may be repeated")
     parser.add_argument("--no-default-excludes", action="store_true", help="disable the ingest command's default excludes")
@@ -105,7 +100,7 @@ def main(argv: list[str]) -> int:
         raise RuntimeError("destination path is empty")
 
     message = args.message or f"Materialise {args.gizmo}/{args.gadget} from {source.name}"
-    verify = args.verify_command or default_verify_command(dest)
+    verify = args.verify_command
 
     print("gadget creation")
     print(f"  agent: {agent}")
@@ -114,7 +109,7 @@ def main(argv: list[str]) -> int:
     print(f"  dest: {dest}")
     print(f"  amalgamate: {'yes' if args.amalgamate else 'no'}")
     if args.amalgamate:
-        print(f"  verify-command: {verify}")
+        print(f"  verify-command: {verify if verify else '<none; transport-only>'}")
 
     ingest = [
         sys.executable,
@@ -148,7 +143,7 @@ def main(argv: list[str]) -> int:
 
     if not args.amalgamate:
         print("ingest complete; amalgamation skipped by default")
-        print(f"run safe amalgamation explicitly when ready: python scripts\\forks\\gadget_amalgamate_safe.py --gadget {args.gizmo} {args.gadget} --agents {agent} --apply --verify-command <command>")
+        print(f"run safe amalgamation explicitly when ready: python scripts\\forks\\gadget_amalgamate_safe.py --gadget {args.gizmo} {args.gadget} --agents {agent} --apply")
         return 0
 
     amalgamate = [
@@ -160,9 +155,9 @@ def main(argv: list[str]) -> int:
         "--agents",
         agent,
         "--apply",
-        "--verify-command",
-        verify,
     ]
+    if verify:
+        amalgamate.extend(["--verify-command", verify])
     if args.skip_replay_audit:
         amalgamate.append("--skip-replay-audit")
     return run(amalgamate, root)
