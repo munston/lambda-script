@@ -1,23 +1,23 @@
-# Gadget initialization route
+# Gadget initialization for independent gizmos
 
-This document fixes the accepted route for initializing forks-backed gizmo gadgets. It is intended to prevent agents from confusing gadget initialization with manifest creation, manual branch mutation, or direct GitHub writes.
+This note records the accepted initialization route for forks-backed gizmo/gadget work.
 
-## Scope
+## Rule
 
-The supported agent lanes are the configured lanes:
+A new package must be initialized under its owning gizmo/gadget identity. Do not place an independent package inside the `lambdascript` gizmo merely to satisfy a landing error. The `lambdascript` gizmo is the core machinery supplier. It owns the compiler, forks tooling, gizmo tooling, and related core documentation. Independent packages should use their own gizmo name.
+
+Examples:
 
 ```text
-ed
-edd
-eddy
-guy
+metrics-lab/image-metrics
+audio-lab/wavproc
 ```
 
-A new gizmo/gadget is initialized through the gadget branch tooling. The initializer creates or refreshes the gadget integration branch and the configured gadget-agent lanes. It is the accepted route for preparing a target such as `lambdascript/wavproc` or `metrics-lab/image-metrics` before normal lane-local patch submission.
+Use `lambdascript/<gadget>` only when the gadget is actually part of the LambdaScript core gizmo.
 
 ## Accepted initialization command
 
-Run from the repository root that contains `forks.bat`:
+Run from the repository root:
 
 ```bat
 cd /d "C:\Users\guyas\Desktop\codebase\7\ollama.wires\foreign-language\lambda-script"
@@ -31,20 +31,20 @@ python scripts\forks\gadget_branches.py init <gizmo> <gadget>
 python scripts\forks\gadget_branches.py status <gizmo> <gadget>
 ```
 
-Example:
-
-```bat
-python scripts\forks\gadget_branches.py init lambdascript wavproc
-
-python scripts\forks\gadget_branches.py status lambdascript wavproc
-```
-
-Known metrics example:
+For the known metrics gadget:
 
 ```bat
 python scripts\forks\gadget_branches.py init metrics-lab image-metrics
 
 python scripts\forks\gadget_branches.py status metrics-lab image-metrics
+```
+
+For an independent WAV processor package, use an owning gizmo outside `lambdascript`, for example:
+
+```bat
+python scripts\forks\gadget_branches.py init audio-lab wavproc
+
+python scripts\forks\gadget_branches.py status audio-lab wavproc
 ```
 
 Expected status shape:
@@ -53,97 +53,111 @@ Expected status shape:
 gadget <gizmo>/<gadget>
 target origin/gadgets/<gizmo>/<gadget>/main
 gadgets/<gizmo>/<gadget>/main: even
-gadget-agents/<gizmo>/<gadget>/ed: even ahead=0 behind=0
-gadget-agents/<gizmo>/<gadget>/edd: even ahead=0 behind=0
-gadget-agents/<gizmo>/<gadget>/eddy: even ahead=0 behind=0
-gadget-agents/<gizmo>/<gadget>/guy: even ahead=0 behind=0
+gadget-agents/<gizmo>/<gadget>/ed: even
+gadget-agents/<gizmo>/<gadget>/edd: even
+gadget-agents/<gizmo>/<gadget>/eddy: even
+gadget-agents/<gizmo>/<gadget>/guy: even
 ```
 
-## What the initializer does
-
-`gadget_branches.py init <gizmo> <gadget>` ensures the gadget integration branch exists:
+The supported configured lanes are currently:
 
 ```text
-gadgets/<gizmo>/<gadget>/main
+ed
+edd
+eddy
+guy
 ```
 
-It then ensures the configured agent lanes exist and are aligned to the gadget integration branch:
+Do not invent branch suffixes or agent names.
 
-```text
-gadget-agents/<gizmo>/<gadget>/ed
-gadget-agents/<gizmo>/<gadget>/edd
-gadget-agents/<gizmo>/<gadget>/eddy
-gadget-agents/<gizmo>/<gadget>/guy
+## Landing patches after initialization
+
+A JSON patch must target the same initialized gizmo/gadget:
+
+```json
+{
+  "target": {
+    "kind": "gadget",
+    "gizmo": "<gizmo>",
+    "gadget": "<gadget>"
+  }
+}
 ```
 
-The command is allowed to create and align these branches through the forks/gadget tooling. Agents should not replace this with raw Git branch creation, direct pushes, direct GitHub mutation, promotion, or manual sync commands.
+For an independent WAV processor, the target should be the independent gizmo/gadget, for example:
 
-## What not to do
+```json
+{
+  "target": {
+    "kind": "gadget",
+    "gizmo": "audio-lab",
+    "gadget": "wavproc"
+  }
+}
+```
 
-Do not use `gizmo init` for this. That command creates a fresh empty gizmo manifest and is not the accepted route for initializing a new gadget inside the current forks-backed workflow.
+It should not be:
 
-Do not manually edit `examples/gizmos/*.gizmo.json` as a substitute for initialization.
+```json
+{
+  "target": {
+    "kind": "gadget",
+    "gizmo": "lambdascript",
+    "gadget": "wavproc"
+  }
+}
+```
 
-Do not use raw `git push`, direct GitHub connector writes, promotion commands, or ad hoc branch syncs as a substitute for gadget initialization.
+That target incorrectly asks the LambdaScript core gizmo to own `wavproc`.
 
-Do not invent extra agent lanes. Use the configured lanes: `ed`, `edd`, `eddy`, and `guy`.
-
-## Submitting work after initialization
-
-After initialization, submit normal patches through the assigned lane-local submission button. For Edd this means:
+Submit through the assigned agent button:
 
 ```bat
 edd-land-json.bat "C:\path\to\patch.json"
 ```
 
-Then inspect the lane-local result through Git read-only commands if needed:
+Use the button matching the declared agent in the JSON patch.
 
-```bat
-git show gadget-agents/<gizmo>/<gadget>/edd:<path-created-by-patch>
-```
+## Amalgamation
 
-Read-only inspection is acceptable. Mutation should continue through the forks/gadget tooling.
-
-## Amalgamating and tool-driven push
-
-Use gadget-mode amalgamation for patches landed to gadget-agent lanes:
+After the lane-local patch lands, amalgamate the same gizmo/gadget:
 
 ```bat
 forks.bat amalgamate-all --gadget <gizmo> <gadget> --agents edd --apply
 ```
 
-For all configured lanes:
-
-```bat
-forks.bat amalgamate-all --gadget <gizmo> <gadget> --agents ed edd eddy guy --apply
-```
-
-The `--apply` route performs the guarded capture, verification, integration-branch advance, final lane sync, and push through the forks tooling. Operators should not add a separate raw `git push` step unless they are deliberately repairing tooling outside this workflow.
-
-After amalgamation, check status:
+Then inspect status:
 
 ```bat
 python scripts\forks\gadget_branches.py status <gizmo> <gadget>
 ```
 
-Expected result after a clean amalgamation is that the gadget integration branch exists and the selected lanes are even against it.
-
-## Example: initialize, submit, amalgamate
+For an independent WAV processor under `audio-lab/wavproc`:
 
 ```bat
-cd /d "C:\Users\guyas\Desktop\codebase\7\ollama.wires\foreign-language\lambda-script"
+forks.bat amalgamate-all --gadget audio-lab wavproc --agents edd --apply
 
-git fetch origin --prune
-
-git restore --source=origin/gadgets/lambdascript/core/main -- forks.bat scripts/forks/forks_dispatch.py scripts/forks/gadget_branches.py scripts/forks/forks.py
-
-python scripts\forks\gadget_branches.py init lambdascript wavproc
-
-python scripts\forks\gadget_branches.py status lambdascript wavproc
-
-edd-land-json.bat "C:\Users\guyas\Downloads\edd_wavproc_haskell_learning_patch_v2.json"
-
-forks.bat amalgamate-all --gadget lambdascript wavproc --agents edd --apply
-
-python scripts\forks\gadget_branches.py status lambdascript wavproc
+python scripts\forks\gadget_branches.py status audio-lab wavproc
 ```
+
+The expected final state is that the selected lane is even with the gadget integration branch.
+
+## Common error
+
+This error:
+
+```text
+agent-land-json: manifest for lambdascript has no gadget wavproc
+```
+
+means the patch is being routed to `lambdascript/wavproc`. That is a target error for an independent package. Do not repair it by adding `wavproc` to the `lambdascript` gizmo. Retarget the patch to the owning gizmo/gadget and initialize that gizmo/gadget with `gadget_branches.py init`.
+
+## Separation of responsibilities
+
+`gadget_branches.py init <gizmo> <gadget>` creates and aligns the gadget integration branch and the configured agent lanes.
+
+`edd-land-json.bat` and the other agent buttons submit JSON patches through one configured agent lane.
+
+`forks.bat amalgamate-all --gadget <gizmo> <gadget> --agents <agent> --apply` captures the selected lane delta, applies it to the gadget integration branch, and syncs the selected lane back to the integration branch through the forks tooling.
+
+Do not use raw Git mutation, direct GitHub mutation, promotion, or manual sync for the normal initialization-and-land path.

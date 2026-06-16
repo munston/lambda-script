@@ -1,0 +1,30 @@
+{
+  "created_at": "2026-06-16T12:14:22.611549+00:00",
+  "format": "LS_FORK_REPLAY_PAYLOAD_V1",
+  "json_patch_sha256": "b5395d947883ca36b0b5d6ade5bc04c1ac498d70ac788ae40d9294a0e540794c",
+  "payload": {
+    "agent": "edd",
+    "files": [
+      {
+        "content": "# Gadget initialization for independent gizmos\n\nThis note records the accepted initialization route for forks-backed gizmo/gadget work.\n\n## Rule\n\nA new package must be initialized under its owning gizmo/gadget identity. Do not place an independent package inside the `lambdascript` gizmo merely to satisfy a landing error. The `lambdascript` gizmo is the core machinery supplier. It owns the compiler, forks tooling, gizmo tooling, and related core documentation. Independent packages should use their own gizmo name.\n\nExamples:\n\n```text\nmetrics-lab/image-metrics\naudio-lab/wavproc\n```\n\nUse `lambdascript/<gadget>` only when the gadget is actually part of the LambdaScript core gizmo.\n\n## Accepted initialization command\n\nRun from the repository root:\n\n```bat\ncd /d \"C:\\Users\\guyas\\Desktop\\codebase\\7\\ollama.wires\\foreign-language\\lambda-script\"\n\ngit fetch origin --prune\n\ngit restore --source=origin/gadgets/lambdascript/core/main -- forks.bat scripts/forks/forks_dispatch.py scripts/forks/gadget_branches.py scripts/forks/forks.py\n\npython scripts\\forks\\gadget_branches.py init <gizmo> <gadget>\n\npython scripts\\forks\\gadget_branches.py status <gizmo> <gadget>\n```\n\nFor the known metrics gadget:\n\n```bat\npython scripts\\forks\\gadget_branches.py init metrics-lab image-metrics\n\npython scripts\\forks\\gadget_branches.py status metrics-lab image-metrics\n```\n\nFor an independent WAV processor package, use an owning gizmo outside `lambdascript`, for example:\n\n```bat\npython scripts\\forks\\gadget_branches.py init audio-lab wavproc\n\npython scripts\\forks\\gadget_branches.py status audio-lab wavproc\n```\n\nExpected status shape:\n\n```text\ngadget <gizmo>/<gadget>\ntarget origin/gadgets/<gizmo>/<gadget>/main\ngadgets/<gizmo>/<gadget>/main: even\ngadget-agents/<gizmo>/<gadget>/ed: even\ngadget-agents/<gizmo>/<gadget>/edd: even\ngadget-agents/<gizmo>/<gadget>/eddy: even\ngadget-agents/<gizmo>/<gadget>/guy: even\n```\n\nThe supported configured lanes are currently:\n\n```text\ned\nedd\neddy\nguy\n```\n\nDo not invent branch suffixes or agent names.\n\n## Landing patches after initialization\n\nA JSON patch must target the same initialized gizmo/gadget:\n\n```json\n{\n  \"target\": {\n    \"kind\": \"gadget\",\n    \"gizmo\": \"<gizmo>\",\n    \"gadget\": \"<gadget>\"\n  }\n}\n```\n\nFor an independent WAV processor, the target should be the independent gizmo/gadget, for example:\n\n```json\n{\n  \"target\": {\n    \"kind\": \"gadget\",\n    \"gizmo\": \"audio-lab\",\n    \"gadget\": \"wavproc\"\n  }\n}\n```\n\nIt should not be:\n\n```json\n{\n  \"target\": {\n    \"kind\": \"gadget\",\n    \"gizmo\": \"lambdascript\",\n    \"gadget\": \"wavproc\"\n  }\n}\n```\n\nThat target incorrectly asks the LambdaScript core gizmo to own `wavproc`.\n\nSubmit through the assigned agent button:\n\n```bat\nedd-land-json.bat \"C:\\path\\to\\patch.json\"\n```\n\nUse the button matching the declared agent in the JSON patch.\n\n## Amalgamation\n\nAfter the lane-local patch lands, amalgamate the same gizmo/gadget:\n\n```bat\nforks.bat amalgamate-all --gadget <gizmo> <gadget> --agents edd --apply\n```\n\nThen inspect status:\n\n```bat\npython scripts\\forks\\gadget_branches.py status <gizmo> <gadget>\n```\n\nFor an independent WAV processor under `audio-lab/wavproc`:\n\n```bat\nforks.bat amalgamate-all --gadget audio-lab wavproc --agents edd --apply\n\npython scripts\\forks\\gadget_branches.py status audio-lab wavproc\n```\n\nThe expected final state is that the selected lane is even with the gadget integration branch.\n\n## Common error\n\nThis error:\n\n```text\nagent-land-json: manifest for lambdascript has no gadget wavproc\n```\n\nmeans the patch is being routed to `lambdascript/wavproc`. That is a target error for an independent package. Do not repair it by adding `wavproc` to the `lambdascript` gizmo. Retarget the patch to the owning gizmo/gadget and initialize that gizmo/gadget with `gadget_branches.py init`.\n\n## Separation of responsibilities\n\n`gadget_branches.py init <gizmo> <gadget>` creates and aligns the gadget integration branch and the configured agent lanes.\n\n`edd-land-json.bat` and the other agent buttons submit JSON patches through one configured agent lane.\n\n`forks.bat amalgamate-all --gadget <gizmo> <gadget> --agents <agent> --apply` captures the selected lane delta, applies it to the gadget integration branch, and syncs the selected lane back to the integration branch through the forks tooling.\n\nDo not use raw Git mutation, direct GitHub mutation, promotion, or manual sync for the normal initialization-and-land path.\n",
+        "encoding": "utf-8",
+        "op": "upsert",
+        "path": "docs/forks/gadget-initialization.md"
+      }
+    ],
+    "format": "LS_FORK_JSON_PATCH_V1",
+    "summary": "Clarify that independent packages are initialized under their own gizmo/gadget identity, not added to the lambdascript gizmo.",
+    "target": {
+      "gadget": "core",
+      "gizmo": "lambdascript",
+      "history": true,
+      "kind": "gadget",
+      "profile": "quick",
+      "promote": false,
+      "refresh": true,
+      "repository_sync": false,
+      "sync": false
+    },
+    "title": "Document independent gizmo/gadget initialization"
+  }
+}

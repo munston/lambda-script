@@ -505,15 +505,41 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Document accepted gadget initialization route"
+    },
+    {
+      "agent": "edd",
+      "created_at": "2026-06-16T12:14:22.627460+00:00",
+      "file_count": 1,
+      "file_fingerprints": [
+        {
+          "content_length": 4406,
+          "content_sha256": "d91379d5e4483aba1d34ee76db504ecf2c3d9be4bd7fb2e9e4ab6283be4df0a6",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "docs/forks/gadget-initialization.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "b5395d947883ca36b0b5d6ade5bc04c1ac498d70ac788ae40d9294a0e540794c",
+      "payload_path": "forks/replay-ledger/payloads/b5/b5395d947883ca36b0b5d6ade5bc04c1ac498d70ac788ae40d9294a0e540794c.json",
+      "sequence": 15,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Document independent gizmo/gadget initialization"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 15,
+  "next_sequence": 16,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T12:10:19.561177+00:00"
+  "updated_at": "2026-06-16T12:14:22.627489+00:00"
 }
