@@ -26,7 +26,9 @@ library
       , LambdaScript.Gizmo.Runner
       , LambdaScript.Forks
       , LambdaScript.Forks.Git
+      , LambdaScript.Forks.Hash
       , LambdaScript.Forks.Patch
+      , LambdaScript.Forks.ReplayLedger
       , LambdaScript.Forks.Land
       , LambdaScript.Forks.Gadget
       , LambdaScript.Forks.MainHistory

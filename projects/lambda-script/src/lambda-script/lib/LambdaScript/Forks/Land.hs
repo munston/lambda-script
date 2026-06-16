@@ -19,6 +19,7 @@ import Data.List (isPrefixOf)
 
 import LambdaScript.Forks.Git
 import LambdaScript.Forks.Patch
+import LambdaScript.Forks.ReplayLedger (appendEntry)
 import LambdaScript.Forks.Submission (writeSubmission)
 
 -- | Run a shell command in a directory; return its exit code.
@@ -93,11 +94,14 @@ landJson root agent targetRef verifyCmds patchFile noSync = do
   let work = forksPath root ["worktrees", normalizeAgent agent ++ "-candidate"]
   removeWorktree root work
   _ <- git root ["worktree", "add", "--detach", work, targetRef]
-  applyPatch work patch
+  applyFileOps work patch
+  -- Record the landed payload into the committed replay ledger so the work is
+  -- preserved (and later audited as materialised) independent of the lane.
+  _ <- appendEntry work agent (patchValue patch) targetRef
   _ <- git work ["add", "-A"]
   status <- gitText work ["status", "--porcelain=v1"] ""
   when (not (null status)) $ do
-    let msg = if null (patchMessage patch) then ("Land " ++ normalizeAgent agent ++ " patch") else patchMessage patch
+    let msg = if null (patchTitle patch) then ("Land " ++ normalizeAgent agent ++ " patch") else patchTitle patch
     _ <- git work ["-c", "user.name=Forks", "-c", "user.email=forks@local", "commit", "-m", msg]
     pure ()
 
