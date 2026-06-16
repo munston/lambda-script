@@ -5,12 +5,35 @@ The public button shape is intentionally one argument:
 
     guy-land-json.bat path\to\patch.json
 
-Default behaviour is preserved for existing agent buttons unless the wrapper
-passes --lane-local-only.
+The patch itself carries its target and transaction policy:
 
-Legacy/default mode follows the patch target policy. Pilot lane-local mode lands
-only to the hardcoded agent's own gadget-agent lane and deliberately skips
-gadget integration, amalgamation, promotion, and all-lane sync.
+    {
+      "format": "LS_FORK_JSON_PATCH_V1",
+      "agent": "guy",
+      "target": {
+        "kind": "gadget",
+        "gizmo": "metrics",
+        "gadget": "image-metrics",
+        "profile": "quick",
+        "promote": true,
+        "sync": false,
+        "history": true,
+        "repository_sync": true,
+        "refresh": true
+      },
+      "title": "...",
+      "files": [...]
+    }
+
+Gadget lane sync is intentionally opt-in. Normal parallel-agent operation should
+land replay-backed JSON patches first, then use audited amalgamation to align
+lanes.
+
+First materialisation is the explicit bootstrap exception for a newly initialized
+independent gizmo/gadget whose branch exists but whose manifest/profiles do not
+exist yet. In that case the patch may set target.first_materialisation=true.
+The button then lands by explicit gadget target-ref instead of the manifest-gated
+gadget landing path. This is only for the first materialising patch.
 """
 
 from __future__ import annotations
@@ -29,6 +52,7 @@ import gadget_land_json
 import gadget_promote
 import gadget_verify_profiles
 import import_json_patch
+import land_json_patch
 
 VALID_AGENTS = {"ed", "edd", "eddy", "guy"}
 
@@ -46,6 +70,7 @@ class Target:
         promote_profile: str | None,
         repository_sync: bool,
         refresh: bool,
+        first_materialisation: bool,
     ) -> None:
         self.gizmo = gizmo
         self.gadget = gadget
@@ -57,6 +82,7 @@ class Target:
         self.promote_profile = promote_profile
         self.repository_sync = repository_sync
         self.refresh = refresh
+        self.first_materialisation = first_materialisation
 
 
 def _bool(target: dict, name: str, default: bool) -> bool:
@@ -101,6 +127,7 @@ def resolve_target(payload: dict) -> Target:
         promote_profile=promote_profile,
         repository_sync=_bool(target, "repository_sync", True),
         refresh=_bool(target, "refresh", True),
+        first_materialisation=_bool(target, "first_materialisation", False),
     )
 
 
@@ -113,7 +140,7 @@ def validate_agent(hardcoded_agent: str, payload: dict, strict_agent: bool) -> N
         return
     if not isinstance(declared, str) or not declared:
         raise RuntimeError("patch agent field must be a non-empty string when present")
-    if strict_agent and forks.normalize_agent(declared) != hardcoded_agent:
+    if strict_agent and declared != hardcoded_agent:
         raise RuntimeError(f"patch declares agent {declared!r}, but this button is for {hardcoded_agent!r}")
 
 
@@ -153,13 +180,6 @@ def run_shell(command: str, cwd: Path) -> None:
     proc = subprocess.run(command, cwd=str(cwd), shell=True, text=True)
     if proc.returncode != 0:
         raise RuntimeError(f"command failed: {command}")
-
-
-def run(args: list[str], cwd: Path, check: bool = True) -> subprocess.CompletedProcess[str]:
-    proc = subprocess.run(args, cwd=str(cwd), text=True)
-    if check and proc.returncode != 0:
-        raise RuntimeError("command failed: " + " ".join(args))
-    return proc
 
 
 def verification_profile(target: Target) -> str:
@@ -238,115 +258,39 @@ def refresh_gadget_before_land(root: Path, target: Target) -> None:
     raise RuntimeError(f"{target_ref} cannot be refreshed: state={state} ahead={ahead} behind={behind}")
 
 
-def remote_ref(branch: str) -> str:
-    return branch if branch.startswith("origin/") else f"origin/{branch}"
+def land_first_materialisation(root: Path, target: Target, agent: str, patch_path: Path) -> int:
+    if target.promote:
+        raise RuntimeError("target.first_materialisation cannot be combined with target.promote")
+    if target.promote_profile is not None:
+        raise RuntimeError("target.first_materialisation cannot use target.promote_profile")
+    if target.profile is not None:
+        print("first materialisation: ignoring manifest profile until the gadget manifest exists")
 
+    target_ref = gadget_branches.target_ref(target.gizmo, target.gadget)
+    print(f"first materialisation target-ref={target_ref}")
 
-def push_ref_for_ref(ref: str) -> str:
-    return ref[len("origin/"):] if ref.startswith("origin/") else ref
-
-
-def ensure_lane_ref(root: Path, agent: str, target: Target) -> str:
-    branch = gadget_branches.gadget_agent_branch(agent, target.gizmo, target.gadget)
-    ref = remote_ref(branch)
-    fetch(root)
-    if forks.ref_exists(root, ref):
-        return ref
-
-    base = gadget_branches.target_ref(target.gizmo, target.gadget)
-    if not forks.ref_exists(root, base):
-        raise RuntimeError(f"missing gadget integration base for lane creation: {base}")
-    print(f"{branch}: creating missing gadget-agent lane at {forks.short_commit(root, base)}")
-    forks.git(["push", "origin", f"{base}:refs/heads/{branch}"], root)
-    fetch(root)
-    if not forks.ref_exists(root, ref):
-        raise RuntimeError(f"failed to create gadget-agent lane: {ref}")
-    return ref
-
-
-def require_candidate_fresh(work: Path, target_ref: str) -> None:
-    forks.git(["fetch", "--prune", "origin"], work)
-    ancestor = forks.git(["merge-base", "--is-ancestor", target_ref, "HEAD"], work, check=False)
-    if ancestor.returncode != 0:
-        raise RuntimeError(f"{target_ref} is not an ancestor of imported candidate")
-    ahead, behind = forks.ahead_behind(work, "HEAD", target_ref)
-    if ahead <= 0 or behind != 0:
-        raise RuntimeError(f"imported candidate is not fresh ahead-only against {target_ref}: ahead={ahead} behind={behind}")
-
-
-def verify_lane_candidate(root: Path, work: Path, target: Target) -> None:
-    profile = target.profile or ("full" if target.full else "quick")
-    commands = gadget_verify_profiles.profile_commands(root, target.gizmo, target.gadget, profile)
-    if commands is not None:
-        print(f"verification profile: {profile}")
-        for command in commands:
-            run_shell(command, work)
-        return
-    if target.profile:
-        raise RuntimeError(f"missing verification profile {profile} for {target.gizmo}/{target.gadget}")
-    if target.full:
-        run(["cmd", "/c", "verify.bat"], work)
-        return
-    run([
-        sys.executable,
-        "-m",
-        "py_compile",
-        "scripts/forks/forks.py",
-        "scripts/forks/forks_dispatch.py",
-        "scripts/forks/submission_object.py",
-        "scripts/forks/import_json_patch.py",
-        "scripts/forks/land_json_patch.py",
-        "scripts/forks/gadget_branches.py",
-        "scripts/forks/gadget_land_json.py",
-        "scripts/forks/gadget_verify_profiles.py",
-        "scripts/forks/gadget_promote.py",
-        "scripts/forks/ensure_node_toolchains.py",
-        "scripts/forks/agent_land_json.py",
-        "scripts/forks/main_history.py",
-        "scripts/forks/replay_plan.py",
-        "scripts/forks/replay_sync.py",
-        "scripts/forks/accelerator.py",
-        "scripts/forks/amalgamate_all.py",
-    ], work)
-
-
-def cmd_land_lane_local(args: argparse.Namespace, payload: dict, target: Target, patch_path: Path) -> int:
-    root = forks.repo_root()
-    forks.ensure_dirs(root)
-    agent = forks.normalize_agent(args.agent)
-    lane_ref = ensure_lane_ref(root, agent, target)
-
-    print(f"agent={agent}")
-    print(f"target={target.gizmo}/{target.gadget}")
-    print(f"lane={lane_ref}")
-    print(f"profile={target.profile or ('full' if target.full else 'quick')}")
-    print("scope=agent-lane-only")
-    print("sync=False promote=False amalgamate=False")
-
-    submission = import_json_patch.make_submission(root, agent, payload, lane_ref)
-    import_json_patch.submission_object.write_submission(root, agent, submission)
-    work = import_json_patch.import_worktree(root, agent)
-
-    print(f"imported JSON candidate for {agent}: {work}")
-    print(f"target={lane_ref}")
-    print(f"files={len(submission['changed_files'])} ahead={submission['ahead']} behind={submission['behind']}")
-
-    require_candidate_fresh(work, lane_ref)
-    print("verifying imported candidate")
-    verify_lane_candidate(root, work, target)
-    require_candidate_fresh(work, lane_ref)
-
-    push_ref = push_ref_for_ref(lane_ref)
-    print("dry-run lane submit")
-    run(["git", "push", "--dry-run", "origin", f"HEAD:{push_ref}"], work)
-
-    print("lane submit")
-    run(["git", "push", "origin", f"HEAD:{push_ref}"], work)
+    land_args = SimpleNamespace(
+        require_file=True,
+        full=target.full,
+        target_ref=target_ref,
+        push_ref=None,
+        no_sync=True,
+        agent=agent,
+        file=str(patch_path),
+        verify_commands=None,
+        verify_profile=None,
+    )
+    rc = land_json_patch.cmd_land(land_args)
+    if rc != 0:
+        return rc
 
     fetch(root)
-    print(f"submitted to {push_ref}; skipped gadget integration, amalgamation, promotion, and lane sync")
-    print("gadget status")
-    gadget_branches.cmd_status(SimpleNamespace(gizmo=target.gizmo, gadget=target.gadget, json=False))
+    if target.sync:
+        force_align_gadget(root, target.gizmo, target.gadget, target_ref)
+        run_status(root, target.gizmo, target.gadget)
+    else:
+        print("first materialisation submitted; skipped gadget lane sync")
+        print("run gadget sync/amalgamation explicitly after inspecting the materialised branch")
     return 0
 
 
@@ -359,17 +303,17 @@ def cmd_land(args: argparse.Namespace) -> int:
     validate_agent(args.agent, payload, args.strict_agent)
     target = resolve_target(payload)
 
-    if args.lane_local_only:
-        return cmd_land_lane_local(args, payload, target, patch_path)
-
     print(f"agent={args.agent}")
     print(f"target={target.gizmo}/{target.gadget}")
     print(f"profile={target.profile or ('full' if target.full else 'quick')}")
-    print(f"promote={target.promote} sync={target.sync} history={target.history} repository_sync={target.repository_sync} refresh={target.refresh}")
+    print(f"promote={target.promote} sync={target.sync} history={target.history} repository_sync={target.repository_sync} refresh={target.refresh} first_materialisation={target.first_materialisation}")
 
     root = forks.repo_root()
     if target.refresh:
         refresh_gadget_before_land(root, target)
+
+    if target.first_materialisation:
+        return land_first_materialisation(root, target, args.agent, patch_path)
 
     land_args = SimpleNamespace(
         require_file=True,
@@ -409,7 +353,6 @@ def cmd_land(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="agent-land-json")
-    parser.add_argument("--lane-local-only", action="store_true", help="land only to the hardcoded agent gadget lane; do not touch gadget integration or other lanes")
     parser.add_argument("agent")
     parser.add_argument("file")
     parser.add_argument("--strict-agent", action="store_true", default=True)

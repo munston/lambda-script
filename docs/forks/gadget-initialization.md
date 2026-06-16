@@ -31,22 +31,6 @@ python scripts\forks\gadget_branches.py init <gizmo> <gadget>
 python scripts\forks\gadget_branches.py status <gizmo> <gadget>
 ```
 
-For the known metrics gadget:
-
-```bat
-python scripts\forks\gadget_branches.py init metrics-lab image-metrics
-
-python scripts\forks\gadget_branches.py status metrics-lab image-metrics
-```
-
-For an independent WAV processor package, use an owning gizmo outside `lambdascript`, for example:
-
-```bat
-python scripts\forks\gadget_branches.py init audio-lab wavproc
-
-python scripts\forks\gadget_branches.py status audio-lab wavproc
-```
-
 Expected status shape:
 
 ```text
@@ -70,28 +54,46 @@ guy
 
 Do not invent branch suffixes or agent names.
 
-## Landing patches after initialization
+## First materialisation support
 
-A JSON patch must target the same initialized gizmo/gadget:
+A newly initialized independent gizmo/gadget may not have a manifest or verification profile yet. This is a real bootstrap state:
+
+1. `gadget_branches.py init <gizmo> <gadget>` has created `origin/gadgets/<gizmo>/<gadget>/main`.
+2. The four configured lanes exist and are even with that target.
+3. The first JSON patch must materialize the package files and any manifest/profile files needed by later manifest-gated operations.
+
+The agent buttons support this bootstrap case through an explicit target flag:
 
 ```json
 {
   "target": {
     "kind": "gadget",
     "gizmo": "<gizmo>",
-    "gadget": "<gadget>"
+    "gadget": "<gadget>",
+    "first_materialisation": true,
+    "sync": false
   }
 }
 ```
 
-For an independent WAV processor, the target should be the independent gizmo/gadget, for example:
+When `first_materialisation` is true, `agent_land_json.py` lands the patch by explicit gadget target-ref:
+
+```text
+origin/gadgets/<gizmo>/<gadget>/main
+```
+
+It bypasses the manifest-gated `gadget_land_json` profile lookup only for this first materialising patch. This is proper tooling support for the bootstrap corner case, rather than an operator workaround.
+
+For an independent WAV processor under `audio-lab/wavproc`, the patch target should be:
 
 ```json
 {
   "target": {
     "kind": "gadget",
     "gizmo": "audio-lab",
-    "gadget": "wavproc"
+    "gadget": "wavproc",
+    "first_materialisation": true,
+    "sync": false
   }
 }
 ```
@@ -110,7 +112,9 @@ It should not be:
 
 That target incorrectly asks the LambdaScript core gizmo to own `wavproc`.
 
-Submit through the assigned agent button:
+## Later patch landing
+
+After the first materialisation has created the independent package manifest/profile files, ordinary manifest-gated landing may be used without `first_materialisation`:
 
 ```bat
 edd-land-json.bat "C:\path\to\patch.json"
@@ -120,7 +124,7 @@ Use the button matching the declared agent in the JSON patch.
 
 ## Amalgamation
 
-After the lane-local patch lands, amalgamate the same gizmo/gadget:
+After lane-local work exists, amalgamate the same gizmo/gadget:
 
 ```bat
 forks.bat amalgamate-all --gadget <gizmo> <gadget> --agents edd --apply
@@ -152,11 +156,19 @@ agent-land-json: manifest for lambdascript has no gadget wavproc
 
 means the patch is being routed to `lambdascript/wavproc`. That is a target error for an independent package. Do not repair it by adding `wavproc` to the `lambdascript` gizmo. Retarget the patch to the owning gizmo/gadget and initialize that gizmo/gadget with `gadget_branches.py init`.
 
+This error:
+
+```text
+agent-land-json: manifest for <gizmo> has no gadget <gadget>
+```
+
+on a genuinely new independent gizmo/gadget means the first patch should set `target.first_materialisation=true`.
+
 ## Separation of responsibilities
 
 `gadget_branches.py init <gizmo> <gadget>` creates and aligns the gadget integration branch and the configured agent lanes.
 
-`edd-land-json.bat` and the other agent buttons submit JSON patches through one configured agent lane.
+`edd-land-json.bat` and the other agent buttons submit JSON patches through one configured agent lane. With `target.first_materialisation=true`, they can also materialize the first package patch onto the explicit gadget target-ref when no manifest/profile exists yet.
 
 `forks.bat amalgamate-all --gadget <gizmo> <gadget> --agents <agent> --apply` captures the selected lane delta, applies it to the gadget integration branch, and syncs the selected lane back to the integration branch through the forks tooling.
 
