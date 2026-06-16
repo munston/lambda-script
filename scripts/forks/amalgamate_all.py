@@ -308,22 +308,47 @@ def gadget_ledger_path(gizmo: str, gadget: str, agent: str) -> str:
     return f"forks/replay-ledger/gadgets/{gizmo}/{gadget}/{forks.normalize_agent(agent)}.json"
 
 
+def replay_entry_sort_key(agent: str, entry: dict[str, Any], fallback_order: int) -> tuple[str, str, int, int]:
+    """Return a cross-agent ordering key for replay-ledger entries.
+
+    Ledgers are per-agent, but the materialised integration branch is shared.
+    The final file content should be compared against the latest replay entry
+    touching that path across all selected agents. Agent iteration order is not
+    meaningful, so use replay timestamps first and sequence only as a stable
+    intra-agent tie-breaker.
+    """
+    created = entry.get("created_at")
+    if not isinstance(created, str):
+        created = ""
+    try:
+        sequence = int(entry.get("sequence", 0))
+    except Exception:
+        sequence = 0
+    return (created, agent, sequence, fallback_order)
+
+
+def should_replace_latest(current: dict[str, Any] | None, candidate: dict[str, Any]) -> bool:
+    if current is None:
+        return True
+    return tuple(candidate.get("sort_key", ("", "", 0, 0))) > tuple(current.get("sort_key", ("", "", 0, 0)))
+
+
 def audit_gadget_replay_materialisation(root: Path, gizmo: str, gadget: str, agents: list[str], *, require_ledgers: bool) -> None:
     """Audit replay materialisation without treating superseded history as failure.
 
-    Replay ledgers are historical. A file may be updated by several later replay
-    entries, so an old entry's file hash is not expected to equal the final branch
-    content. The audit therefore checks two different invariants:
+    Replay ledgers are historical. A file may be updated by later replay entries,
+    possibly by another agent. Older hashes therefore should not be compared with
+    the final branch content. The audit checks two invariants:
 
-    1. Every ledger entry still has its payload object.
-    2. For each materialised file path, the final branch content matches the
-       latest non-delete replay fingerprint touching that path across the selected
-       agents' ledgers.
+    1. Every replay entry still has its payload object.
+    2. For each replay-touched file path, final branch content matches the latest
+       non-delete replay fingerprint touching that path across the selected
+       agents' ledgers, ordered by replay entry timestamp plus sequence.
     """
     base_ref = gadget_base_ref(gizmo, gadget)
     errors: list[str] = []
     latest_by_path: dict[str, dict[str, Any]] = {}
-    order = 0
+    fallback_order = 0
 
     print(f"gadget replay materialisation audit for {gizmo}/{gadget} at {forks.short_commit(root, base_ref)}")
     for agent in agents:
@@ -344,8 +369,10 @@ def audit_gadget_replay_materialisation(root: Path, gizmo: str, gadget: str, age
         entries = list(ledger.get("entries", []))
         print(f"{agent}: ledger entries={len(entries)} path={ledger_path}")
         for entry in entries:
+            fallback_order += 1
             seq = entry.get("sequence")
             title = entry.get("title", "")
+            sort_key = replay_entry_sort_key(agent, entry, fallback_order)
             payload_path = entry.get("payload_path")
             if not isinstance(payload_path, str) or not payload_path:
                 errors.append(f"{agent}#{seq}: missing payload_path")
@@ -359,17 +386,19 @@ def audit_gadget_replay_materialisation(root: Path, gizmo: str, gadget: str, age
                 if not isinstance(path, str) or not path:
                     errors.append(f"{agent}#{seq}: malformed file fingerprint path")
                     continue
-                order += 1
-                latest_by_path[path] = {
-                    "order": order,
+                candidate = {
+                    "sort_key": sort_key,
                     "agent": agent,
                     "sequence": seq,
                     "title": title,
+                    "created_at": entry.get("created_at", ""),
                     "path": path,
                     "op": fp.get("op", "upsert"),
                     "content_sha256": fp.get("content_sha256"),
                     "content_length": fp.get("content_length"),
                 }
+                if should_replace_latest(latest_by_path.get(path), candidate):
+                    latest_by_path[path] = candidate
             print(f"  #{seq}: files={file_count} title={title}")
 
     if errors:
@@ -395,7 +424,8 @@ def audit_gadget_replay_materialisation(root: Path, gizmo: str, gadget: str, age
             if actual != expected:
                 errors.append(f"{label}: final file hash mismatch expected={expected} actual={actual}")
                 continue
-        print(f"  ok {label}")
+        created = info.get("created_at", "")
+        print(f"  ok {label} created_at={created}")
 
     if errors:
         raise RuntimeError("gadget replay materialisation audit failed\n" + "\n".join(errors))

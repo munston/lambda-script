@@ -467,15 +467,48 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Track initial accelerator state and fix forks.bat forwarding"
+    },
+    {
+      "agent": "ed",
+      "created_at": "2026-06-16T00:37:10.729698+00:00",
+      "file_count": 2,
+      "file_fingerprints": [
+        {
+          "content_length": 29162,
+          "content_sha256": "5847fc1f0c971bba6c0cbb74d56ed949eba9bbd8ff4ac7a6bc5feb42c3719b34",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/amalgamate_all.py"
+        },
+        {
+          "content_length": 3037,
+          "content_sha256": "48a8b1c585300fd3f6d551c94eae0d1757e593af644728b0891328dd537a1796",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/README.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "214951aa54e22aa782b4a3ff6670b1734caf0484f7875b07e6ef32be817b62ea",
+      "payload_path": "forks/replay-ledger/payloads/21/214951aa54e22aa782b4a3ff6670b1734caf0484f7875b07e6ef32be817b62ea.json",
+      "sequence": 13,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Order gadget replay audit across agents by timestamp"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 13,
+  "next_sequence": 14,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T00:32:57.431549+00:00"
+  "updated_at": "2026-06-16T00:37:10.729708+00:00"
 }
