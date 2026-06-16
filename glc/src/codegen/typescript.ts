@@ -82,10 +82,7 @@ function emitExpr(e: any, foreignNames = new Set<string>()): string {
     if (foreignNames.has(c.callee.name)) throw new Error(`TypeScript backend unsupported foreign call placement: ${c.callee.name}`);
     return `${c.callee.name}(${c.arguments.map((arg: any) => emitExpr(arg, foreignNames)).join(', ')})`;
   }
-  if (e.kind === 'UnaryExpression') {
-    const op = e.operator === 'not' ? '!' : e.operator;
-    return `(${op}${emitExpr(e.operand, foreignNames)})`;
-  }
+  if (e.kind === 'UnaryExpression') return `(!${emitExpr(e.operand, foreignNames)})`;
   if (e.kind === 'BinaryExpression') return `(${emitExpr(e.left, foreignNames)} ${e.operator} ${emitExpr(e.right, foreignNames)})`;
   if (e.kind === 'IfExpression') return `(${emitExpr(e.condition, foreignNames)} ? ${emitExpr(e.thenBranch, foreignNames)} : ${emitExpr(e.elseBranch, foreignNames)})`;
   if (e.kind === 'LetExpression') return `(() => { const ${e.name.name} = ${emitExpr(e.value, foreignNames)}; return ${emitExpr(e.body, foreignNames)}; })()`;

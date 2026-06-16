@@ -25,7 +25,7 @@ export interface CallExpression {
 
 export interface UnaryExpression {
   kind: 'UnaryExpression';
-  operator: '!' | 'not';
+  operator: 'not';
   operand: Expression;
   span?: Span;
 }

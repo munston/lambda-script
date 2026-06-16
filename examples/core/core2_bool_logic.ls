@@ -7,7 +7,7 @@ either : bool -> bool -> bool
 either a b = a || b
 
 inverse : bool -> bool
-inverse ok = !ok
+inverse ok = not ok
 
 neither : bool -> bool -> bool
 neither a b = not (a || b)

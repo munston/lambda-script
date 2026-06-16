@@ -121,15 +121,83 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Add unary bool negation and fix Haskell FFI pointer emission"
+    },
+    {
+      "agent": "edd",
+      "created_at": "2026-06-16T00:21:19.927727+00:00",
+      "file_count": 7,
+      "file_fingerprints": [
+        {
+          "content_length": 2089,
+          "content_sha256": "a27e9e3da0310fefa49b53b7e1068afdb5ef1797615fff89d316436f2a00cf75",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/src/core/ast.ts"
+        },
+        {
+          "content_length": 11806,
+          "content_sha256": "5c2477a6ffde64d99b6059c82a0a7c7164955f169cb19885c8894eea0b86dacf",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/src/parser/parser.ts"
+        },
+        {
+          "content_length": 7731,
+          "content_sha256": "1d18d1d334b40b12e09007956fc3d94171ccd0d4749618aa243007b38aff0743",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/src/core/check.ts"
+        },
+        {
+          "content_length": 3744,
+          "content_sha256": "8c5fbaaa07b7ffd7698349bc10c149962b7862a2c59f02eac9fd86e3c4d5e4e8",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/src/codegen/typescript.ts"
+        },
+        {
+          "content_length": 6086,
+          "content_sha256": "23f1e64756153cfde05bf5e8eb7bad5db20ef4f89e4a3d6c6b704562624fcef4",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/src/codegen/haskell.ts"
+        },
+        {
+          "content_length": 362,
+          "content_sha256": "567b1360e571debf5879e6d26490187927c867e29df0f708cd7cbc8732c1a495",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "examples/core/core2_bool_logic.ls"
+        },
+        {
+          "content_length": 8589,
+          "content_sha256": "bb0db3175b38718698422740669133e787f61f5ad29b9ce962e640882921086b",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "glc/test/smoke.ts"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "1b01e3041ccb1e3b45ef46000e47770b8e043959d6c295f4aa568025eb5b6481",
+      "payload_path": "forks/replay-ledger/payloads/1b/1b01e3041ccb1e3b45ef46000e47770b8e043959d6c295f4aa568025eb5b6481.json",
+      "sequence": 4,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Reserve bang syntax and keep not-only boolean negation"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 4,
+  "next_sequence": 5,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-15T23:56:27.935758+00:00"
+  "updated_at": "2026-06-16T00:21:19.927745+00:00"
 }
