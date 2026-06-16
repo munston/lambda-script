@@ -6,23 +6,27 @@ There is one generic amalgamation button.
 amalgamate.bat
 ```
 
-With no arguments, it amalgamates every configured gadget target discovered from:
+With no arguments, it amalgamates every initialized configured gadget target discovered from:
 
 ```text
 examples/gizmos/*.gizmo.json
 ```
 
-For the current repository this includes:
+A target is initialized when its gadget integration branch exists:
 
 ```text
-lambdascript/core
+origin/gadgets/<gizmo>/<gadget>/main
 ```
+
+Configured but uninitialized targets are skipped by default with a visible message. This prevents a partially declared gizmo/gadget from breaking the normal operator amalgamation cycle.
 
 A single target can still be supplied explicitly:
 
 ```bat
 amalgamate.bat lambdascript core
 ```
+
+For explicit single-target mode, a missing integration branch is fatal by default, because the operator has named the target directly.
 
 The selected agents default to:
 
@@ -37,12 +41,10 @@ amalgamate.bat --agents ed edd eddy guy
 amalgamate.bat lambdascript core --agents ed edd
 ```
 
-The wrapper delegates to:
+To deliberately fail on uninitialized discovered targets, use:
 
-```text
-python scripts/forks/amalgamate_targets.py
+```bat
+amalgamate.bat --include-uninitialized
 ```
 
-which fetches, runs `amalgamate_all.py --gadget <gizmo> <gadget> --agents ... --apply` for each selected target, and prints gadget status after each target.
-
-The default is all configured gadget targets, not a project-specific subbranch.
+The default is all initialized configured gadget targets, not all declared but unprovisioned targets.

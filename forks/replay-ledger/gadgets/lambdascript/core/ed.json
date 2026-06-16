@@ -952,15 +952,55 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Warn on Python tooling migration inventory replay drift"
+    },
+    {
+      "agent": "ed",
+      "created_at": "2026-06-16T03:57:27.268880+00:00",
+      "file_count": 3,
+      "file_fingerprints": [
+        {
+          "content_length": 137,
+          "content_sha256": "66cfc13218ee818aaefc382e6133747884cf8fc24585a3a18b7b544b8cdf75e8",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "amalgamate.bat"
+        },
+        {
+          "content_length": 5131,
+          "content_sha256": "307f4d5ebd0dee805a7a8be38abe56058f62f5b639590973d32e6357a664c1d9",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/amalgamate_targets.py"
+        },
+        {
+          "content_length": 1184,
+          "content_sha256": "cdd1d318fb511ac2e93c24129ae969945f2a99a17f517a3f1d464c9200609085",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "docs/forks/AMALGAMATE_BUTTON.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "d5536ff5ff49e648a4d4a603b018e588e3e7fee6d56f7abd250fd35b2df7a784",
+      "payload_path": "forks/replay-ledger/payloads/d5/d5536ff5ff49e648a4d4a603b018e588e3e7fee6d56f7abd250fd35b2df7a784.json",
+      "sequence": 26,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Skip uninitialized targets in generic amalgamation"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 26,
+  "next_sequence": 27,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T03:43:04.289561+00:00"
+  "updated_at": "2026-06-16T03:57:27.268892+00:00"
 }

@@ -1,0 +1,39 @@
+{
+  "created_at": "2026-06-16T03:57:27.253934+00:00",
+  "format": "LS_FORK_REPLAY_PAYLOAD_V1",
+  "json_patch_sha256": "d5536ff5ff49e648a4d4a603b018e588e3e7fee6d56f7abd250fd35b2df7a784",
+  "payload": {
+    "agent": "ed",
+    "files": [
+      {
+        "content": "@echo off\nsetlocal EnableExtensions\n\nset \"ROOT=%~dp0\"\ncd /d \"%ROOT%\"\n\npython scripts\\forks\\amalgamate_targets.py %*\nexit /b %errorlevel%\n",
+        "encoding": "utf-8",
+        "op": "upsert",
+        "path": "amalgamate.bat"
+      },
+      {
+        "content": "#!/usr/bin/env python3\n\"\"\"Run gadget amalgamation for one target or all initialized configured targets.\"\"\"\n\nfrom __future__ import annotations\n\nimport argparse\nimport json\nimport subprocess\nimport sys\nfrom pathlib import Path\n\nDEFAULT_AGENTS = [\"ed\", \"edd\", \"eddy\", \"guy\"]\n\n\ndef repo_root() -> Path:\n    return Path(__file__).resolve().parents[2]\n\n\ndef run_capture(cmd: list[str], root: Path, check: bool = True) -> subprocess.CompletedProcess[str]:\n    proc = subprocess.run(cmd, cwd=str(root), text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)\n    if check and proc.returncode != 0:\n        raise RuntimeError(\"command failed: \" + \" \".join(cmd) + \"\\n\" + proc.stdout + proc.stderr)\n    return proc\n\n\ndef run(cmd: list[str], root: Path) -> None:\n    print(\"> \" + \" \".join(cmd))\n    proc = subprocess.run(cmd, cwd=str(root), text=True)\n    if proc.returncode != 0:\n        raise RuntimeError(\"command failed: \" + \" \".join(cmd))\n\n\ndef ref_exists(root: Path, ref: str) -> bool:\n    proc = run_capture([\"git\", \"rev-parse\", \"--verify\", \"--quiet\", ref], root, check=False)\n    return proc.returncode == 0\n\n\ndef integration_ref(gizmo: str, gadget: str) -> str:\n    return f\"origin/gadgets/{gizmo}/{gadget}/main\"\n\n\ndef load_gizmo_targets(root: Path) -> list[tuple[str, str]]:\n    out: list[tuple[str, str]] = []\n    examples = root / \"examples\" / \"gizmos\"\n    if not examples.exists():\n        return out\n    for path in sorted(examples.glob(\"*.gizmo.json\")):\n        try:\n            data = json.loads(path.read_text(encoding=\"utf-8\"))\n        except Exception as exc:\n            raise RuntimeError(f\"failed to read {path}: {exc}\") from exc\n        gizmo = data.get(\"name\")\n        gadgets = data.get(\"gadgets\")\n        if not isinstance(gizmo, str) or not gizmo:\n            raise RuntimeError(f\"{path}: missing non-empty name\")\n        if not isinstance(gadgets, dict):\n            raise RuntimeError(f\"{path}: missing gadgets object\")\n        for gadget in sorted(gadgets):\n            out.append((gizmo, gadget))\n    return out\n\n\ndef initialized_targets(root: Path, targets: list[tuple[str, str]], *, include_uninitialized: bool) -> list[tuple[str, str]]:\n    if include_uninitialized:\n        return targets\n    kept: list[tuple[str, str]] = []\n    skipped: list[tuple[str, str]] = []\n    for gizmo, gadget in targets:\n        if ref_exists(root, integration_ref(gizmo, gadget)):\n            kept.append((gizmo, gadget))\n        else:\n            skipped.append((gizmo, gadget))\n    if skipped:\n        print(\"skipping uninitialized gadget target(s):\")\n        for gizmo, gadget in skipped:\n            print(f\"  {gizmo}/{gadget} missing {integration_ref(gizmo, gadget)}\")\n        print(\"initialize a skipped target before amalgamating it, or pass --include-uninitialized to fail loudly\")\n    return kept\n\n\ndef amalgamate_target(root: Path, gizmo: str, gadget: str, agents: list[str]) -> None:\n    run([\n        sys.executable,\n        \"scripts/forks/amalgamate_all.py\",\n        \"--gadget\",\n        gizmo,\n        gadget,\n        \"--agents\",\n        *agents,\n        \"--apply\",\n    ], root)\n    run([sys.executable, \"scripts/forks/gadget_branches.py\", \"status\", gizmo, gadget], root)\n\n\ndef build_parser() -> argparse.ArgumentParser:\n    parser = argparse.ArgumentParser(prog=\"amalgamate\")\n    parser.add_argument(\"gizmo\", nargs=\"?\")\n    parser.add_argument(\"gadget\", nargs=\"?\")\n    parser.add_argument(\"--agents\", nargs=\"+\", default=list(DEFAULT_AGENTS))\n    parser.add_argument(\"--all\", action=\"store_true\", help=\"amalgamate every initialized configured gizmo/gadget target\")\n    parser.add_argument(\"--include-uninitialized\", action=\"store_true\", help=\"do not skip configured targets whose integration branch is missing\")\n    return parser\n\n\ndef main(argv: list[str]) -> int:\n    args = build_parser().parse_args(argv)\n    root = repo_root()\n    try:\n        run([\"git\", \"fetch\", \"origin\", \"--prune\"], root)\n        if args.gizmo or args.gadget:\n            if not args.gizmo or not args.gadget:\n                raise RuntimeError(\"provide both gizmo and gadget, or provide neither for all initialized targets\")\n            targets = [(args.gizmo, args.gadget)]\n            if not args.include_uninitialized and not ref_exists(root, integration_ref(args.gizmo, args.gadget)):\n                raise RuntimeError(f\"missing gadget integration ref: {integration_ref(args.gizmo, args.gadget)}\")\n        else:\n            targets = initialized_targets(root, load_gizmo_targets(root), include_uninitialized=args.include_uninitialized)\n        if not targets:\n            raise RuntimeError(\"no initialized gadget targets found\")\n        print(\"amalgamation targets:\")\n        for gizmo, gadget in targets:\n            print(f\"  {gizmo}/{gadget}\")\n        for gizmo, gadget in targets:\n            print(f\"amalgamate {gizmo}/{gadget} start\")\n            amalgamate_target(root, gizmo, gadget, args.agents)\n        print(\"amalgamate complete\")\n        return 0\n    except Exception as exc:\n        print(f\"amalgamate: {exc}\", file=sys.stderr)\n        return 1\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main(sys.argv[1:]))\n",
+        "encoding": "utf-8",
+        "op": "upsert",
+        "path": "scripts/forks/amalgamate_targets.py"
+      },
+      {
+        "content": "# Amalgamation button\n\nThere is one generic amalgamation button.\n\n```bat\namalgamate.bat\n```\n\nWith no arguments, it amalgamates every initialized configured gadget target discovered from:\n\n```text\nexamples/gizmos/*.gizmo.json\n```\n\nA target is initialized when its gadget integration branch exists:\n\n```text\norigin/gadgets/<gizmo>/<gadget>/main\n```\n\nConfigured but uninitialized targets are skipped by default with a visible message. This prevents a partially declared gizmo/gadget from breaking the normal operator amalgamation cycle.\n\nA single target can still be supplied explicitly:\n\n```bat\namalgamate.bat lambdascript core\n```\n\nFor explicit single-target mode, a missing integration branch is fatal by default, because the operator has named the target directly.\n\nThe selected agents default to:\n\n```text\ned edd eddy guy\n```\n\nA custom agent set can be supplied:\n\n```bat\namalgamate.bat --agents ed edd eddy guy\namalgamate.bat lambdascript core --agents ed edd\n```\n\nTo deliberately fail on uninitialized discovered targets, use:\n\n```bat\namalgamate.bat --include-uninitialized\n```\n\nThe default is all initialized configured gadget targets, not all declared but unprovisioned targets.\n",
+        "encoding": "utf-8",
+        "op": "upsert",
+        "path": "docs/forks/AMALGAMATE_BUTTON.md"
+      }
+    ],
+    "format": "LS_FORK_JSON_PATCH_V1",
+    "target": {
+      "gadget": "core",
+      "gizmo": "lambdascript",
+      "history": false,
+      "kind": "gadget",
+      "profile": "quick",
+      "promote": false,
+      "sync": false
+    },
+    "title": "Skip uninitialized targets in generic amalgamation"
+  }
+}
