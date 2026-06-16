@@ -615,12 +615,37 @@ def gadget_apply_agent(root: Path, gizmo: str, gadget: str, agent: str, args: ar
     forks.git(["fetch", "--prune", "origin"], root)
 
 
+def force_sync_gadget_lane_to_base(root: Path, agent: str, gizmo: str, gadget: str, base_ref: str) -> None:
+    branch = gadget_lane_branch(agent, gizmo, gadget)
+    remote = remote_ref(branch)
+    full = full_remote_ref(branch)
+    forks.git(["fetch", "--prune", "origin"], root)
+    expected = forks.commit(root, remote) if forks.ref_exists(root, remote) else None
+    base_commit = forks.commit(root, base_ref)
+    if expected:
+        ahead, behind = forks.ahead_behind(root, remote, base_ref)
+        state = forks.classify(ahead, behind)
+        if state in {"ahead-only", "diverged"}:
+            raise RuntimeError(f"refusing final sync for {branch}; unique work remains state={state} ahead={ahead} behind={behind}")
+    if forks.current_branch(root) == branch:
+        forks.git(["reset", "--hard", base_ref], root)
+    elif forks.ref_exists(root, branch):
+        forks.git(["branch", "-f", branch, base_ref], root)
+    else:
+        forks.git(["branch", branch, base_ref], root)
+    if expected:
+        forks.git(["push", f"--force-with-lease={full}:{expected}", "origin", f"{base_commit}:{full}"], root)
+    else:
+        forks.git(["push", "origin", f"{base_commit}:{full}"], root)
+    print(f"{branch}: synced to {forks.short_commit(root, base_ref)}")
+
+
 def gadget_final_sync(root: Path, gizmo: str, gadget: str, agents: list[str]) -> None:
     base_ref = gadget_base_ref(gizmo, gadget)
     forks.git(["fetch", "--prune", "origin"], root)
     print(f"final gadget lane sync to {base_ref}")
     for agent in agents:
-        gadget_branches.sync_agent_lane(root, agent, gizmo, gadget)
+        force_sync_gadget_lane_to_base(root, agent, gizmo, gadget, base_ref)
     forks.git(["fetch", "--prune", "origin"], root)
 
 

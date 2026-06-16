@@ -714,15 +714,48 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Default strict agent docs flag in amalgamate"
+    },
+    {
+      "agent": "ed",
+      "created_at": "2026-06-16T01:28:55.106800+00:00",
+      "file_count": 2,
+      "file_fingerprints": [
+        {
+          "content_length": 32212,
+          "content_sha256": "c4be9ec03a3bd6ca6598dbe3e996d5232693bba0381d5e7392920f5e54fdf06e",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/amalgamate_all.py"
+        },
+        {
+          "content_length": 4145,
+          "content_sha256": "df52941a66330d2229ddcaed6da4a237a7b1049822270b9f7339c735c7b72285",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/README.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "4c7d90ea32c9f1d2a1d012d1589caddf4736a67e6d9f43d93a8cc939a1954b93",
+      "payload_path": "forks/replay-ledger/payloads/4c/4c7d90ea32c9f1d2a1d012d1589caddf4736a67e6d9f43d93a8cc939a1954b93.json",
+      "sequence": 19,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Use force-with-lease for final gadget lane sync"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 19,
+  "next_sequence": 20,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T01:25:47.675823+00:00"
+  "updated_at": "2026-06-16T01:28:55.106813+00:00"
 }

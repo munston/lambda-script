@@ -102,3 +102,7 @@ Per-agent planning notes under `docs/agents/` are coordination artefacts. If the
 ## Strict agent-doc flag compatibility
 
 `amalgamate-all` treats `--strict-agent-docs` as optional. Internal callers that construct an argument namespace without that attribute default to warning-only handling for `docs/agents/` drift.
+
+## Final gadget lane sync
+
+Gadget amalgamation final sync now uses guarded force-with-lease alignment for consumed agent lanes. A lane may be behind the final gadget integration branch after its work has been captured and incorporated. Final sync intentionally moves that lane to the final integration commit, but only after checking that no unique lane work remains and that the remote tip still matches the expected value.
