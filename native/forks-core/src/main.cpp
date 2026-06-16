@@ -1,6 +1,8 @@
 #include <array>
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -15,6 +17,8 @@
 #endif
 
 namespace {
+
+namespace fs = std::filesystem;
 
 struct Args {
   std::vector<std::string> values;
@@ -50,6 +54,18 @@ struct AgentLane {
   std::string error;
 };
 
+struct LedgerProbe {
+  std::string agent;
+  std::string ledger_path;
+  bool ledger_exists = false;
+  int entry_count = 0;
+  int payload_count = 0;
+  int payload_present = 0;
+  int payload_missing = 0;
+  std::vector<std::string> missing_payload_paths;
+  std::string error;
+};
+
 struct ExpectedMutation {
   std::string scope;
   std::string ref;
@@ -59,10 +75,11 @@ struct ExpectedMutation {
 struct CommandPlan {
   std::string command;
   std::string mutation_scope;
-  bool mutates;
+  bool mutates = false;
   GadgetTarget gadget;
   RefProbe integration;
   std::vector<AgentLane> lanes;
+  std::vector<LedgerProbe> ledgers;
   std::vector<ExpectedMutation> expected_mutations;
 };
 
@@ -124,6 +141,64 @@ SubprocessResult run_readonly_command(const std::string& command) {
   return result;
 }
 
+bool read_text_file(const std::string& path, std::string& out, std::string& error) {
+  std::ifstream in(path, std::ios::binary);
+  if (!in) {
+    error = "file not readable";
+    return false;
+  }
+  std::ostringstream buffer;
+  buffer << in.rdbuf();
+  out = buffer.str();
+  return true;
+}
+
+int count_occurrences(const std::string& text, const std::string& needle) {
+  int count = 0;
+  size_t pos = 0;
+  while (true) {
+    pos = text.find(needle, pos);
+    if (pos == std::string::npos) return count;
+    count++;
+    pos += needle.size();
+  }
+}
+
+std::vector<std::string> extract_json_string_values(const std::string& text, const std::string& key) {
+  std::vector<std::string> values;
+  size_t pos = 0;
+  const std::string quoted_key = "\"" + key + "\"";
+  while (true) {
+    pos = text.find(quoted_key, pos);
+    if (pos == std::string::npos) return values;
+    const size_t colon = text.find(':', pos + quoted_key.size());
+    if (colon == std::string::npos) return values;
+    const size_t first_quote = text.find('"', colon + 1);
+    if (first_quote == std::string::npos) return values;
+    std::string value;
+    bool escaped = false;
+    for (size_t i = first_quote + 1; i < text.size(); ++i) {
+      const char ch = text[i];
+      if (escaped) {
+        value.push_back(ch);
+        escaped = false;
+        continue;
+      }
+      if (ch == '\\') {
+        escaped = true;
+        continue;
+      }
+      if (ch == '"') {
+        values.push_back(value);
+        pos = i + 1;
+        break;
+      }
+      value.push_back(ch);
+      if (i + 1 == text.size()) return values;
+    }
+  }
+}
+
 GadgetTarget make_gadget_target(const std::string& gizmo, const std::string& gadget) {
   GadgetTarget target;
   target.gizmo = gizmo;
@@ -135,6 +210,10 @@ GadgetTarget make_gadget_target(const std::string& gizmo, const std::string& gad
 
 std::string agent_ref(const GadgetTarget& target, const std::string& agent) {
   return "origin/gadget-agents/" + target.gizmo + "/" + target.gadget + "/" + agent;
+}
+
+std::string ledger_path(const GadgetTarget& target, const std::string& agent) {
+  return "forks/replay-ledger/gadgets/" + target.gizmo + "/" + target.gadget + "/" + agent + ".json";
 }
 
 RefProbe probe_ref(const std::string& ref) {
@@ -191,6 +270,31 @@ AgentLane inspect_agent_lane(const GadgetTarget& target, const RefProbe& integra
   return lane;
 }
 
+LedgerProbe inspect_replay_ledger(const GadgetTarget& target, const std::string& agent) {
+  LedgerProbe probe;
+  probe.agent = agent;
+  probe.ledger_path = ledger_path(target, agent);
+  if (!fs::exists(probe.ledger_path)) {
+    probe.error = "ledger not found";
+    return probe;
+  }
+  probe.ledger_exists = true;
+  std::string text;
+  if (!read_text_file(probe.ledger_path, text, probe.error)) return probe;
+  probe.entry_count = count_occurrences(text, "\"format\": \"LS_FORK_REPLAY_LEDGER_ENTRY_V1\"");
+  const std::vector<std::string> payloads = extract_json_string_values(text, "payload_path");
+  probe.payload_count = static_cast<int>(payloads.size());
+  for (const std::string& payload : payloads) {
+    if (fs::exists(payload)) {
+      probe.payload_present++;
+    } else {
+      probe.payload_missing++;
+      probe.missing_payload_paths.push_back(payload);
+    }
+  }
+  return probe;
+}
+
 bool parse_gadget_args(const Args& args, size_t start, GadgetTarget& target, std::string& error) {
   for (size_t i = start; i < args.values.size(); ++i) {
     if (args.values[i] == "--gadget" && i + 2 < args.values.size()) {
@@ -208,7 +312,7 @@ bool parse_gadget_args(const Args& args, size_t start, GadgetTarget& target, std
   return false;
 }
 
-CommandPlan build_readonly_plan(const std::string& command, const GadgetTarget& target) {
+CommandPlan build_readonly_plan(const std::string& command, const GadgetTarget& target, bool include_ledgers) {
   CommandPlan plan;
   plan.command = command;
   plan.mutation_scope = "read-only";
@@ -217,6 +321,7 @@ CommandPlan build_readonly_plan(const std::string& command, const GadgetTarget& 
   plan.integration = probe_ref(target.integration_ref);
   for (const std::string& agent : kDefaultAgents) {
     plan.lanes.push_back(inspect_agent_lane(target, plan.integration, agent));
+    if (include_ledgers) plan.ledgers.push_back(inspect_replay_ledger(target, agent));
   }
   return plan;
 }
@@ -264,7 +369,36 @@ void print_lanes(const std::vector<AgentLane>& lanes) {
   std::cout << "  ],\n";
 }
 
-void print_plan_json(const std::string& format, const CommandPlan& plan, const std::vector<std::string>& facts) {
+void print_missing_payloads(const std::vector<std::string>& paths) {
+  std::cout << "      \"missing_payload_paths\": [\n";
+  for (size_t i = 0; i < paths.size(); ++i) {
+    std::cout << "        " << json_string(paths[i]) << (i + 1 < paths.size() ? "," : "") << "\n";
+  }
+  std::cout << "      ],\n";
+}
+
+void print_ledgers(const std::vector<LedgerProbe>& ledgers) {
+  std::cout << "  \"replay_ledgers\": [\n";
+  for (size_t i = 0; i < ledgers.size(); ++i) {
+    const LedgerProbe& ledger = ledgers[i];
+    std::cout
+      << "    {\n"
+      << "      \"agent\": " << json_string(ledger.agent) << ",\n"
+      << "      \"ledger_path\": " << json_string(ledger.ledger_path) << ",\n"
+      << "      \"ledger_exists\": " << (ledger.ledger_exists ? "true" : "false") << ",\n"
+      << "      \"entry_count\": " << ledger.entry_count << ",\n"
+      << "      \"payload_count\": " << ledger.payload_count << ",\n"
+      << "      \"payload_present\": " << ledger.payload_present << ",\n"
+      << "      \"payload_missing\": " << ledger.payload_missing << ",\n";
+    print_missing_payloads(ledger.missing_payload_paths);
+    std::cout
+      << "      \"error\": " << json_string(ledger.error) << "\n"
+      << "    }" << (i + 1 < ledgers.size() ? "," : "") << "\n";
+  }
+  std::cout << "  ],\n";
+}
+
+void print_plan_json(const std::string& format, const CommandPlan& plan, const std::vector<std::string>& facts, bool include_ledgers) {
   std::cout
     << "{\n"
     << "  \"format\": " << json_string(format) << ",\n"
@@ -275,6 +409,7 @@ void print_plan_json(const std::string& format, const CommandPlan& plan, const s
   std::cout << ",\n";
   print_ref_probe("integration", plan.integration, true);
   print_lanes(plan.lanes);
+  if (include_ledgers) print_ledgers(plan.ledgers);
   std::cout << "  \"facts\": [\n";
   for (size_t i = 0; i < facts.size(); ++i) {
     std::cout << "    " << json_string(facts[i]) << (i + 1 < facts.size() ? "," : "") << "\n";
@@ -290,7 +425,7 @@ int status_command(const Args& args) {
   if (!parse_gadget_args(args, 1, target, error)) {
     std::cout
       << "{\n"
-      << "  \"format\": \"FORKS_CORE_STATUS_V2\",\n"
+      << "  \"format\": \"FORKS_CORE_STATUS_V3\",\n"
       << "  \"command\": \"status\",\n"
       << "  \"mutation_scope\": \"read-only\",\n"
       << "  \"mutates\": false,\n"
@@ -300,13 +435,13 @@ int status_command(const Args& args) {
       << "}\n";
     return 0;
   }
-  const CommandPlan plan = build_readonly_plan("status", target);
-  print_plan_json("FORKS_CORE_STATUS_V2", plan, {
+  const CommandPlan plan = build_readonly_plan("status", target, false);
+  print_plan_json("FORKS_CORE_STATUS_V3", plan, {
     "integration_ref",
     "agent_refs",
     "ahead_behind",
     "expected_mutations"
-  });
+  }, false);
   return 0;
 }
 
@@ -317,15 +452,15 @@ int audit_command(const Args& args) {
     std::cerr << "audit requires --gadget <gizmo> <gadget>\n";
     return 1;
   }
-  const CommandPlan plan = build_readonly_plan("audit", target);
-  print_plan_json("FORKS_CORE_AUDIT_V2", plan, {
+  const CommandPlan plan = build_readonly_plan("audit", target, true);
+  print_plan_json("FORKS_CORE_AUDIT_V3", plan, {
     "integration_ref",
     "agent_refs",
     "ahead_behind",
-    "payload_presence_pending",
-    "latest_writer_per_path_pending",
-    "materialisation_result_pending"
-  });
+    "ledger_file_presence",
+    "payload_object_presence",
+    "expected_mutations"
+  }, true);
   return 0;
 }
 
