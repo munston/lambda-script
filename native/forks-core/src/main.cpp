@@ -81,6 +81,22 @@ struct LedgerProbe {
   std::string error;
 };
 
+struct MaterialisationProbe {
+  std::string agent;
+  std::string path;
+  int sequence = 0;
+  std::string op;
+  bool expected_present = true;
+  bool actual_present = false;
+  int expected_length = 0;
+  int actual_length = 0;
+  bool length_matches = false;
+  std::string expected_sha256;
+  std::string sha256_status;
+  std::string status;
+  std::string error;
+};
+
 struct ExpectedMutation {
   std::string scope;
   std::string ref;
@@ -96,6 +112,7 @@ struct CommandPlan {
   std::vector<AgentLane> lanes;
   std::vector<LedgerProbe> ledgers;
   std::vector<LatestWriter> latest_writers_by_path;
+  std::vector<MaterialisationProbe> materialisation;
   std::vector<ExpectedMutation> expected_mutations;
 };
 
@@ -145,13 +162,8 @@ SubprocessResult run_readonly_command(const std::string& command) {
   SubprocessResult result;
   std::array<char, 256> buffer{};
   FILE* pipe = FORKS_POPEN(command.c_str(), "r");
-  if (!pipe) {
-    result.status = 1;
-    return result;
-  }
-  while (fgets(buffer.data(), static_cast<int>(buffer.size()), pipe) != nullptr) {
-    result.stdout_text += buffer.data();
-  }
+  if (!pipe) return result;
+  while (fgets(buffer.data(), static_cast<int>(buffer.size()), pipe) != nullptr) result.stdout_text += buffer.data();
   result.status = FORKS_PCLOSE(pipe);
   result.stdout_text = trim(result.stdout_text);
   return result;
@@ -169,17 +181,6 @@ bool read_text_file(const std::string& path, std::string& out, std::string& erro
   return true;
 }
 
-int count_occurrences(const std::string& text, const std::string& needle) {
-  int count = 0;
-  size_t pos = 0;
-  while (true) {
-    pos = text.find(needle, pos);
-    if (pos == std::string::npos) return count;
-    count++;
-    pos += needle.size();
-  }
-}
-
 size_t find_matching_delimiter(const std::string& text, size_t start, char open_ch, char close_ch) {
   int depth = 0;
   bool in_string = false;
@@ -187,22 +188,17 @@ size_t find_matching_delimiter(const std::string& text, size_t start, char open_
   for (size_t i = start; i < text.size(); ++i) {
     const char ch = text[i];
     if (in_string) {
-      if (escaped) {
-        escaped = false;
-      } else if (ch == '\\') {
-        escaped = true;
-      } else if (ch == '"') {
-        in_string = false;
-      }
+      if (escaped) escaped = false;
+      else if (ch == '\\') escaped = true;
+      else if (ch == '"') in_string = false;
       continue;
     }
     if (ch == '"') {
       in_string = true;
       continue;
     }
-    if (ch == open_ch) {
-      depth++;
-    } else if (ch == close_ch) {
+    if (ch == open_ch) depth++;
+    else if (ch == close_ch) {
       depth--;
       if (depth == 0) return i;
     }
@@ -289,9 +285,7 @@ std::vector<std::string> extract_json_objects_in_array(const std::string& text, 
 }
 
 bool writer_is_newer_or_equal(const LatestWriter& candidate, const LatestWriter& current) {
-  if (!candidate.created_at.empty() && !current.created_at.empty() && candidate.created_at != current.created_at) {
-    return candidate.created_at > current.created_at;
-  }
+  if (!candidate.created_at.empty() && !current.created_at.empty() && candidate.created_at != current.created_at) return candidate.created_at > current.created_at;
   return candidate.sequence >= current.sequence;
 }
 
@@ -330,7 +324,6 @@ RefProbe probe_ref(const std::string& ref) {
     probe.exists = true;
     probe.head = result.stdout_text;
   } else {
-    probe.exists = false;
     probe.error = "ref not found";
   }
   return probe;
@@ -393,9 +386,8 @@ LedgerProbe inspect_replay_ledger(const GadgetTarget& target, const std::string&
     const std::string payload = extract_json_string_value(entry, "payload_path");
     if (!payload.empty()) {
       probe.payload_count++;
-      if (fs::exists(payload)) {
-        probe.payload_present++;
-      } else {
+      if (fs::exists(payload)) probe.payload_present++;
+      else {
         probe.payload_missing++;
         probe.missing_payload_paths.push_back(payload);
       }
@@ -422,6 +414,44 @@ LedgerProbe inspect_replay_ledger(const GadgetTarget& target, const std::string&
     }
   }
   return probe;
+}
+
+MaterialisationProbe inspect_materialisation(const LatestWriter& writer) {
+  MaterialisationProbe probe;
+  probe.agent = writer.agent;
+  probe.path = writer.path;
+  probe.sequence = writer.sequence;
+  probe.op = writer.op;
+  probe.expected_present = writer.op != "delete";
+  probe.expected_length = writer.content_length;
+  probe.expected_sha256 = writer.content_sha256;
+  probe.sha256_status = "pending-cpp-sha256";
+  if (!probe.expected_present) {
+    probe.actual_present = fs::exists(writer.path);
+    probe.status = probe.actual_present ? "delete-not-materialised" : "delete-materialised";
+    return probe;
+  }
+  if (!fs::exists(writer.path)) {
+    probe.status = "missing";
+    probe.error = "latest replay path is absent from working tree";
+    return probe;
+  }
+  probe.actual_present = true;
+  std::string text;
+  if (!read_text_file(writer.path, text, probe.error)) {
+    probe.status = "read-error";
+    return probe;
+  }
+  probe.actual_length = static_cast<int>(text.size());
+  probe.length_matches = probe.actual_length == probe.expected_length;
+  probe.status = probe.length_matches ? "length-matches-hash-pending" : "length-mismatch";
+  return probe;
+}
+
+std::vector<MaterialisationProbe> inspect_materialisation(const std::vector<LatestWriter>& writers) {
+  std::vector<MaterialisationProbe> probes;
+  for (const LatestWriter& writer : writers) probes.push_back(inspect_materialisation(writer));
+  return probes;
 }
 
 bool parse_gadget_args(const Args& args, size_t start, GadgetTarget& target, std::string& error) {
@@ -456,6 +486,7 @@ CommandPlan build_readonly_plan(const std::string& command, const GadgetTarget& 
       plan.ledgers.push_back(ledger);
     }
   }
+  if (include_ledgers) plan.materialisation = inspect_materialisation(plan.latest_writers_by_path);
   return plan;
 }
 
@@ -521,9 +552,7 @@ void print_latest_writer(const LatestWriter& writer, const std::string& indent) 
 
 void print_missing_payloads(const std::vector<std::string>& paths) {
   std::cout << "      \"missing_payload_paths\": [\n";
-  for (size_t i = 0; i < paths.size(); ++i) {
-    std::cout << "        " << json_string(paths[i]) << (i + 1 < paths.size() ? "," : "") << "\n";
-  }
+  for (size_t i = 0; i < paths.size(); ++i) std::cout << "        " << json_string(paths[i]) << (i + 1 < paths.size() ? "," : "") << "\n";
   std::cout << "      ],\n";
 }
 
@@ -532,6 +561,30 @@ void print_latest_writers_array(const std::string& key, const std::vector<Latest
   for (size_t i = 0; i < writers.size(); ++i) {
     print_latest_writer(writers[i], item_indent);
     std::cout << (i + 1 < writers.size() ? "," : "") << "\n";
+  }
+  std::cout << "  ],\n";
+}
+
+void print_materialisation(const std::vector<MaterialisationProbe>& probes) {
+  std::cout << "  \"materialisation\": [\n";
+  for (size_t i = 0; i < probes.size(); ++i) {
+    const MaterialisationProbe& probe = probes[i];
+    std::cout
+      << "    {\n"
+      << "      \"agent\": " << json_string(probe.agent) << ",\n"
+      << "      \"path\": " << json_string(probe.path) << ",\n"
+      << "      \"sequence\": " << probe.sequence << ",\n"
+      << "      \"op\": " << json_string(probe.op) << ",\n"
+      << "      \"expected_present\": " << (probe.expected_present ? "true" : "false") << ",\n"
+      << "      \"actual_present\": " << (probe.actual_present ? "true" : "false") << ",\n"
+      << "      \"expected_length\": " << probe.expected_length << ",\n"
+      << "      \"actual_length\": " << probe.actual_length << ",\n"
+      << "      \"length_matches\": " << (probe.length_matches ? "true" : "false") << ",\n"
+      << "      \"expected_sha256\": " << json_string(probe.expected_sha256) << ",\n"
+      << "      \"sha256_status\": " << json_string(probe.sha256_status) << ",\n"
+      << "      \"status\": " << json_string(probe.status) << ",\n"
+      << "      \"error\": " << json_string(probe.error) << "\n"
+      << "    }" << (i + 1 < probes.size() ? "," : "") << "\n";
   }
   std::cout << "  ],\n";
 }
@@ -577,11 +630,10 @@ void print_plan_json(const std::string& format, const CommandPlan& plan, const s
   if (include_ledgers) {
     print_ledgers(plan.ledgers);
     print_latest_writers_array("latest_writers_by_path", plan.latest_writers_by_path, "    ");
+    print_materialisation(plan.materialisation);
   }
   std::cout << "  \"facts\": [\n";
-  for (size_t i = 0; i < facts.size(); ++i) {
-    std::cout << "    " << json_string(facts[i]) << (i + 1 < facts.size() ? "," : "") << "\n";
-  }
+  for (size_t i = 0; i < facts.size(); ++i) std::cout << "    " << json_string(facts[i]) << (i + 1 < facts.size() ? "," : "") << "\n";
   std::cout << "  ],\n";
   print_expected_mutations_empty();
   std::cout << "}\n";
@@ -593,7 +645,7 @@ int status_command(const Args& args) {
   if (!parse_gadget_args(args, 1, target, error)) {
     std::cout
       << "{\n"
-      << "  \"format\": \"FORKS_CORE_STATUS_V4\",\n"
+      << "  \"format\": \"FORKS_CORE_STATUS_V5\",\n"
       << "  \"command\": \"status\",\n"
       << "  \"mutation_scope\": \"read-only\",\n"
       << "  \"mutates\": false,\n"
@@ -604,7 +656,7 @@ int status_command(const Args& args) {
     return 0;
   }
   const CommandPlan plan = build_readonly_plan("status", target, false);
-  print_plan_json("FORKS_CORE_STATUS_V4", plan, {
+  print_plan_json("FORKS_CORE_STATUS_V5", plan, {
     "integration_ref",
     "agent_refs",
     "ahead_behind",
@@ -621,13 +673,15 @@ int audit_command(const Args& args) {
     return 1;
   }
   const CommandPlan plan = build_readonly_plan("audit", target, true);
-  print_plan_json("FORKS_CORE_AUDIT_V4", plan, {
+  print_plan_json("FORKS_CORE_AUDIT_V5", plan, {
     "integration_ref",
     "agent_refs",
     "ahead_behind",
     "ledger_file_presence",
     "payload_object_presence",
     "latest_writer_per_path",
+    "materialisation_length_check",
+    "materialisation_sha256_pending",
     "expected_mutations"
   }, true);
   return 0;

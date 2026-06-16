@@ -401,15 +401,41 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Add latest-writer-per-path audit to forks-core"
+    },
+    {
+      "agent": "edd",
+      "created_at": "2026-06-16T04:53:34.129536+00:00",
+      "file_count": 1,
+      "file_fingerprints": [
+        {
+          "content_length": 24944,
+          "content_sha256": "9290799b4b465ff259445eddcae009e65d230fa66ea5b270b5762bd986693eb5",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "native/forks-core/src/main.cpp"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "64d664f04cbe012ee10da8209f4cb791031d19daa19eda92d005e193c3d95f55",
+      "payload_path": "forks/replay-ledger/payloads/64/64d664f04cbe012ee10da8209f4cb791031d19daa19eda92d005e193c3d95f55.json",
+      "sequence": 11,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Add read-only materialisation length audit to forks-core"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 11,
+  "next_sequence": 12,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T02:00:55.686481+00:00"
+  "updated_at": "2026-06-16T04:53:34.129555+00:00"
 }
