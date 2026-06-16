@@ -1,0 +1,97 @@
+cabal-version: 3.0
+-- generated-by: wires cast 0.1
+name: lambda-script
+version: 0.1.0.0
+build-type: Simple
+
+library
+  exposed-modules:
+      LambdaScript
+
+  other-modules:
+      LambdaScript.Paths
+      , LambdaScript.Parser.Parser
+      , LambdaScript.Core.Program
+      , LambdaScript.Core.Diagnostic
+      , LambdaScript.Core.Check
+      , LambdaScript.Core.Ast
+      , LambdaScript.Compiler
+      , LambdaScript.Codegen.Haskell
+      , LambdaScript.Codegen.TypeScript
+      , LambdaScript.Bridge.Endpoint
+      , LambdaScript.Bridge.Bridge
+      , LambdaScript.Runtime.CppForeign
+      , LambdaScript.Gizmo.Types
+      , LambdaScript.Gizmo.Manifest
+      , LambdaScript.Gizmo.Runner
+      , LambdaScript.Forks
+      , LambdaScript.Forks.Git
+      , LambdaScript.Forks.Patch
+      , LambdaScript.Forks.Land
+      , LambdaScript.Forks.Gadget
+      , LambdaScript.Forks.MainHistory
+      , LambdaScript.Forks.Amalgamate
+      , LambdaScript.Forks.Submission
+
+  hs-source-dirs:
+      lib
+  build-depends:
+      base >=4.14 && <5
+      , aeson >=2.0
+      , bytestring
+      , directory
+      , filepath
+      , folders
+      , containers
+      , process >=1.6
+      , text
+      , SHA
+      , scientific
+      , time
+
+
+
+  default-language:
+      Haskell2010
+  ghc-options: -Wall
+
+executable lambda-script
+  main-is:
+      Main.hs
+  hs-source-dirs:
+      exe
+  build-depends:
+      base >=4.14 && <5
+      , directory
+      , filepath
+      , folders
+      , containers
+      , lambda-script
+
+
+
+  default-language:
+      Haskell2010
+  ghc-options: -Wall
+
+test-suite lambda-script-cog
+  type:
+      exitcode-stdio-1.0
+  main-is:
+      CogMain.hs
+  hs-source-dirs:
+      cog
+
+  build-depends:
+      base >=4.14 && <5
+      , directory
+      , filepath
+      , folders
+      , containers
+      , process >=1.6
+
+
+
+  default-language:
+      Haskell2010
+  ghc-options: -Wall

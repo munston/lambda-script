@@ -1,0 +1,6 @@
+test-suite: lambda-script-cog
+type: exitcode-stdio-1.0
+main-is: CogMain.hs
+source-dirs:
+  cog
+depends:

@@ -1,0 +1,14 @@
+name: lambda-script
+depends:
+  folders
+  containers
+  aeson
+  bytestring
+  text
+  process
+  SHA
+  scientific
+  time
+exposes:
+  LambdaScript
+garrage-is: LambdaScript.go
