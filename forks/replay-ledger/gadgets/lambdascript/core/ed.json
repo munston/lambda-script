@@ -879,15 +879,55 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Add simple LambdaScript core amalgamation button"
+    },
+    {
+      "agent": "ed",
+      "created_at": "2026-06-16T02:20:12.141234+00:00",
+      "file_count": 3,
+      "file_fingerprints": [
+        {
+          "content_length": 137,
+          "content_sha256": "66cfc13218ee818aaefc382e6133747884cf8fc24585a3a18b7b544b8cdf75e8",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "amalgamate.bat"
+        },
+        {
+          "content_length": 3225,
+          "content_sha256": "a928cebc9ff0a0ced2ad33e0795410d0ba696b3b366310ec348c553363083508",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/amalgamate_targets.py"
+        },
+        {
+          "content_length": 909,
+          "content_sha256": "78a158fb3c88ba208a4a580468faa5eb662db4849319004d134e44defe49cd12",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "docs/forks/AMALGAMATE_BUTTON.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "07ea077ffc03c66987cdb35f29c4ea4a2e5570634810594dc58d959e57dd33c5",
+      "payload_path": "forks/replay-ledger/payloads/07/07ea077ffc03c66987cdb35f29c4ea4a2e5570634810594dc58d959e57dd33c5.json",
+      "sequence": 24,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Add generic amalgamation button defaulting to all targets"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 24,
+  "next_sequence": 25,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T01:52:13.728130+00:00"
+  "updated_at": "2026-06-16T02:20:12.141248+00:00"
 }
