@@ -5,8 +5,7 @@ import System.Directory (doesFileExist, getCurrentDirectory)
 import System.Environment (getArgs)
 import System.Exit (ExitCode(..), exitWith)
 import System.FilePath ((</>))
-import System.Info (os)
-import System.Process (rawSystem)
+import System.Process (CreateProcess(..), proc, waitForProcess, createProcess)
 
 import LambdaScript.Sandbox.Command
   ( OnepushOptions
@@ -54,21 +53,23 @@ onepushArgs opts =
 
 runButton :: SandboxConfig -> [String] -> IO ExitCode
 runButton cfg xs = do
-  let exe = cfgToolRoot cfg </> ("onepush-" ++ cfgButton cfg ++ ".bat")
-  requireFile exe
-  runTrusted exe xs
+  let script = cfgToolRoot cfg </> ("onepush-" ++ cfgButton cfg ++ ".hat")
+  runHat cfg script xs
 
 runLand :: SandboxConfig -> FilePath -> IO ExitCode
 runLand cfg patch = do
   requireFile patch
-  let exe = cfgToolRoot cfg </> "land-anything.bat"
-  requireFile exe
-  runTrusted exe [patch]
+  let script = cfgToolRoot cfg </> "land-anything.hat"
+  runHat cfg script [patch]
 
-runTrusted :: FilePath -> [String] -> IO ExitCode
-runTrusted exe xs
-  | os == "mingw32" = rawSystem "cmd" (["/c", "call", exe] ++ xs)
-  | otherwise = rawSystem exe xs
+runHat :: SandboxConfig -> FilePath -> [String] -> IO ExitCode
+runHat cfg script xs = do
+  requireFile script
+  let hatRoot = cfgToolRoot cfg </> "hat"
+      cabalProject = hatRoot </> "cabal.project"
+  requireFile cabalProject
+  (_, _, _, ph) <- createProcess (proc "cabal" (["run", "src/hat", "--", script] ++ xs)) { cwd = Just hatRoot }
+  waitForProcess ph
 
 requireFile :: FilePath -> IO ()
 requireFile path = do
