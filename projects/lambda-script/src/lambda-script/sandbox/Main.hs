@@ -17,8 +17,9 @@ import LambdaScript.Sandbox.Command
   )
 import LambdaScript.Sandbox.Config
   ( SandboxConfig
-  , cfgButton
-  , cfgToolRoot
+  , cfgHatRoot
+  , cfgLandHat
+  , cfgOnepushHat
   , loadConfig
   )
 
@@ -37,7 +38,7 @@ dispatch args = do
   cfg <- loadConfig cwd
   case parseCommand args of
     Right SandboxHelp -> usage ExitSuccess
-    Right (SandboxOnepush opts) -> runButton cfg (onepushArgs opts)
+    Right (SandboxOnepush opts) -> runHat cfg (cfgOnepushHat cfg) (onepushArgs opts)
     Right (SandboxLand patch) -> runLand cfg patch
     Left _ -> putStr "sandbox: unsupported command. Use `cabal run sandbox -- help`.\n" >> pure (ExitFailure 2)
 
@@ -51,21 +52,15 @@ onepushArgs opts =
         Nothing -> []
         Just dir -> ["--init-from-dir", dir]
 
-runButton :: SandboxConfig -> [String] -> IO ExitCode
-runButton cfg xs = do
-  let script = cfgToolRoot cfg </> ("onepush-" ++ cfgButton cfg ++ ".hat")
-  runHat cfg script xs
-
 runLand :: SandboxConfig -> FilePath -> IO ExitCode
 runLand cfg patch = do
   requireFile patch
-  let script = cfgToolRoot cfg </> "land-anything.hat"
-  runHat cfg script [patch]
+  runHat cfg (cfgLandHat cfg) [patch]
 
 runHat :: SandboxConfig -> FilePath -> [String] -> IO ExitCode
 runHat cfg script xs = do
   requireFile script
-  let hatRoot = cfgToolRoot cfg </> "hat"
+  let hatRoot = cfgHatRoot cfg
       cabalProject = hatRoot </> "cabal.project"
   requireFile cabalProject
   (_, _, _, ph) <- createProcess (proc "cabal" (["run", "src/hat", "--", script] ++ xs)) { cwd = Just hatRoot }
