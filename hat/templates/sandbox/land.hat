@@ -1,0 +1,3 @@
+rem hat-hash: f8ea39cef19d5e7d
+rem hat 0
+cabal run sandbox -- land %*
