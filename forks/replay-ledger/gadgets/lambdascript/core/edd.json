@@ -1362,15 +1362,62 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Make land-anything compose onto existing lanes"
+    },
+    {
+      "agent": "edd",
+      "created_at": "2026-06-17T05:34:37.454092+00:00",
+      "file_count": 4,
+      "file_fingerprints": [
+        {
+          "content_length": 95,
+          "content_sha256": "d44aca28944936ef9e5ce97b929b04852bbf8360f3e06a47d5bcea2aaa15a6b6",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "land-anything.bat"
+        },
+        {
+          "content_length": 9959,
+          "content_sha256": "202d123f6f60e9f91f04c63a561e7f2a172e384d96b131969ce9fd00585fd517",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/land_anything.py"
+        },
+        {
+          "content_length": 1253,
+          "content_sha256": "c2f8838d074d0fafbc0b4b267aacfd6a9039cc4423a7c7242d6cf4245cda4e9b",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "docs/forks/land-anything.md"
+        },
+        {
+          "content_length": 5503,
+          "content_sha256": "2b06449af2402865b234a84e2d8d8501b1edeadd80248500379587e15653e1d2",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "examples/gizmos/lambdascript.gizmo.json"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "e7fb6b143927f8ce62d193251e6cb05d632848f66b70d68c1d6f0bb4278fc8fb",
+      "payload_path": "forks/replay-ledger/payloads/e7/e7fb6b143927f8ce62d193251e6cb05d632848f66b70d68c1d6f0bb4278fc8fb.json",
+      "sequence": 31,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Make land-anything replay-first"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 31,
+  "next_sequence": 32,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-17T05:02:11.321590+00:00"
+  "updated_at": "2026-06-17T05:34:37.454114+00:00"
 }

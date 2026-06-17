@@ -1,10 +1,10 @@
-# Land anything
+# land-anything
 
-`land-anything.bat <patch.json>` is the canonical JSON-patch landing surface.
+`land-anything.bat <patch.json>` is the canonical JSON patch entry point.
 
-The patch decides where it belongs. The operator supplies only the patch path.
+The patch payload is the routing authority. The payload supplies the author/agent and the target object. The landing tool derives the integration ref and agent lane from that information.
 
-A gadget patch should carry:
+Example gadget target:
 
 ```json
 {
@@ -15,39 +15,18 @@ A gadget patch should carry:
     "gizmo": "lambda-script",
     "gadget": "lambda-script"
   },
-  "title": "Patch title",
+  "title": "Example",
   "files": []
 }
 ```
 
-The resolver derives:
+This resolves to:
 
 ```text
-target integration: origin/gadgets/<gizmo>/<gadget>/main
-agent lane:         gadget-agents/<gizmo>/<gadget>/<agent>
+integration: origin/gadgets/lambda-script/lambda-script/main
+lane:        gadget-agents/lambda-script/lambda-script/edd
 ```
 
-A repository patch should carry:
+The lane is treated as a disposable carrier. Before landing the new patch, the tool reconstructs the lane from the current integration target plus durable replay entries already recorded for that agent and target. Branch topology is not authoritative: stale, ahead, behind, reset, or divergent lane carriers are handled through replay recovery when the replay payloads are present and valid.
 
-```json
-{
-  "format": "LS_FORK_JSON_PATCH_V1",
-  "agent": "edd",
-  "target": {
-    "kind": "repo"
-  },
-  "title": "Patch title",
-  "files": []
-}
-```
-
-The resolver derives:
-
-```text
-target integration: origin/main
-agent lane:         agents/<agent>
-```
-
-If the resolved lane is already ahead-only relative to its integration target,
-the next JSON patch lands on top of that lane. If the lane is even or behind,
-the patch lands from the integration target. Diverged lanes are refused.
+A landing fails when the durable replay data is incomplete or cannot be applied, when the new patch cannot be applied after replay, or when the remote lane changes during the final leased push.
