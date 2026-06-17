@@ -1,0 +1,442 @@
+{
+  "format": "LS_FORK_ACCELERATOR_V1",
+  "name": "haskell-migration",
+  "gizmo": "lambda-script",
+  "gadget": "lambda-script",
+  "created_at": "2026-06-17T00:00:00Z",
+  "updated_at": "2026-06-17T00:00:00Z",
+  "cursor": {
+    "slot": 1
+  },
+  "agents": [
+    "ed",
+    "edd",
+    "eddy",
+    "guy"
+  ],
+  "global_objective": "Translate the Python forks/gizmo/gadget distributed developmental build system (scripts/forks/*.py, 22 modules) into a principled Haskell package under projects/lambda-script/src/lambda-script/lib/LambdaScript/Forks/, then make the Haskell tool self-hosting (used to drive its own remaining migration) before decommissioning the Python. Architecture is functional-core/imperative-shell with a single injected Git capability, typed wire formats with one canonical encoder, load-bearing invariants encoded as smart-constructor types (FreshCandidate, MaterialisedLedger), errors as values, and destructive operations isolated by namespace and gated by the replay materialisation audit. See accelerators/HASKELL_MIGRATION_DESIGN.md for the full rationale and Python->Haskell module map.",
+  "rules": [
+    "Each agent keeps a distinct responsibility track.",
+    "For every turn, each agent maintains current implementation, next-slot complete plan, and plus-two lookahead.",
+    "Compile or verification failures enter an attempt loop for the same slot.",
+    "A slot advances only after every active agent has an accepted patch or is explicitly marked skipped.",
+    "JSON landing records replay history; lane propagation belongs to audited amalgamation.",
+    "Functional core, imperative shell: logic is pure; all git/process/fs effects live behind the MonadGit capability at the edge.",
+    "Every LS_FORK_*_V1 format is a typed record with a single canonical encoder; output must stay byte-identical to the Python during the parity phase.",
+    "Invariants are types, not asserts: pushing requires a FreshCandidate; a destructive lane rewind requires a MaterialisedLedger.",
+    "Pure planners (Plan.*, Accelerator, Workflow) are compiled without MonadGit in scope; Amalgamate is the only destructive module.",
+    "Do not delete any scripts/forks/*.py module until golden parity holds for it and the self-hosting smoke passes."
+  ],
+  "slots": [
+    {
+      "index": 1,
+      "objective": "Shared spine first: land the contracts (typed wire formats, single error type, the injected Git capability, canonical hashing) and type-only skeletons for every track so parallel lanes have fixed signatures and a collision-free namespace partition before any behaviour is written.",
+      "status": "open",
+      "agents": {
+        "ed": {
+          "responsibility": "Foundation & Git capability: shared data/format types, the single error type, the MonadGit interface, canonical hashing.",
+          "owned_paths": [
+            "src/lambda-script/lib/LambdaScript/Forks/Types.hs",
+            "src/lambda-script/lib/LambdaScript/Forks/Error.hs",
+            "src/lambda-script/lib/LambdaScript/Forks/Git.hs",
+            "src/lambda-script/lib/LambdaScript/Forks/Hash.hs"
+          ],
+          "lookahead": "Slot 3: implement the forks CLI subcommands (diff/stage/verify/sync/capture) and the .forks dir layout over the capability.",
+          "plan": "Add Forks.Types (records + format tags for every LS_FORK_*_V1 the core touches) and Forks.Error (one ForksError sum). Define `class Monad m => MonadGit m` with gitRun/gitIn returning GitResult{exit,stdout,stderr} that never throws; refactor existing Git.hs IO into the IO instance. Keep Hash.canonicalJson as the one canonical encoder (sort_keys, compact separators) and prove it matches Python on a sample.",
+          "patch_goal": "Land Forks.Types + Forks.Error + the MonadGit capability (with IO instance) and confirm Hash.canonicalJson is byte-identical to Python json.dumps(sort_keys=True, separators=(',',':')) on a fixture.",
+          "attempts": [],
+          "accepted": null,
+          "notes": "This is the spine every other track imports; freeze signatures here so later slots do not churn them."
+        },
+        "edd": {
+          "responsibility": "Patch/Land/Ledger pipeline: the JSON-patch land path, replay ledger, submissions, agent-lane land.",
+          "owned_paths": [
+            "src/lambda-script/lib/LambdaScript/Forks/Patch.hs",
+            "src/lambda-script/lib/LambdaScript/Forks/Land.hs",
+            "src/lambda-script/lib/LambdaScript/Forks/ReplayLedger.hs",
+            "src/lambda-script/lib/LambdaScript/Forks/Submission.hs",
+            "src/lambda-script/lib/LambdaScript/Forks/AgentLand.hs"
+          ],
+          "lookahead": "Slot 3: Submission (LS_FORK_SUBMISSION_V1 capture/replay, non-destructive sync-lane) and AgentLand (the per-lane land path behind guy-land-json).",
+          "plan": "Re-express the already-faithful Patch + ReplayLedger and the Land engine to import Forks.Types/Error and the MonadGit capability instead of calling git directly; no behaviour change. Stub AgentLand/Submission signatures against the shared types.",
+          "patch_goal": "Land Patch/Land/ReplayLedger rewired onto Forks.Types/Error + MonadGit, behaviour unchanged, with AgentLand/Submission type-only skeletons.",
+          "attempts": [],
+          "accepted": null,
+          "notes": "Patch.hs and ReplayLedger.hs are already faithful (LS_FORK_JSON_PATCH_V1 upsert/delete, content-addressed ledger); this slot only aligns them to the spine."
+        },
+        "eddy": {
+          "responsibility": "Gadget & Amalgamation: gadget branches, folder ingest, the audited amalgamation, promote, main-history, verify profiles.",
+          "owned_paths": [
+            "src/lambda-script/lib/LambdaScript/Forks/Gadget.hs",
+            "src/lambda-script/lib/LambdaScript/Forks/GadgetBranches.hs",
+            "src/lambda-script/lib/LambdaScript/Forks/Amalgamate.hs",
+            "src/lambda-script/lib/LambdaScript/Forks/MainHistory.hs"
+          ],
+          "lookahead": "Slot 4: faithful amalgamate_all gadget mode (audit -> capture -> destructive rewind -> apply-to-integration -> re-audit -> assert-clean).",
+          "plan": "Define type-only skeletons + signatures for GadgetBranches (integration_branch/gadget_agent_branch/status), Gadget ingest, Amalgamate, and MainHistory against Forks.Types. Encode the MaterialisedLedger newtype with no public constructor now so Amalgamate's signature can require it.",
+          "patch_goal": "Land gadget/amalgamate/main-history type-only skeletons including the MaterialisedLedger smart-constructor type.",
+          "attempts": [],
+          "accepted": null,
+          "notes": "Reserve the only destructive code to this track; its signatures must demand MaterialisedLedger before any rewind."
+        },
+        "guy": {
+          "responsibility": "Planning & orchestration: the accelerator itself, replay/workflow planners, the unified CLI dispatcher and .bat->exe shims.",
+          "owned_paths": [
+            "src/lambda-script/lib/LambdaScript/Forks/Accelerator.hs",
+            "src/lambda-script/lib/LambdaScript/Forks/Cli.hs",
+            "src/lambda-script/lib/LambdaScript/Forks/Dispatch.hs"
+          ],
+          "lookahead": "Slot 3: replay-plan and workflow-plan as pure planners (no MonadGit), wired into Dispatch.",
+          "plan": "Define Forks.Accelerator records + FromJSON/ToJSON mirroring LS_FORK_ACCELERATOR_V1 exactly (this file), with a round-trip test that re-encodes this request byte-identically. Sketch Cli/Dispatch with the subcommand enum.",
+          "patch_goal": "Land Forks.Accelerator data model that round-trips accelerators/haskell-migration.json without drift, plus the Cli/Dispatch skeleton.",
+          "attempts": [],
+          "accepted": null,
+          "notes": "Accelerator is compiled without MonadGit in scope; it is the bootstrap that lets the Haskell tool drive the rest of this plan."
+        }
+      }
+    },
+    {
+      "index": 2,
+      "objective": "Make the spine live: real Git/snapshot machinery, the green land/ledger pipeline on a golden fixture, gadget branch ref computation, and a working Haskell accelerator command set at parity with Python.",
+      "status": "open",
+      "agents": {
+        "ed": {
+          "responsibility": "Foundation & Git capability.",
+          "owned_paths": [
+            "src/lambda-script/lib/LambdaScript/Forks/Snapshot.hs",
+            "src/lambda-script/lib/LambdaScript/Forks/Manifest.hs",
+            "src/lambda-script/lib/LambdaScript/Forks/Git.hs"
+          ],
+          "lookahead": "Slot 4: main_history (LS_MAIN_HISTORY_V1) and snapshot_diff_summary feed the amalgamation audit.",
+          "plan": "Implement git_manifest (LS_FORK_MANIFEST_V1 via git ls-tree + sha256), compact_snapshot {commit,tree,manifest_hash}, snapshots_match, candidate_identity, classify, ahead_behind, changed_files, merge_base, and guard_forbidden_paths over the capability. Match Python hashes exactly.",
+          "patch_goal": "Land Snapshot/Manifest with manifest_hash byte-identical to Python and the full git helper set on the IO MonadGit instance.",
+          "attempts": [],
+          "accepted": null,
+          "notes": "manifest_hash is the identity used by snapshots_match and the audit; parity here is non-negotiable."
+        },
+        "edd": {
+          "responsibility": "Patch/Land/Ledger pipeline.",
+          "owned_paths": [
+            "src/lambda-script/lib/LambdaScript/Forks/Land.hs",
+            "src/lambda-script/lib/LambdaScript/Forks/ReplayLedger.hs"
+          ],
+          "lookahead": "Slot 4: replay-sync rebuilds a lane from the ledger non-destructively; share the materialisation-audit helper with eddy's Amalgamate.",
+          "plan": "Turn requireCandidateFresh into the FreshCandidate smart constructor (remote-first fetch + is-ancestor + ahead-only) and make pushRef require it. Keep appendEntry writing the content-addressed payload + per-agent ledger into the candidate before commit.",
+          "patch_goal": "Land path green end-to-end on a golden fixture, producing a ledger whose fingerprints match Python; push is reachable only with a FreshCandidate.",
+          "attempts": [],
+          "accepted": null,
+          "notes": "FreshCandidate is the first invariant-as-type; verify the ungated push path does not type-check."
+        },
+        "eddy": {
+          "responsibility": "Gadget & Amalgamation.",
+          "owned_paths": [
+            "src/lambda-script/lib/LambdaScript/Forks/GadgetBranches.hs"
+          ],
+          "lookahead": "Slot 4: the destructive amalgamation core consumes these ref helpers and the status reader.",
+          "plan": "Implement GadgetBranches pure ref computation (integration_branch=gadgets/<gizmo>/<gadget>/main, gadget_agent_branch=gadget-agents/<gizmo>/<gadget>/<agent>) and the status reader (per-lane ahead/behind/state) over the capability; init/sync remain non-destructive (even/behind-only).",
+          "patch_goal": "Land GadgetBranches with init/status/sync at parity with gadget_branches.py on a live gadget.",
+          "attempts": [],
+          "accepted": null,
+          "notes": "Ref string computation is pure and must match Python exactly so existing remote lanes resolve."
+        },
+        "guy": {
+          "responsibility": "Planning & orchestration.",
+          "owned_paths": [
+            "src/lambda-script/lib/LambdaScript/Forks/Accelerator.hs"
+          ],
+          "lookahead": "Slot 4: workflow_runner consumes accepted accelerator cells to emit land calls/packets for remote agents.",
+          "plan": "Implement the accelerator commands as pure state transforms (init/set-slot/set-agent/attempt/accept/advance) plus IO load/save at the canonical path, and the packet emitter (current + next + plus-two window). Enforce the advance gate and path-collision detection.",
+          "patch_goal": "Haskell `forks accelerator` command set at parity with accelerator.py, including packet output and the advance gate, validated against this request file.",
+          "attempts": [],
+          "accepted": null,
+          "notes": "Once this lands, the Haskell tool can read and advance this very plan -- the self-hosting bootstrap is reached."
+        }
+      }
+    },
+    {
+      "index": 3,
+      "objective": "Complete the capture/replay surface: forks CLI subcommands, submission objects + the per-agent land path, gadget folder ingest + creation orchestrator, and the pure replay/workflow planners.",
+      "status": "open",
+      "agents": {
+        "ed": {
+          "responsibility": "Foundation & Git capability.",
+          "owned_paths": [
+            "src/lambda-script/lib/LambdaScript/Forks/Cli.hs"
+          ],
+          "lookahead": "Slot 5: gadget_verify_profiles wires optional cabal/npm gates into the verify command.",
+          "plan": "Implement the forks CLI subcommands (diff/stage/verify/sync/capture) and the .forks dir layout (patches/candidates/receipts/worktrees/snapshots/conflicts/ships) over the capability and Snapshot.",
+          "patch_goal": "Land the forks subcommands at parity with forks.py CLI for the non-destructive commands.",
+          "attempts": [],
+          "accepted": null,
+          "notes": "Keep destructive sync paths (reset --hard / branch -f) behind the same even/behind-only guard Python uses."
+        },
+        "edd": {
+          "responsibility": "Patch/Land/Ledger pipeline.",
+          "owned_paths": [
+            "src/lambda-script/lib/LambdaScript/Forks/Submission.hs",
+            "src/lambda-script/lib/LambdaScript/Forks/AgentLand.hs"
+          ],
+          "lookahead": "Slot 4: ReplaySync reuses Submission's capture and the ledger audit to realign lanes without losing work.",
+          "plan": "Implement Submission (LS_FORK_SUBMISSION_V1 capture/replay, sha-checked, non-destructive sync-lane) and AgentLand (the per-agent land path behind ed/edd/eddy/guy-land-json, including forbidden-path guard).",
+          "patch_goal": "Land Submission + AgentLand at parity; guy-land-json driven by the Haskell path produces an identical submission record to Python.",
+          "attempts": [],
+          "accepted": null,
+          "notes": "Submission patch_sha256 must verify on load exactly as submission_object.py does."
+        },
+        "eddy": {
+          "responsibility": "Gadget & Amalgamation.",
+          "owned_paths": [
+            "src/lambda-script/lib/LambdaScript/Forks/Ingest.hs",
+            "src/lambda-script/lib/LambdaScript/Forks/Gadget.hs"
+          ],
+          "lookahead": "Slot 4: the amalgamation core captures a gadget-submission per lane before any rewind.",
+          "plan": "Implement gadget_ingest_folder (scan source folder -> diff vs dest on the lane -> emit LS_FORK_JSON_PATCH_V1 upsert/delete -> land) and the gadget creation orchestrator (ensure lane -> ingest -> optional amalgamate), with the default-excludes set.",
+          "patch_goal": "Haskell gadget-creation ingest reproduces the copied/skipped/changed report and lands the same patch as gadget_creation_agent.py.",
+          "attempts": [],
+          "accepted": null,
+          "notes": "Ingest is how this very migration is shipped; it must stay byte-faithful to the Python diff format."
+        },
+        "guy": {
+          "responsibility": "Planning & orchestration.",
+          "owned_paths": [
+            "src/lambda-script/lib/LambdaScript/Forks/Plan/Replay.hs",
+            "src/lambda-script/lib/LambdaScript/Forks/Plan/Workflow.hs",
+            "src/lambda-script/lib/LambdaScript/Forks/Dispatch.hs"
+          ],
+          "lookahead": "Slot 5: the unified dispatcher routes every subcommand; .bat shims point at the wires-built exe.",
+          "plan": "Implement replay_plan and workflow_plan as pure planners (no MonadGit) that compute the intended sequence of land/sync/amalgamate steps, and wire them plus accelerator into Dispatch.",
+          "patch_goal": "Land Plan.Replay + Plan.Workflow pure planners with parity output to the Python plans, routed through Dispatch.",
+          "attempts": [],
+          "accepted": null,
+          "notes": "Planners must not import any effectful module; this is the structural destructive/non-destructive boundary."
+        }
+      }
+    },
+    {
+      "index": 4,
+      "objective": "Land the audited amalgamation (the only destructive core) plus the replay-sync and main-history it depends on, gated end-to-end by MaterialisedLedger.",
+      "status": "open",
+      "agents": {
+        "ed": {
+          "responsibility": "Foundation & Git capability.",
+          "owned_paths": [
+            "src/lambda-script/lib/LambdaScript/Forks/MainHistory.hs"
+          ],
+          "lookahead": "Slot 6: provide golden-fixture helpers for the parity harness.",
+          "plan": "Implement main_history (LS_MAIN_HISTORY_V1) reader/writer and snapshot_diff_summary used by the amalgamation re-audit.",
+          "patch_goal": "Land MainHistory + snapshot_diff_summary at parity with main_history.py.",
+          "attempts": [],
+          "accepted": null,
+          "notes": ""
+        },
+        "edd": {
+          "responsibility": "Patch/Land/Ledger pipeline.",
+          "owned_paths": [
+            "src/lambda-script/lib/LambdaScript/Forks/ReplaySync.hs"
+          ],
+          "lookahead": "Slot 6: replay-sync underwrites the self-hosting smoke (lane realignment without loss).",
+          "plan": "Implement replay_sync (rebuild/realign a lane from the committed ledger non-destructively) and the shared materialisation-audit helper that yields MaterialisedLedger when every entry's fingerprints exist in the tree.",
+          "patch_goal": "Land ReplaySync + the audit helper; the audit refuses to produce MaterialisedLedger on a tampered fixture.",
+          "attempts": [],
+          "accepted": null,
+          "notes": "This audit is the second invariant-as-type and the precondition for any rewind."
+        },
+        "eddy": {
+          "responsibility": "Gadget & Amalgamation.",
+          "owned_paths": [
+            "src/lambda-script/lib/LambdaScript/Forks/Amalgamate.hs",
+            "src/lambda-script/lib/LambdaScript/Forks/AmalgamateTargets.hs"
+          ],
+          "lookahead": "Slot 5: promote and verify-profiles complete the gadget lifecycle.",
+          "plan": "Faithfully port amalgamate_all gadget mode: audit (before) -> per-agent capture gadget-submission -> destructive rewind lane to base (force-with-lease on source_commit) -> apply gadget patch to integration (git apply --3way --binary, force-with-lease) -> final sync -> re-audit -> assert-clean. Require MaterialisedLedger before the rewind step. Add the gadget_amalgamate_safe wrapper and amalgamate_targets resolution.",
+          "patch_goal": "Haskell amalgamation reproduces the Python audit->rewind->apply order exactly and refuses to rewind without MaterialisedLedger.",
+          "attempts": [],
+          "accepted": null,
+          "notes": "The 750-line beast; preserve the audit-before-and-after and force-with-lease semantics precisely -- this is where work is lost if done wrong."
+        },
+        "guy": {
+          "responsibility": "Planning & orchestration.",
+          "owned_paths": [
+            "src/lambda-script/lib/LambdaScript/Forks/Workflow.hs"
+          ],
+          "lookahead": "Slot 6: the runner emits packets that task remote agents directly.",
+          "plan": "Implement workflow_runner: execute an accelerator/workflow plan by emitting per-agent packets and the land/sync/amalgamate calls in order, honouring the attempt loop and advance gate.",
+          "patch_goal": "Land Workflow runner that can drive this accelerator's remaining slots by emitting packets and invoking the land path.",
+          "attempts": [],
+          "accepted": null,
+          "notes": ""
+        }
+      }
+    },
+    {
+      "index": 5,
+      "objective": "Complete the gadget lifecycle (promote, verify profiles, creation orchestrator) and unify everything behind a single dispatcher and exe.",
+      "status": "open",
+      "agents": {
+        "ed": {
+          "responsibility": "Foundation & Git capability.",
+          "owned_paths": [
+            "src/lambda-script/lib/LambdaScript/Forks/VerifyProfiles.hs"
+          ],
+          "lookahead": "Slot 7: property tests for canonical JSON and the invariant types.",
+          "plan": "Implement gadget_verify_profiles (optional cabal/npm gates) and wire them into the verify command as opt-in, not default.",
+          "patch_goal": "Land VerifyProfiles as optional gates at parity with gadget_verify_profiles.py.",
+          "attempts": [],
+          "accepted": null,
+          "notes": ""
+        },
+        "edd": {
+          "responsibility": "Patch/Land/Ledger pipeline.",
+          "owned_paths": [
+            "src/lambda-script/lib/LambdaScript/Forks/Promote.hs"
+          ],
+          "lookahead": "Slot 6: promote participates in the self-hosting cutover.",
+          "plan": "Implement gadget_promote (integration -> main) replay-safe, reusing the FreshCandidate gate.",
+          "patch_goal": "Land Promote at parity with gadget_promote.py, gated by FreshCandidate.",
+          "attempts": [],
+          "accepted": null,
+          "notes": ""
+        },
+        "eddy": {
+          "responsibility": "Gadget & Amalgamation.",
+          "owned_paths": [
+            "src/lambda-script/lib/LambdaScript/Forks/Gadget.hs"
+          ],
+          "lookahead": "Slot 6: gadget creation runs from the Haskell exe end-to-end.",
+          "plan": "Finish the gadget creation orchestrator and unify land_json/gadget_land_json behind one land entry parameterised by target ref.",
+          "patch_goal": "Single gadget-creation + land entry covering both main and gadget-integration targets.",
+          "attempts": [],
+          "accepted": null,
+          "notes": ""
+        },
+        "guy": {
+          "responsibility": "Planning & orchestration.",
+          "owned_paths": [
+            "src/lambda-script/lib/LambdaScript/Forks/Cli.hs",
+            "src/lambda-script/lib/LambdaScript/Forks/Dispatch.hs",
+            "src/lambda-script/exe",
+            "foreign-language/lambda-script"
+          ],
+          "lookahead": "Slot 6: flip the .bat shims to the wires-built exe.",
+          "plan": "Implement forks_dispatch as the single `lambda-script forks <command>` CLI routing all subcommands to pure planners + IO runners; expose it as the wires gadget exe.",
+          "patch_goal": "One dispatcher exe covering the whole command surface; .bat files reduced to thin shims (still pointing at Python until slot 6).",
+          "attempts": [],
+          "accepted": null,
+          "notes": ""
+        }
+      }
+    },
+    {
+      "index": 6,
+      "objective": "Self-hosting cutover: point the shims at the Haskell exe, drive a real land+amalgamate with it, and prove golden parity against Python.",
+      "status": "open",
+      "agents": {
+        "ed": {
+          "responsibility": "Foundation & Git capability.",
+          "owned_paths": [
+            "src/lambda-script/test"
+          ],
+          "lookahead": "Slot 7: convert the parity corpus into permanent regression tests.",
+          "plan": "Build the golden parity harness: fixed corpus of patches/lanes; assert canonical JSON, ledger fingerprints, and snapshot/manifest hashes are byte-identical Haskell-vs-Python.",
+          "patch_goal": "Parity harness green across the corpus.",
+          "attempts": [],
+          "accepted": null,
+          "notes": ""
+        },
+        "edd": {
+          "responsibility": "Patch/Land/Ledger pipeline.",
+          "owned_paths": [
+            "src/lambda-script/lib/LambdaScript/Forks"
+          ],
+          "lookahead": "Slot 7: hardening.",
+          "plan": "Run the Haskell land path to land this gadget's next diff; confirm the ledger entry matches what Python would have written.",
+          "patch_goal": "Haskell tool lands its own next diff with a parity-checked ledger entry.",
+          "attempts": [],
+          "accepted": null,
+          "notes": ""
+        },
+        "eddy": {
+          "responsibility": "Gadget & Amalgamation.",
+          "owned_paths": [
+            "src/lambda-script/lib/LambdaScript/Forks"
+          ],
+          "lookahead": "Slot 7: hardening.",
+          "plan": "Run the Haskell amalgamation (audit-gated) on a scratch gadget and assert-clean; compare against a Python run on the same inputs.",
+          "patch_goal": "Self-hosting amalgamation smoke passes with identical end-state to Python.",
+          "attempts": [],
+          "accepted": null,
+          "notes": ""
+        },
+        "guy": {
+          "responsibility": "Planning & orchestration.",
+          "owned_paths": [
+            "foreign-language/lambda-script"
+          ],
+          "lookahead": "Slot 7: remove Python once parity holds everywhere.",
+          "plan": "Flip the .bat shims (gadget-creation-*, *-land-json, amalgamate*, forks) to call the wires-built Haskell exe; keep a Python fallback flag for one slot.",
+          "patch_goal": "All entrypoints run the Haskell exe by default with a documented Python fallback.",
+          "attempts": [],
+          "accepted": null,
+          "notes": ""
+        }
+      }
+    },
+    {
+      "index": 7,
+      "objective": "Harden and decommission: property tests for determinism and the invariant types, documentation, and removal of scripts/forks/*.py once parity holds across the whole core.",
+      "status": "open",
+      "agents": {
+        "ed": {
+          "responsibility": "Foundation & Git capability.",
+          "owned_paths": [
+            "src/lambda-script/test"
+          ],
+          "lookahead": "Migration complete; maintain.",
+          "plan": "Property tests: canonical-JSON determinism, fingerprint stability under re-encode, and that FreshCandidate/MaterialisedLedger cannot be constructed off the gated path.",
+          "patch_goal": "Property suite green.",
+          "attempts": [],
+          "accepted": null,
+          "notes": ""
+        },
+        "edd": {
+          "responsibility": "Patch/Land/Ledger pipeline.",
+          "owned_paths": [
+            "scripts/forks"
+          ],
+          "lookahead": "Migration complete.",
+          "plan": "Remove the now-replaced Python land/ledger/submission modules once their parity holds.",
+          "patch_goal": "Python land/ledger/submission deleted; references updated.",
+          "attempts": [],
+          "accepted": null,
+          "notes": "Delete only after parity per rule 10."
+        },
+        "eddy": {
+          "responsibility": "Gadget & Amalgamation.",
+          "owned_paths": [
+            "scripts/forks"
+          ],
+          "lookahead": "Migration complete.",
+          "plan": "Remove the Python gadget/amalgamate/main-history modules once their parity holds.",
+          "patch_goal": "Python gadget/amalgamate modules deleted; references updated.",
+          "attempts": [],
+          "accepted": null,
+          "notes": "Delete only after parity per rule 10."
+        },
+        "guy": {
+          "responsibility": "Planning & orchestration.",
+          "owned_paths": [
+            "scripts/forks",
+            "projects/lambda-script/accelerators",
+            "foreign-language/lambda-script/docs/forks"
+          ],
+          "lookahead": "Migration complete; the Haskell tool plans its own future work.",
+          "plan": "Remove the Python accelerator/workflow/dispatch modules, finalise docs, and update this accelerator to reflect completion. Final amalgamation/signover.",
+          "patch_goal": "Python core fully removed; Haskell tool is the sole forks build system; docs and this accelerator marked complete.",
+          "attempts": [],
+          "accepted": null,
+          "notes": "Signover slot: this is where amalgamation to integration/main is expected per the standing workflow rule."
+        }
+      }
+    }
+  ]
+}
