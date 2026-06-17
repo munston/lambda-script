@@ -1,10 +1,8 @@
 # Land anything
 
-`land-anything.bat <patch.json>` is the canonical JSON landing entry point.
+`land-anything.bat <patch.json>` is the canonical JSON-patch landing surface.
 
-The patch payload decides where it belongs. Target-specific landing buttons may
-exist as visible labels, but they are conveniences only. The authoritative
-routing data is inside the patch.
+The patch decides where it belongs. The operator supplies only the patch path.
 
 A gadget patch should carry:
 
@@ -17,19 +15,19 @@ A gadget patch should carry:
     "gizmo": "lambda-script",
     "gadget": "lambda-script"
   },
-  "title": "Example",
+  "title": "Patch title",
   "files": []
 }
 ```
 
-The landing button resolves this to:
+The resolver derives:
 
 ```text
-integration: origin/gadgets/<gizmo>/<gadget>/main
-lane:        gadget-agents/<gizmo>/<gadget>/<agent>
+target integration: origin/gadgets/<gizmo>/<gadget>/main
+agent lane:         gadget-agents/<gizmo>/<gadget>/<agent>
 ```
 
-A repository-level patch may use:
+A repository patch should carry:
 
 ```json
 {
@@ -38,13 +36,18 @@ A repository-level patch may use:
   "target": {
     "kind": "repo"
   },
-  "title": "Example",
+  "title": "Patch title",
   "files": []
 }
 ```
 
-which resolves to the repository main target and the corresponding
-`agents/<agent>` lane.
+The resolver derives:
 
-The button lands the patch to the resolved lane only. Shipping remains a
-separate onepush operation.
+```text
+target integration: origin/main
+agent lane:         agents/<agent>
+```
+
+If the resolved lane is already ahead-only relative to its integration target,
+the next JSON patch lands on top of that lane. If the lane is even or behind,
+the patch lands from the integration target. Diverged lanes are refused.

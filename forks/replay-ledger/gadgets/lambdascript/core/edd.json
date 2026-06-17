@@ -1329,15 +1329,48 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Add quiet process-result compatibility helper"
+    },
+    {
+      "agent": "edd",
+      "created_at": "2026-06-17T05:02:11.321556+00:00",
+      "file_count": 2,
+      "file_fingerprints": [
+        {
+          "content_length": 6055,
+          "content_sha256": "c7f00cb01ba87b28093934b8fdcee5b933fef6d63585b18f856769bcb6bad5d2",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/land_anything.py"
+        },
+        {
+          "content_length": 1088,
+          "content_sha256": "9119349f42ea3759095ae1f3acb5a1ef0a327e8b9f19f4baa4d10588e8dee019",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "docs/forks/land-anything.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "f6f1f86451dad02fe085f1557c4363a8f6c528f2cbc4318041acaa1fe6a763a6",
+      "payload_path": "forks/replay-ledger/payloads/f6/f6f1f86451dad02fe085f1557c4363a8f6c528f2cbc4318041acaa1fe6a763a6.json",
+      "sequence": 30,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Make land-anything compose onto existing lanes"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 30,
+  "next_sequence": 31,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-17T04:57:47.887245+00:00"
+  "updated_at": "2026-06-17T05:02:11.321590+00:00"
 }

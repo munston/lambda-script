@@ -4,6 +4,11 @@
 This is the canonical patch landing entry point for model-facing use. Targeted
 land buttons may exist as labels, but they are only conveniences: the patch
 payload decides where it belongs.
+
+If the resolved agent lane already has ahead-only work relative to the target
+integration branch, this command lands the new patch on top of that lane rather
+than trying to overwrite it from the integration base. That makes repeated JSON
+patch checkpoints compositional.
 """
 
 from __future__ import annotations
@@ -92,6 +97,35 @@ def resolve_lane(template: str, agent: str) -> str:
     return template
 
 
+def lane_remote(push_ref: str) -> str:
+    if push_ref.startswith("origin/"):
+        return push_ref
+    return "origin/" + push_ref
+
+
+def landing_base(root: Path, target_ref: str, push_ref: str) -> str:
+    """Choose the base to land onto.
+
+    The patch's target still decides the integration branch. The mutable lane is
+    the destination. If that lane already contains ahead-only work relative to
+    the target, the next JSON patch should be composed onto the lane. If the
+    lane is even, missing, or behind-only, landing starts from the target.
+    Diverged lanes are refused because automatic composition would be unsafe.
+    """
+    forks.git(["fetch", "--prune", "origin"], root)
+    remote = lane_remote(push_ref)
+    if not forks.ref_exists(root, remote):
+        return target_ref
+
+    ahead, behind = forks.ahead_behind(root, remote, target_ref)
+    state = forks.classify(ahead, behind)
+    if state == "ahead-only":
+        return remote
+    if state in {"even", "behind-only"}:
+        return target_ref
+    raise RuntimeError(f"lane is {state}; ship, sync, or resolve it before landing another patch")
+
+
 def main(argv: list[str]) -> int:
     if len(argv) != 1:
         print("usage: land-anything.bat <patch.json>", file=sys.stderr)
@@ -109,8 +143,9 @@ def main(argv: list[str]) -> int:
 
     _kind, target_ref, lane_template = patch_target(payload)
     push_ref = resolve_lane(lane_template, agent)
-
     root = forks.repo_root()
+    base_ref = landing_base(root, target_ref, push_ref)
+
     code = process_result.run_step_quiet(
         "land-anything",
         [
@@ -118,7 +153,7 @@ def main(argv: list[str]) -> int:
             script(root, "scripts/forks/land_json_patch.py"),
             "--require-file",
             "--target-ref",
-            target_ref,
+            base_ref,
             "--push-ref",
             push_ref,
             "--no-sync",
