@@ -1,0 +1,48 @@
+{
+  "format": "LS_GIZMO_V1",
+  "name": "hat",
+  "description": "Development gizmo for Hat, a small line-oriented command language that emits Haskell backends and executes them through cabal run.",
+  "gadgets": {
+    "hat": {
+      "root": "hat",
+      "language": "hat+haskell",
+      "target_ref": "origin/gadgets/hat/hat/main",
+      "integration_branch": "gadgets/hat/hat/main",
+      "agent_branch_template": "gadget-agents/hat/hat/{agent}",
+      "owned_paths": [
+        "hat/",
+        "examples/gizmos/hat.gizmo.json"
+      ],
+      "verification_profiles": {
+        "quick": [
+          "cd hat && cabal build src/hat",
+          "cd hat && cabal run src/hat -- installation_script.hat"
+        ],
+        "full": [
+          "cd hat && cabal build all",
+          "cd hat && cabal run src/hat -- installation_script.hat",
+          "cd hat && ./bin/hat installation_script.hat"
+        ]
+      },
+      "commands": {
+        "hat": "cd hat && cabal run src/hat -- {args}",
+        "install": "cd hat && cabal run src/hat -- installation_script.hat",
+        "check-install-source": "cd hat && cabal run src/hat -- installation_script.hat --check-only"
+      }
+    }
+  },
+  "imports": {
+    "lambdascript-core": {
+      "from_gizmo": "lambdascript",
+      "from_gadget": "core",
+      "mount": "toolchains/lambdascript",
+      "mode": "read-only",
+      "target_ref": "origin/gadgets/lambdascript/core/main",
+      "allowed_commands": [
+        "forks",
+        "gizmo"
+      ],
+      "write_policy": "deny"
+    }
+  }
+}
