@@ -759,15 +759,153 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Make gadget creation transport-only by default"
+    },
+    {
+      "agent": "edd",
+      "created_at": "2026-06-17T03:12:32.921218+00:00",
+      "file_count": 17,
+      "file_fingerprints": [
+        {
+          "content_length": 8327,
+          "content_sha256": "d861e5e72467a0017b7b59863a7ef5c3e4d3aadb0711f7e08e0b5bb081b263a9",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/agent_folder_submit.py"
+        },
+        {
+          "content_length": 3252,
+          "content_sha256": "67b5cce862bef950f9d48a1d543f887c133ad2510ec95e68ba552b943bf33f93",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/agent_amalgamate_agent.py"
+        },
+        {
+          "content_length": 2992,
+          "content_sha256": "07839eba01daaa6d9498adf7f76d27ff72d9363b130ff7f6826fdb7d83fcd1ab",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/gadget_amalgamate_agent.py"
+        },
+        {
+          "content_length": 2011,
+          "content_sha256": "4befad1ae1e390fde2e3659c63aa09938d0f5692e4926fd552651565802a5fac",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "docs/forks/agent-and-gadget-folder-submission.md"
+        },
+        {
+          "content_length": 104,
+          "content_sha256": "6bb5381840550ecbddcdf827db07f0431e477b5f60de0c7af0e4abd5973e5595",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "agent-submit-ed.bat"
+        },
+        {
+          "content_length": 107,
+          "content_sha256": "95a3e10f3b02c26c9f2ed077c7814b2ed01857332485e232038747da782b52c3",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "agent-amalgamate-ed.bat"
+        },
+        {
+          "content_length": 108,
+          "content_sha256": "9a0d345ae8733343f1761a36b12db2f4112549096d9ac49daf1c72f536d56af6",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "gadget-amalgamate-ed.bat"
+        },
+        {
+          "content_length": 105,
+          "content_sha256": "1ed5f3b201f8e2b85f9d6c0fbc30ab22ffe87cfb66acbbc56bfaad99af41cff8",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "agent-submit-edd.bat"
+        },
+        {
+          "content_length": 108,
+          "content_sha256": "96519f7854ca3a7db0ec8af5d691a2d495ce4cc2083bd0d809345340df469596",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "agent-amalgamate-edd.bat"
+        },
+        {
+          "content_length": 109,
+          "content_sha256": "eef188067db80fdd7bf928c7cba69772b800e03f665c9ede7622542dc487fbbf",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "gadget-amalgamate-edd.bat"
+        },
+        {
+          "content_length": 106,
+          "content_sha256": "bb57bfb384fd050d509c0eaf6fedebb0d45e142f9931f616e31e7ee49a18b25a",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "agent-submit-eddy.bat"
+        },
+        {
+          "content_length": 109,
+          "content_sha256": "f4a298a2521eb5eafd4ac7623868278332eb7df0b65d7ab6d99dff03d4c80343",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "agent-amalgamate-eddy.bat"
+        },
+        {
+          "content_length": 110,
+          "content_sha256": "ea60e50068d3a0edf5c8d2ffd81062a87c048f1e17ad11843143c8f59da162d1",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "gadget-amalgamate-eddy.bat"
+        },
+        {
+          "content_length": 105,
+          "content_sha256": "e9f7d2cca1e0bfd39d75b3148fa63f75b9114d31aa475e913a391bd0171fae7a",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "agent-submit-guy.bat"
+        },
+        {
+          "content_length": 108,
+          "content_sha256": "89327afe3e56a1666f4cb10db8be139b28539786ad3e6538f2b3edacbc59ed82",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "agent-amalgamate-guy.bat"
+        },
+        {
+          "content_length": 109,
+          "content_sha256": "74e1136ee31522d4474b61144ed23e70a26d4a35a657bfc5dd244e7aba37290c",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "gadget-amalgamate-guy.bat"
+        },
+        {
+          "content_length": 4833,
+          "content_sha256": "72aad4539927bf862074e75b899d744ccf021bc2e2816ec909f443151f364694",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "examples/gizmos/lambdascript.gizmo.json"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "8a311ba5c13b0abaccbed9fd3359e5111bd7c53af5b81891a490da10578d219c",
+      "payload_path": "forks/replay-ledger/payloads/8a/8a311ba5c13b0abaccbed9fd3359e5111bd7c53af5b81891a490da10578d219c.json",
+      "sequence": 21,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Add explicit amalgamate wrappers and repository agent folder submission"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 21,
+  "next_sequence": 22,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-16T15:05:54.813114+00:00"
+  "updated_at": "2026-06-17T03:12:32.921253+00:00"
 }

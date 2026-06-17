@@ -31,11 +31,23 @@
         "gadget-creation-ed.bat",
         "gadget-creation-edd.bat",
         "gadget-creation-eddy.bat",
-        "gadget-creation-guy.bat"
+        "gadget-creation-guy.bat",
+        "gadget-amalgamate-ed.bat",
+        "gadget-amalgamate-edd.bat",
+        "gadget-amalgamate-eddy.bat",
+        "gadget-amalgamate-guy.bat",
+        "agent-submit-ed.bat",
+        "agent-submit-edd.bat",
+        "agent-submit-eddy.bat",
+        "agent-submit-guy.bat",
+        "agent-amalgamate-ed.bat",
+        "agent-amalgamate-edd.bat",
+        "agent-amalgamate-eddy.bat",
+        "agent-amalgamate-guy.bat"
       ],
       "verification_profiles": {
         "quick": [
-          "python -m py_compile scripts/forks/forks.py scripts/forks/forks_dispatch.py scripts/forks/submission_object.py scripts/forks/import_json_patch.py scripts/forks/land_json_patch.py scripts/forks/gadget_branches.py scripts/forks/gadget_land_json.py scripts/forks/gadget_verify_profiles.py scripts/forks/gadget_promote.py scripts/forks/ensure_node_toolchains.py scripts/forks/agent_land_json.py scripts/forks/main_history.py scripts/forks/replay_plan.py scripts/forks/replay_sync.py scripts/forks/accelerator.py scripts/forks/amalgamate_all.py scripts/forks/gadget_ingest_folder.py scripts/forks/gadget_creation_agent.py"
+          "python -m py_compile scripts/forks/forks.py scripts/forks/forks_dispatch.py scripts/forks/submission_object.py scripts/forks/import_json_patch.py scripts/forks/land_json_patch.py scripts/forks/gadget_branches.py scripts/forks/gadget_land_json.py scripts/forks/gadget_verify_profiles.py scripts/forks/gadget_promote.py scripts/forks/ensure_node_toolchains.py scripts/forks/agent_land_json.py scripts/forks/main_history.py scripts/forks/replay_plan.py scripts/forks/replay_sync.py scripts/forks/accelerator.py scripts/forks/amalgamate_all.py scripts/forks/gadget_ingest_folder.py scripts/forks/gadget_creation_agent.py scripts/forks/gadget_amalgamate_safe.py scripts/forks/gadget_amalgamate_agent.py scripts/forks/agent_folder_submit.py scripts/forks/agent_amalgamate_agent.py"
         ],
         "gizmo": [
           "python scripts/forks/ensure_node_toolchains.py --install --only tools/gizmo",
@@ -59,7 +71,19 @@
         "gadget-creation-ed": "gadget-creation-ed.bat {args}",
         "gadget-creation-edd": "gadget-creation-edd.bat {args}",
         "gadget-creation-eddy": "gadget-creation-eddy.bat {args}",
-        "gadget-creation-guy": "gadget-creation-guy.bat {args}"
+        "gadget-creation-guy": "gadget-creation-guy.bat {args}",
+        "gadget-amalgamate-ed": "gadget-amalgamate-ed.bat {args}",
+        "gadget-amalgamate-edd": "gadget-amalgamate-edd.bat {args}",
+        "gadget-amalgamate-eddy": "gadget-amalgamate-eddy.bat {args}",
+        "gadget-amalgamate-guy": "gadget-amalgamate-guy.bat {args}",
+        "agent-submit-ed": "agent-submit-ed.bat {args}",
+        "agent-submit-edd": "agent-submit-edd.bat {args}",
+        "agent-submit-eddy": "agent-submit-eddy.bat {args}",
+        "agent-submit-guy": "agent-submit-guy.bat {args}",
+        "agent-amalgamate-ed": "agent-amalgamate-ed.bat {args}",
+        "agent-amalgamate-edd": "agent-amalgamate-edd.bat {args}",
+        "agent-amalgamate-eddy": "agent-amalgamate-eddy.bat {args}",
+        "agent-amalgamate-guy": "agent-amalgamate-guy.bat {args}"
       }
     },
     "wavproc": {
