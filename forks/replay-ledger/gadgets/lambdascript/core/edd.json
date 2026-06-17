@@ -1026,15 +1026,104 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Add onepush agent button"
+    },
+    {
+      "agent": "edd",
+      "created_at": "2026-06-17T04:04:05.097384+00:00",
+      "file_count": 10,
+      "file_fingerprints": [
+        {
+          "content_length": 3351,
+          "content_sha256": "c398b541d6e1783d7e884fcfa314d4a9d1d1c72a6db0cd08bee2d0b772c16c94",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/process_result.py"
+        },
+        {
+          "content_length": 4041,
+          "content_sha256": "83ef2b5f6fbf376e2f53853867a06b0bf168cee3f6adca1116da10f3189e8f7a",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/onepush_agent.py"
+        },
+        {
+          "content_length": 2859,
+          "content_sha256": "095054552474953a70e5c9e46c911ad7e58e0ab1aa5745251f5199f160cfe1da",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/targeted_onepush_create.py"
+        },
+        {
+          "content_length": 110,
+          "content_sha256": "5e3f75ef59fca04e9f1869c6b1d98ceb511c43e70dcd4ad9e9b433dba929b299",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "create-targeted-onepush.bat"
+        },
+        {
+          "content_length": 103,
+          "content_sha256": "127f7888caa2a163a311d0a29f5617bbbd9d1563ced803084fe88a2bd9beb1a0",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "onepush-ed.bat"
+        },
+        {
+          "content_length": 104,
+          "content_sha256": "e09defb0a72e91eb429e2bfc437190594629d4f5cff2687b98ec89d1aa2ac0a3",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "onepush-edd.bat"
+        },
+        {
+          "content_length": 105,
+          "content_sha256": "2f9973b22fa8148bfe328289b8102f7e8ccdbbb9597dd8868e899da74ea8c8b1",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "onepush-eddy.bat"
+        },
+        {
+          "content_length": 104,
+          "content_sha256": "2c92a2ffa87e8acbe223a4b84aa66032e804fa7a44007e8983d59b569f67eb6c",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "onepush-guy.bat"
+        },
+        {
+          "content_length": 1347,
+          "content_sha256": "cce06333f130e652a586922e00281a705f91ac02c464890623fc6a6677cb5409",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "docs/forks/onepush.md"
+        },
+        {
+          "content_length": 5353,
+          "content_sha256": "fb426bd96a49863c2a7122e5f1c12d5aed7523b3ef6220b2431011f89626358e",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "examples/gizmos/lambdascript.gizmo.json"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "f3019af96380fc3b60c351b7d3b5f357dda1948691a1a5a9b17039fa95dc31f2",
+      "payload_path": "forks/replay-ledger/payloads/f3/f3019af96380fc3b60c351b7d3b5f357dda1948691a1a5a9b17039fa95dc31f2.json",
+      "sequence": 24,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Correct targeted onepush buttons"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 24,
+  "next_sequence": 25,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-17T03:47:57.671498+00:00"
+  "updated_at": "2026-06-17T04:04:05.097413+00:00"
 }

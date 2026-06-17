@@ -1,62 +1,62 @@
-# Onepush button contract
+# Targeted onepush
 
-`onepush-<agent>.bat` is the single high-level submission button for an agent.
+`create-targeted-onepush.bat` creates project-specific onepush buttons.
 
-There are no mode words. The only behavioural switch is `--ship`.
+A generated `onepush-<name>.bat` hardcodes:
 
-Without `--ship`, onepush submits a checkpoint to the relevant lane and stops:
+- agent
+- gizmo
+- gadget
+- normal source directory
+- destination path in the gadget branch
 
-- gadget work goes to `gadget-agents/<gizmo>/<gadget>/<agent>`
-- repository work goes to `agents/<agent>`
-
-With `--ship`, onepush submits first when a source folder is supplied, then
-amalgamates and syncs.
-
-## Gadget checkpoint
+The generated button accepts only two runtime controls:
 
 ```bat
-onepush-edd.bat lambda-script lambda-script ^
-  "C:\path\to\projects\lambda-script" ^
-  --dest "projects\lambda-script" ^
-  --replace ^
-  --message "Checkpoint Haskell migration"
+--ship
+--init-from-dir <directory>
 ```
 
-## Gadget ship
+No target, destination, verifier, replace flag, or message flag is supplied during normal use.
 
-Ship existing lane work:
+## Create a button
 
 ```bat
-onepush-edd.bat --ship lambda-script lambda-script
+create-targeted-onepush.bat lambda-script-edd edd lambda-script lambda-script ^
+  "C:\Users\guyas\Desktop\codebase\7\ollama.wires\projects\lambda-script" ^
+  "projects\lambda-script"
 ```
 
-Submit and ship in one call:
+This writes:
 
 ```bat
-onepush-edd.bat --ship lambda-script lambda-script ^
-  "C:\path\to\projects\lambda-script" ^
-  --dest "projects\lambda-script" ^
-  --replace ^
-  --message "Sign over Haskell migration"
+onepush-lambda-script-edd.bat
 ```
 
-## Repository-agent checkpoint
+## Use the button
+
+Submit the hardcoded source folder to the hardcoded gadget-agent lane:
 
 ```bat
-onepush-edd.bat --repo "C:\path\to\folder" --dest "repo/path" --replace
+onepush-lambda-script-edd.bat
 ```
 
-## Repository-agent ship
+Submit and ship:
 
 ```bat
-onepush-edd.bat --ship --repo
+onepush-lambda-script-edd.bat --ship
 ```
 
-## Durability invariant
+First materialisation from a directory:
 
-A lane head is mutable. It may be rewound by a later signover. The durable unit is
-the captured submission/replay materialisation. A `onepush` checkpoint must remain
-recoverable even if a later `--ship` syncs the lane back to the integration ref.
+```bat
+onepush-lambda-script-edd.bat --init-from-dir "C:\path\to\folder"
+```
 
-Therefore shipping must capture the lane into the submission/replay stream before
-any lane sync or rewind is allowed.
+First materialisation and ship:
+
+```bat
+onepush-lambda-script-edd.bat --ship --init-from-dir "C:\path\to\folder"
+```
+
+The mutable lane may later be rewound by a successful ship. The durable unit is the captured submission/replay result, so prior onepush submissions must remain recoverable even when a later ship aligns lanes.
