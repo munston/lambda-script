@@ -958,15 +958,83 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Add pruned process-result summaries to core wrappers"
+    },
+    {
+      "agent": "edd",
+      "created_at": "2026-06-17T03:47:57.671475+00:00",
+      "file_count": 7,
+      "file_fingerprints": [
+        {
+          "content_length": 10254,
+          "content_sha256": "2dcf79668281a4c161d7cb925d86162ab9c28ecd978c9b707889c4019f26f349",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/onepush_agent.py"
+        },
+        {
+          "content_length": 98,
+          "content_sha256": "fb46f8ffc0fb766f2a7b59b8e3b1d4fd8c2bb39b78caa2b3a68987abec243488",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "onepush-ed.bat"
+        },
+        {
+          "content_length": 99,
+          "content_sha256": "621948e5fe541707db19b3269c3d06b3f268dafb53ba05a4037ea8f3014e60a9",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "onepush-edd.bat"
+        },
+        {
+          "content_length": 100,
+          "content_sha256": "6c034eed25b33a621a983afe8bc6f95032fc14124da41e04ffcc02e5fb041a7a",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "onepush-eddy.bat"
+        },
+        {
+          "content_length": 99,
+          "content_sha256": "21867025204334485bd6a401645b976b7fe3cf15ab030393df07157cc7b1d7e7",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "onepush-guy.bat"
+        },
+        {
+          "content_length": 1581,
+          "content_sha256": "e28c8f590a953202caa797a29a487a0c7f7b4a1d61507e4dc318233569b834b7",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "docs/forks/onepush.md"
+        },
+        {
+          "content_length": 5168,
+          "content_sha256": "f34def3130c48a3c2d8b4d67049d53de46481aa02f2740752b754fdd1ec357ef",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "examples/gizmos/lambdascript.gizmo.json"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "8467778dd44656adaea96b205ec4f1965ea21a1b379cde6a367c10c1785dee2f",
+      "payload_path": "forks/replay-ledger/payloads/84/8467778dd44656adaea96b205ec4f1965ea21a1b379cde6a367c10c1785dee2f.json",
+      "sequence": 23,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Add onepush agent button"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 23,
+  "next_sequence": 24,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-17T03:26:21.448042+00:00"
+  "updated_at": "2026-06-17T03:47:57.671498+00:00"
 }

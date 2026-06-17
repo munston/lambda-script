@@ -43,11 +43,15 @@
         "agent-amalgamate-ed.bat",
         "agent-amalgamate-edd.bat",
         "agent-amalgamate-eddy.bat",
-        "agent-amalgamate-guy.bat"
+        "agent-amalgamate-guy.bat",
+        "onepush-ed.bat",
+        "onepush-edd.bat",
+        "onepush-eddy.bat",
+        "onepush-guy.bat"
       ],
       "verification_profiles": {
         "quick": [
-          "python -m py_compile scripts/forks/forks.py scripts/forks/forks_dispatch.py scripts/forks/submission_object.py scripts/forks/import_json_patch.py scripts/forks/land_json_patch.py scripts/forks/gadget_branches.py scripts/forks/gadget_land_json.py scripts/forks/gadget_verify_profiles.py scripts/forks/gadget_promote.py scripts/forks/ensure_node_toolchains.py scripts/forks/agent_land_json.py scripts/forks/main_history.py scripts/forks/replay_plan.py scripts/forks/replay_sync.py scripts/forks/accelerator.py scripts/forks/amalgamate_all.py scripts/forks/gadget_ingest_folder.py scripts/forks/gadget_creation_agent.py scripts/forks/gadget_amalgamate_safe.py scripts/forks/gadget_amalgamate_agent.py scripts/forks/agent_folder_submit.py scripts/forks/agent_amalgamate_agent.py scripts/forks/process_result.py"
+          "python -m py_compile scripts/forks/forks.py scripts/forks/forks_dispatch.py scripts/forks/submission_object.py scripts/forks/import_json_patch.py scripts/forks/land_json_patch.py scripts/forks/gadget_branches.py scripts/forks/gadget_land_json.py scripts/forks/gadget_verify_profiles.py scripts/forks/gadget_promote.py scripts/forks/ensure_node_toolchains.py scripts/forks/agent_land_json.py scripts/forks/main_history.py scripts/forks/replay_plan.py scripts/forks/replay_sync.py scripts/forks/accelerator.py scripts/forks/amalgamate_all.py scripts/forks/gadget_ingest_folder.py scripts/forks/gadget_creation_agent.py scripts/forks/gadget_amalgamate_safe.py scripts/forks/gadget_amalgamate_agent.py scripts/forks/agent_folder_submit.py scripts/forks/agent_amalgamate_agent.py scripts/forks/onepush_agent.py"
         ],
         "gizmo": [
           "python scripts/forks/ensure_node_toolchains.py --install --only tools/gizmo",
@@ -83,7 +87,11 @@
         "agent-amalgamate-ed": "agent-amalgamate-ed.bat {args}",
         "agent-amalgamate-edd": "agent-amalgamate-edd.bat {args}",
         "agent-amalgamate-eddy": "agent-amalgamate-eddy.bat {args}",
-        "agent-amalgamate-guy": "agent-amalgamate-guy.bat {args}"
+        "agent-amalgamate-guy": "agent-amalgamate-guy.bat {args}",
+        "onepush-ed": "onepush-ed.bat {args}",
+        "onepush-edd": "onepush-edd.bat {args}",
+        "onepush-eddy": "onepush-eddy.bat {args}",
+        "onepush-guy": "onepush-guy.bat {args}"
       }
     },
     "wavproc": {
