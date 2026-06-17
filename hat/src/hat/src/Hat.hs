@@ -7,7 +7,7 @@ module Hat
 
 import Control.Monad (unless, when)
 import Data.Bits (xor, (.&.))
-import Data.Char (isSpace, ord)
+import Data.Char (isDigit, isSpace, ord, toLower)
 import Data.List (isPrefixOf)
 import Numeric (showHex)
 import System.Directory (createDirectoryIfMissing, doesFileExist, makeAbsolute)
@@ -15,10 +15,16 @@ import System.Environment (getArgs)
 import System.Exit (ExitCode(..), exitWith)
 import System.FilePath ((</>), takeBaseName, takeDirectory, takeFileName)
 import System.IO (hPutStrLn, stderr)
-import System.Process (CreateProcess(..), proc, waitForProcess, createProcess)
+import System.Process (CreateProcess(..), createProcess, proc, waitForProcess)
 
+-- Hat deliberately models only a tiny, auditable subset of batch-style wrapper
+-- files: comments, directory changes, directory creation, and per-line command
+-- invocation with positional argument forwarding. It is not a cmd.exe clone and
+-- must not grow support for control-flow, fallback trees, redirection, pipes, or
+-- ambient batch expansion. A select .bat can become .hat by extension change only
+-- when every line already fits this strict subset and the first-line hash is set.
 backendVersion :: String
-backendVersion = "hat-backend-v2"
+backendVersion = "hat-backend-v3"
 
 data HatFile = HatFile
   { hatPath :: FilePath
@@ -27,12 +33,9 @@ data HatFile = HatFile
   } deriving (Eq, Show)
 
 data HatCommand
-  = HatSay [String]
-  | HatCd String
+  = HatCd String
   | HatMkdir String
-  | HatRun String [String]
-  | HatCabalRun String [String]
-  | HatInstallCopy String String
+  | HatExec String [String]
   deriving (Eq, Show)
 
 mainHat :: IO ()
@@ -68,11 +71,22 @@ readHatFile path = do
 
 parseHashLine :: String -> Maybe String
 parseHashLine line =
-  case stripPrefixSimple "# hat-hash:" line of
-    Just rest -> Just (trim rest)
-    Nothing -> case stripPrefixSimple "# hat-sha256:" line of
-      Just rest -> Just (trim rest)
-      Nothing -> Nothing
+  firstJust
+    [ stripPrefixSimple "# hat-hash:" raw
+    , stripPrefixSimple "# hat-sha256:" raw
+    , stripPrefixSimple "rem hat-hash:" low
+    , stripPrefixSimple "rem hat-sha256:" low
+    , stripPrefixSimple ":: hat-hash:" low
+    , stripPrefixSimple ":: hat-sha256:" low
+    ]
+  where
+    raw = trim line
+    low = map toLower raw
+
+firstJust :: [Maybe String] -> Maybe String
+firstJust [] = Nothing
+firstJust (Nothing:xs) = firstJust xs
+firstJust (Just x:_) = Just (trim x)
 
 stripPrefixSimple :: String -> String -> Maybe String
 stripPrefixSimple p s
@@ -91,32 +105,56 @@ fingerprintText = pad16 . foldl step offset
 parseHatBody :: String -> IO [HatCommand]
 parseHatBody body = mapM parseLine numbered
   where
-    meaningful = filter (not . null . trim . snd) (zip [(1 :: Int)..] (lines body))
-    numbered = filter (not . isPrefixOf "#" . trim . snd) meaningful
+    ls = zip [(1 :: Int)..] (lines body)
+    numbered = filter (not . skipLine . snd) ls
+
+skipLine :: String -> Bool
+skipLine raw =
+  let s = trim raw
+      l = map toLower s
+  in null s || "#" `isPrefixOf` s || "rem " `isPrefixOf` l || "::" `isPrefixOf` l
 
 parseLine :: (Int, String) -> IO HatCommand
 parseLine (n, raw) = do
+  rejectBatchSyntax n raw
   toks <- either (fail . prefix) pure (lexHatLine raw)
   case toks of
     [] -> fail (prefix "empty command")
-    ["hat", _] -> pure (HatSay [])
-    "say":xs -> pure (HatSay xs)
+    ["cd", "/d", dir] -> pure (HatCd dir)
     ["cd", dir] -> pure (HatCd dir)
     ["mkdir", dir] -> pure (HatMkdir dir)
-    "run":prog:args -> pure (HatRun prog args)
-    "cabal-run":target:args -> pure (HatCabalRun target args)
-    ["install-copy", exe, dir] -> pure (HatInstallCopy exe dir)
-    _ -> fail (prefix ("unsupported command: " ++ raw))
+    "run":prog:args -> pure (HatExec prog args)
+    prog:args -> pure (HatExec prog args)
   where
     prefix msg = "hat line " ++ show n ++ ": " ++ msg
+
+rejectBatchSyntax :: Int -> String -> IO ()
+rejectBatchSyntax n raw = do
+  toks <- either (fail . prefix) pure (lexHatLine raw)
+  when (any forbiddenToken toks)
+    (fail (prefix "outside Hat's per-line invocation subset"))
+  when (any badPercent toks)
+    (fail (prefix "unsupported batch percent expansion; only %1..%9 and %* are allowed"))
+  case toks of
+    [] -> pure ()
+    first:_ -> when (map toLower first `elem` forbiddenWords || "@" `isPrefixOf` first || ":" `isPrefixOf` first)
+      (fail (prefix "unsupported batch control syntax"))
+  where
+    prefix msg = "hat line " ++ show n ++ ": " ++ msg
+    forbiddenWords = ["@echo", "echo", "set", "setlocal", "endlocal", "if", "for", "goto", "call", "pause", "exit", "shift"]
+    forbiddenRaw = ["&&", "||", "|", ">", "<", "2>", "1>"]
+    forbiddenToken tok = tok `elem` forbiddenRaw
+    badPercent tok = '%' `elem` tok && not (tok == "%*" || validPercentPos tok)
+    validPercentPos ('%':xs) = not (null xs) && all isDigit xs
+    validPercentPos _ = False
 
 lexHatLine :: String -> Either String [String]
 lexHatLine = go [] [] Outside
   where
-    dataStateError = Left "unterminated quoted string"
+    unterminated = Left "unterminated quoted string"
     go acc cur mode [] =
       case mode of
-        InQuote -> dataStateError
+        InQuote -> unterminated
         _ -> Right (reverse (finish acc cur))
     go acc cur Outside (c:cs)
       | isSpace c = go (finish acc cur) [] Outside cs
@@ -174,7 +212,6 @@ renderGenerated hf = unlines $ header ++ concatMap renderCommand (hatCommands hf
       , "import System.Directory (createDirectoryIfMissing, setCurrentDirectory)"
       , "import System.Environment (getArgs)"
       , "import System.Exit (ExitCode(..), exitWith)"
-      , "import System.FilePath ((</>))"
       , "import System.Process (rawSystem)"
       , "main :: IO ()"
       , "main = do"
@@ -188,14 +225,15 @@ renderGenerated hf = unlines $ header ++ concatMap renderCommand (hatCommands hf
       , "expand runtime = concatMap (expandOne runtime)"
       , "expandOne :: [String] -> String -> [String]"
       , "expandOne runtime tok"
-      , "  | tok == \"$@\" = runtime"
+      , "  | tok == \"$@\" || tok == \"%*\" = runtime"
       , "  | isPosArg tok = maybe [] (\\x -> [x]) (pickArg runtime tok)"
       , "  | otherwise = [tok]"
       , "isPosArg :: String -> Bool"
       , "isPosArg ('$':xs) = not (null xs) && all isDigit xs"
+      , "isPosArg ('%':xs) = not (null xs) && all isDigit xs"
       , "isPosArg _ = False"
       , "pickArg :: [String] -> String -> Maybe String"
-      , "pickArg runtime ('$':xs) = case reads xs of"
+      , "pickArg runtime (_:xs) = case reads xs of"
       , "  [(n, \"\")] | n > 0 && n <= length runtime -> Just (runtime !! (n - 1))"
       , "  _ -> Nothing"
       , "pickArg _ _ = Nothing"
@@ -210,17 +248,9 @@ renderGenerated hf = unlines $ header ++ concatMap renderCommand (hatCommands hf
 renderCommand :: HatCommand -> [String]
 renderCommand cmd =
   case cmd of
-    HatSay [] -> []
-    HatSay toks -> ["  putStrLn (unwords (expand hatArgs " ++ show toks ++ "))"]
     HatCd dir -> ["  case expand hatArgs " ++ show [dir] ++ " of", "    [d] -> setCurrentDirectory d", "    _ -> fail \"hat cd expects one path after expansion\""]
     HatMkdir dir -> ["  case expand hatArgs " ++ show [dir] ++ " of", "    [d] -> createDirectoryIfMissing True d", "    _ -> fail \"hat mkdir expects one path after expansion\""]
-    HatRun prog args -> ["  runStep " ++ show prog ++ " (expand hatArgs " ++ show args ++ ")"]
-    HatCabalRun target args -> ["  runStep \"cabal\" ([\"run\", " ++ show target ++ ", \"--\"] ++ expand hatArgs " ++ show args ++ ")"]
-    HatInstallCopy exe dir ->
-      [ "  let installDir = root </> " ++ show dir
-      , "  createDirectoryIfMissing True installDir"
-      , "  runStep \"cabal\" [\"install\", \"exe:" ++ exe ++ "\", \"--install-method=copy\", \"--overwrite-policy=always\", \"--installdir=\" ++ installDir]"
-      ]
+    HatExec prog args -> ["  runStep " ++ show prog ++ " (expand hatArgs " ++ show args ++ ")"]
 
 runHatFile :: FilePath -> [String] -> IO ()
 runHatFile path extra = do
