@@ -1,6 +1,6 @@
 module Main where
 
-import Hat (message)
+import Hat (mainHat)
 
 main :: IO ()
-main = putStrLn message
+main = mainHat
