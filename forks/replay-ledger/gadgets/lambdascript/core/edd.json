@@ -1303,15 +1303,41 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Add JSON-routed universal landing button"
+    },
+    {
+      "agent": "edd",
+      "created_at": "2026-06-17T04:57:47.887223+00:00",
+      "file_count": 1,
+      "file_fingerprints": [
+        {
+          "content_length": 5166,
+          "content_sha256": "bf2f75b01f0a9f03eae7d8370d5ae0ea50bcee9297005d9bdc3746e000e36068",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/process_result.py"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "5ecd60e55a6e249f8419d15636aa81fa9c394a1f8eb2181672361ee118f54ab2",
+      "payload_path": "forks/replay-ledger/payloads/5e/5ecd60e55a6e249f8419d15636aa81fa9c394a1f8eb2181672361ee118f54ab2.json",
+      "sequence": 29,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Add quiet process-result compatibility helper"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 29,
+  "next_sequence": 30,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-17T04:47:35.222952+00:00"
+  "updated_at": "2026-06-17T04:57:47.887245+00:00"
 }

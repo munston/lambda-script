@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Minimal hierarchical process output for agent-facing buttons.
 
-The button-level contract is deliberately narrow: successful inner tools are
-silent, and failed inner tools report only the failed stage plus a short root
-cause. Full child output is captured for parsing, then discarded from the
-interactive transcript.
+Successful inner tools are normally silent. Failed inner tools report only the
+failed stage plus a short root-cause summary. Full child output is captured for
+parsing, then discarded from the interactive transcript.
 """
 
 from __future__ import annotations
@@ -170,3 +169,12 @@ def run_step(
     result = run_captured(label, args, cwd)
     print_process_result(result, print_ok=print_ok, failure_label=failure_label)
     return result.returncode
+
+
+def run_step_quiet(label: str, args: list[str], cwd: Path) -> int:
+    """Compatibility helper for target-facing buttons.
+
+    Success produces no child-tool output. Failure prints the stage name and a
+    pruned root-cause summary.
+    """
+    return run_step(label, args, cwd, print_ok=False)
