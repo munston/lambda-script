@@ -1,6 +1,5 @@
 module Hat
-  ( message
-  , mainHat
+  ( mainHat
   , fingerprintText
   , checkHatFile
   , emitHatFile
@@ -11,59 +10,38 @@ import Data.Bits (xor, (.&.))
 import Data.Char (isSpace, ord)
 import Data.List (isPrefixOf)
 import Numeric (showHex)
-import System.Directory (doesFileExist)
+import System.Directory (createDirectoryIfMissing, doesFileExist, makeAbsolute)
 import System.Environment (getArgs)
 import System.Exit (ExitCode(..), exitWith)
-import System.FilePath (replaceExtension, takeDirectory, takeFileName)
+import System.FilePath ((</>), takeBaseName, takeDirectory, takeFileName)
 import System.IO (hPutStrLn, stderr)
 import System.Process (CreateProcess(..), proc, waitForProcess, createProcess)
 
-message :: String
-message = "hat!"
+backendVersion :: String
+backendVersion = "hat-backend-v2"
 
 data HatFile = HatFile
   { hatPath :: FilePath
   , hatDeclaredHash :: String
-  , hatBody :: String
   , hatCommands :: [HatCommand]
   } deriving (Eq, Show)
 
 data HatCommand
-  = HatSay String
-  | HatCd FilePath
-  | HatMkdir FilePath
+  = HatSay [String]
+  | HatCd String
+  | HatMkdir String
   | HatRun String [String]
-  | HatInstallCopy String FilePath
+  | HatCabalRun String [String]
+  | HatInstallCopy String String
   deriving (Eq, Show)
 
 mainHat :: IO ()
 mainHat = do
   args <- getArgs
   case args of
-    [] -> putStrLn message
-    ["help"] -> usage
-    ["hash", file] -> fingerprintText . snd <$> splitHatFile file >>= putStrLn
-    ["check", file] -> checkHatFile file >>= printCheck
-    ["emit", file] -> emitHatFile file >>= putStrLn
-    ["run", file] -> runHatFile file []
-    "run":file:"--":rest -> runHatFile file rest
-    "run":file:rest -> runHatFile file rest
-    ["stamp", file] -> stampHatFile file
-    _ -> hPutStrLn stderr "hat: invalid arguments" >> usage >> exitWith (ExitFailure 2)
-
-usage :: IO ()
-usage = do
-  putStrLn "hat commands:"
-  putStrLn "  hat"
-  putStrLn "  hat help"
-  putStrLn "  hat hash FILE.hat"
-  putStrLn "  hat check FILE.hat"
-  putStrLn "  hat stamp FILE.hat"
-  putStrLn "  hat emit FILE.hat"
-  putStrLn "  hat run FILE.hat [-- ARGS...]"
-
-printCheck :: Bool -> IO ()
-printCheck ok = putStrLn (if ok then "hat: fingerprint ok" else "hat: fingerprint mismatch") >> unless ok (exitWith (ExitFailure 1))
+    file:rest
+      | ".hat" `isSuffixOfSimple` file -> runHatFile file rest
+    _ -> hPutStrLn stderr "hat: expected FILE.hat [ARGS...]" >> exitWith (ExitFailure 2)
 
 splitHatFile :: FilePath -> IO (String, String)
 splitHatFile path = do
@@ -86,26 +64,20 @@ readHatFile path = do
   let actual = fingerprintText body
   unless (declared == actual) (fail ("hat hash mismatch: declared=" ++ declared ++ " actual=" ++ actual))
   cmds <- parseHatBody body
-  pure HatFile { hatPath = path, hatDeclaredHash = declared, hatBody = body, hatCommands = cmds }
+  pure HatFile { hatPath = path, hatDeclaredHash = declared, hatCommands = cmds }
 
 parseHashLine :: String -> Maybe String
 parseHashLine line =
-  case stripPrefix "# hat-hash:" line of
+  case stripPrefixSimple "# hat-hash:" line of
     Just rest -> Just (trim rest)
-    Nothing -> case stripPrefix "# hat-sha256:" line of
+    Nothing -> case stripPrefixSimple "# hat-sha256:" line of
       Just rest -> Just (trim rest)
       Nothing -> Nothing
 
-stripPrefix :: String -> String -> Maybe String
-stripPrefix p s
+stripPrefixSimple :: String -> String -> Maybe String
+stripPrefixSimple p s
   | p `isPrefixOf` s = Just (drop (length p) s)
   | otherwise = Nothing
-
-stampHatFile :: FilePath -> IO ()
-stampHatFile path = do
-  (_, body) <- splitHatFile path
-  writeFile path ("# hat-hash: " ++ fingerprintText body ++ "\n" ++ body)
-  putStrLn ("hat: stamped " ++ path)
 
 fingerprintText :: String -> String
 fingerprintText = pad16 . foldl step offset
@@ -123,28 +95,68 @@ parseHatBody body = mapM parseLine numbered
     numbered = filter (not . isPrefixOf "#" . trim . snd) meaningful
 
 parseLine :: (Int, String) -> IO HatCommand
-parseLine (n, raw) =
-  case words raw of
-    ["hat", _] -> pure (HatSay "")
-    "say":xs -> pure (HatSay (unwords xs))
+parseLine (n, raw) = do
+  toks <- either (fail . prefix) pure (lexHatLine raw)
+  case toks of
+    [] -> fail (prefix "empty command")
+    ["hat", _] -> pure (HatSay [])
+    "say":xs -> pure (HatSay xs)
     ["cd", dir] -> pure (HatCd dir)
     ["mkdir", dir] -> pure (HatMkdir dir)
     "run":prog:args -> pure (HatRun prog args)
+    "cabal-run":target:args -> pure (HatCabalRun target args)
     ["install-copy", exe, dir] -> pure (HatInstallCopy exe dir)
-    _ -> fail ("unsupported hat command at line " ++ show n ++ ": " ++ raw)
+    _ -> fail (prefix ("unsupported command: " ++ raw))
+  where
+    prefix msg = "hat line " ++ show n ++ ": " ++ msg
+
+lexHatLine :: String -> Either String [String]
+lexHatLine = go [] [] Outside
+  where
+    dataStateError = Left "unterminated quoted string"
+    go acc cur mode [] =
+      case mode of
+        InQuote -> dataStateError
+        _ -> Right (reverse (finish acc cur))
+    go acc cur Outside (c:cs)
+      | isSpace c = go (finish acc cur) [] Outside cs
+      | c == '"' = go acc cur InQuote cs
+      | c == '\\' = case cs of
+          [] -> go acc (c:cur) Outside []
+          d:ds -> go acc (d:cur) Outside ds
+      | otherwise = go acc (c:cur) Outside cs
+    go acc cur InQuote (c:cs)
+      | c == '"' = go acc cur Outside cs
+      | c == '\\' = case cs of
+          [] -> go acc (c:cur) InQuote []
+          d:ds -> go acc (d:cur) InQuote ds
+      | otherwise = go acc (c:cur) InQuote cs
+    finish acc [] = acc
+    finish acc cur = reverse cur : acc
+
+data LexMode = Outside | InQuote deriving Eq
 
 emitHatFile :: FilePath -> IO FilePath
 emitHatFile path = do
-  hf <- readHatFile path
-  let out = replaceExtension path "hs"
+  absolute <- makeAbsolute path
+  hf <- readHatFile absolute
+  let out = backendPath absolute (hatDeclaredHash hf)
       generated = renderGenerated hf
+  createDirectoryIfMissing True (takeDirectory out)
   exists <- doesFileExist out
   stale <- if exists then not . hasGeneratedHash (hatDeclaredHash hf) <$> readFile out else pure True
   when stale (writeFile out generated)
   pure out
 
+backendPath :: FilePath -> String -> FilePath
+backendPath path h =
+  takeDirectory path </> ".hat-cache" </> (takeBaseName path ++ "-" ++ h ++ "-" ++ backendVersion ++ ".hs")
+
 hasGeneratedHash :: String -> String -> Bool
-hasGeneratedHash h src = ("-- hat-source-hash: " ++ h) `elem` take 8 (lines src)
+hasGeneratedHash h src =
+  let header = take 10 (lines src)
+  in ("-- hat-source-hash: " ++ h) `elem` header
+     && ("-- hat-backend-version: " ++ backendVersion) `elem` header
 
 renderGenerated :: HatFile -> String
 renderGenerated hf = unlines $ header ++ concatMap renderCommand (hatCommands hf) ++ footer
@@ -156,17 +168,37 @@ renderGenerated hf = unlines $ header ++ concatMap renderCommand (hatCommands hf
       , "-}"
       , "-- generated-from: " ++ takeFileName (hatPath hf)
       , "-- hat-source-hash: " ++ hatDeclaredHash hf
+      , "-- hat-backend-version: " ++ backendVersion
       , "module Main where"
-      , "import System.Directory (createDirectoryIfMissing, getCurrentDirectory, setCurrentDirectory)"
+      , "import Data.Char (isDigit)"
+      , "import System.Directory (createDirectoryIfMissing, setCurrentDirectory)"
+      , "import System.Environment (getArgs)"
       , "import System.Exit (ExitCode(..), exitWith)"
       , "import System.FilePath ((</>))"
       , "import System.Process (rawSystem)"
       , "main :: IO ()"
       , "main = do"
-      , "  root <- getCurrentDirectory"
+      , "  hatArgs <- getArgs"
+      , "  let root = " ++ show (takeDirectory (hatPath hf))
+      , "  setCurrentDirectory root"
       ]
     footer =
       [ "  pure ()"
+      , "expand :: [String] -> [String] -> [String]"
+      , "expand runtime = concatMap (expandOne runtime)"
+      , "expandOne :: [String] -> String -> [String]"
+      , "expandOne runtime tok"
+      , "  | tok == \"$@\" = runtime"
+      , "  | isPosArg tok = maybe [] (\\x -> [x]) (pickArg runtime tok)"
+      , "  | otherwise = [tok]"
+      , "isPosArg :: String -> Bool"
+      , "isPosArg ('$':xs) = not (null xs) && all isDigit xs"
+      , "isPosArg _ = False"
+      , "pickArg :: [String] -> String -> Maybe String"
+      , "pickArg runtime ('$':xs) = case reads xs of"
+      , "  [(n, \"\")] | n > 0 && n <= length runtime -> Just (runtime !! (n - 1))"
+      , "  _ -> Nothing"
+      , "pickArg _ _ = Nothing"
       , "runStep :: String -> [String] -> IO ()"
       , "runStep prog args = do"
       , "  code <- rawSystem prog args"
@@ -178,11 +210,12 @@ renderGenerated hf = unlines $ header ++ concatMap renderCommand (hatCommands hf
 renderCommand :: HatCommand -> [String]
 renderCommand cmd =
   case cmd of
-    HatSay "" -> []
-    HatSay msg -> ["  putStrLn " ++ show msg]
-    HatCd dir -> ["  setCurrentDirectory " ++ show dir]
-    HatMkdir dir -> ["  createDirectoryIfMissing True " ++ show dir]
-    HatRun prog args -> ["  runStep " ++ show prog ++ " " ++ show args]
+    HatSay [] -> []
+    HatSay toks -> ["  putStrLn (unwords (expand hatArgs " ++ show toks ++ "))"]
+    HatCd dir -> ["  case expand hatArgs " ++ show [dir] ++ " of", "    [d] -> setCurrentDirectory d", "    _ -> fail \"hat cd expects one path after expansion\""]
+    HatMkdir dir -> ["  case expand hatArgs " ++ show [dir] ++ " of", "    [d] -> createDirectoryIfMissing True d", "    _ -> fail \"hat mkdir expects one path after expansion\""]
+    HatRun prog args -> ["  runStep " ++ show prog ++ " (expand hatArgs " ++ show args ++ ")"]
+    HatCabalRun target args -> ["  runStep \"cabal\" ([\"run\", " ++ show target ++ ", \"--\"] ++ expand hatArgs " ++ show args ++ ")"]
     HatInstallCopy exe dir ->
       [ "  let installDir = root </> " ++ show dir
       , "  createDirectoryIfMissing True installDir"
@@ -194,9 +227,12 @@ runHatFile path extra = do
   out <- emitHatFile path
   let dir = takeDirectory out
       file = takeFileName out
-  (_, _, _, ph) <- createProcess (proc "cabal" (["run", file] ++ extra)) { cwd = Just dir }
+  (_, _, _, ph) <- createProcess (proc "cabal" (["run", file, "--"] ++ extra)) { cwd = Just dir }
   code <- waitForProcess ph
   exitWith code
 
 trim :: String -> String
 trim = dropWhile isSpace . reverse . dropWhile isSpace . reverse
+
+isSuffixOfSimple :: String -> String -> Bool
+isSuffixOfSimple suffix s = reverse suffix `isPrefixOf` reverse s
