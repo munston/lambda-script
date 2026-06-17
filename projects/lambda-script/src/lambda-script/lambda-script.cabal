@@ -28,12 +28,16 @@ library
       , LambdaScript.Forks.Git
       , LambdaScript.Forks.Hash
       , LambdaScript.Forks.Patch
+      , LambdaScript.Forks.ProcessResult
       , LambdaScript.Forks.ReplayLedger
       , LambdaScript.Forks.Land
       , LambdaScript.Forks.Gadget
       , LambdaScript.Forks.MainHistory
       , LambdaScript.Forks.Amalgamate
       , LambdaScript.Forks.Submission
+      , LambdaScript.Forks.Target
+      , LambdaScript.Sandbox.Config
+      , LambdaScript.Sandbox.Command
 
   hs-source-dirs:
       lib
@@ -71,6 +75,22 @@ executable lambda-script
       , lambda-script
 
 
+
+  default-language:
+      Haskell2010
+  ghc-options: -Wall
+
+executable sandbox
+  main-is:
+      Main.hs
+  hs-source-dirs:
+      sandbox
+  build-depends:
+      base >=4.14 && <5
+      , directory
+      , filepath
+      , process >=1.6
+      , lambda-script
 
   default-language:
       Haskell2010

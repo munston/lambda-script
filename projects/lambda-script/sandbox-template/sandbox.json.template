@@ -1,0 +1,4 @@
+{
+  "tool_root": "<absolute-path-to-ollama.wires>/foreign-language/lambda-script",
+  "button": "lambda-script-edd"
+}

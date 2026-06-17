@@ -1,0 +1,53 @@
+{
+  "created_at": "2026-06-17T08:08:53.615315+00:00",
+  "format": "LS_FORK_REPLAY_PAYLOAD_V1",
+  "json_patch_sha256": "8831e8fc41a7a17f39992aacf6c7b7c82a93645793f2ef99beb059b50e65d887",
+  "payload": {
+    "agent": "edd",
+    "files": [
+      {
+        "content": "cabal-version: 3.0\n-- generated-by: wires cast 0.1\nname: lambda-script\nversion: 0.1.0.0\nbuild-type: Simple\n\nlibrary\n  exposed-modules:\n      LambdaScript\n\n  other-modules:\n      LambdaScript.Paths\n      , LambdaScript.Parser.Parser\n      , LambdaScript.Core.Program\n      , LambdaScript.Core.Diagnostic\n      , LambdaScript.Core.Check\n      , LambdaScript.Core.Ast\n      , LambdaScript.Compiler\n      , LambdaScript.Codegen.Haskell\n      , LambdaScript.Codegen.TypeScript\n      , LambdaScript.Bridge.Endpoint\n      , LambdaScript.Bridge.Bridge\n      , LambdaScript.Runtime.CppForeign\n      , LambdaScript.Gizmo.Types\n      , LambdaScript.Gizmo.Manifest\n      , LambdaScript.Gizmo.Runner\n      , LambdaScript.Forks\n      , LambdaScript.Forks.Git\n      , LambdaScript.Forks.Hash\n      , LambdaScript.Forks.Patch\n      , LambdaScript.Forks.ReplayLedger\n      , LambdaScript.Forks.Land\n      , LambdaScript.Forks.Gadget\n      , LambdaScript.Forks.MainHistory\n      , LambdaScript.Forks.Amalgamate\n      , LambdaScript.Forks.Submission\n\n  hs-source-dirs:\n      lib\n  build-depends:\n      base >=4.14 && <5\n      , aeson >=2.0\n      , bytestring\n      , directory\n      , filepath\n      , folders\n      , containers\n      , process >=1.6\n      , text\n      , SHA\n      , scientific\n      , time\n\n\n\n  default-language:\n      Haskell2010\n  ghc-options: -Wall\n\nexecutable lambda-script\n  main-is:\n      Main.hs\n  hs-source-dirs:\n      exe\n  build-depends:\n      base >=4.14 && <5\n      , directory\n      , filepath\n      , folders\n      , containers\n      , lambda-script\n\n\n\n  default-language:\n      Haskell2010\n  ghc-options: -Wall\n\nexecutable sandbox\n  main-is:\n      Main.hs\n  hs-source-dirs:\n      sandbox\n  build-depends:\n      base >=4.14 && <5\n      , aeson >=2.0\n      , bytestring\n      , directory\n      , filepath\n      , process >=1.6\n      , text\n\n  default-language:\n      Haskell2010\n  ghc-options: -Wall\n\ntest-suite lambda-script-cog\n  type:\n      exitcode-stdio-1.0\n  main-is:\n      CogMain.hs\n  hs-source-dirs:\n      cog\n\n  build-depends:\n      base >=4.14 && <5\n      , directory\n      , filepath\n      , folders\n      , containers\n      , process >=1.6\n\n\n\n  default-language:\n      Haskell2010\n  ghc-options: -Wall\n",
+        "encoding": "utf-8",
+        "op": "upsert",
+        "path": "projects/lambda-script/src/lambda-script/lambda-script.cabal"
+      },
+      {
+        "content": "{-# LANGUAGE OverloadedStrings #-}\n\nmodule Main where\n\nimport Control.Exception (IOException, catch, throwIO)\nimport Data.Aeson ((.:), withObject, eitherDecodeFileStrict')\nimport Data.Aeson.Types (FromJSON(..))\nimport qualified Data.Text as T\nimport System.Directory (doesDirectoryExist, doesFileExist, getCurrentDirectory)\nimport System.Environment (getArgs)\nimport System.Exit (ExitCode(..), exitWith)\nimport System.FilePath ((</>), takeFileName)\nimport System.Info (os)\nimport System.Process (rawSystem)\n\ndata SandboxConfig =\n  SandboxConfig\n    { cfgToolRoot :: FilePath\n    , cfgButton :: String\n    }\n  deriving (Eq, Show)\n\ninstance FromJSON SandboxConfig where\n  parseJSON = withObject \"SandboxConfig\" $ \\o ->\n    SandboxConfig\n      <$> (T.unpack <$> o .: \"tool_root\")\n      <*> (T.unpack <$> o .: \"button\")\n\nmain :: IO ()\nmain = do\n  args <- getArgs\n  result <- (Right <$> dispatch args) `catch` (pure . Left)\n  case result of\n    Right ExitSuccess -> pure ()\n    Right code -> exitWith code\n    Left e -> putStrLn (\"sandbox: \" ++ show (e :: IOException)) >> exitWith (ExitFailure 1)\n\ndispatch :: [String] -> IO ExitCode\ndispatch args = do\n  cwd <- getCurrentDirectory\n  cfg <- loadConfig cwd\n  case args of\n    [] -> usage ExitSuccess\n    [\"help\"] -> usage ExitSuccess\n    [\"onepush\"] -> runButton cfg []\n    [\"onepush\", \"--ship\"] -> runButton cfg [\"--ship\"]\n    [\"onepush\", \"--init-from-dir\", dir] -> runButton cfg [\"--init-from-dir\", dir]\n    [\"onepush\", \"--ship\", \"--init-from-dir\", dir] -> runButton cfg [\"--ship\", \"--init-from-dir\", dir]\n    [\"onepush\", \"--init-from-dir\", dir, \"--ship\"] -> runButton cfg [\"--ship\", \"--init-from-dir\", dir]\n    [\"land\", patch] -> runLand cfg patch\n    _ -> putStrLn \"sandbox: unsupported command. Use `cabal run sandbox -- help`.\" >> pure (ExitFailure 2)\n\nloadConfig :: FilePath -> IO SandboxConfig\nloadConfig cwd = do\n  let path = cwd </> \"sandbox.json\"\n  exists <- doesFileExist path\n  if exists\n    then either (ioError . userError . (\"sandbox.json parse failed: \" ++)) pure =<< eitherDecodeFileStrict' path\n    else ioError (userError \"missing sandbox.json in current directory\")\n\nrunButton :: SandboxConfig -> [String] -> IO ExitCode\nrunButton cfg xs = do\n  let exe = cfgToolRoot cfg </> (\"onepush-\" ++ cfgButton cfg ++ \".bat\")\n  requireFile exe\n  runTrusted exe xs\n\nrunLand :: SandboxConfig -> FilePath -> IO ExitCode\nrunLand cfg patch = do\n  requireFile patch\n  let exe = cfgToolRoot cfg </> \"land-anything.bat\"\n  requireFile exe\n  runTrusted exe [patch]\n\nrunTrusted :: FilePath -> [String] -> IO ExitCode\nrunTrusted exe xs\n  | os == \"mingw32\" = rawSystem \"cmd\" ([\"/c\", \"call\", exe] ++ xs)\n  | otherwise = rawSystem exe xs\n\nrequireFile :: FilePath -> IO ()\nrequireFile path = do\n  ok <- doesFileExist path\n  if ok then pure () else ioError (userError (\"missing required file: \" ++ path))\n\nusage :: ExitCode -> IO ExitCode\nusage code = do\n  putStrLn \"sandbox commands:\"\n  putStrLn \"  cabal run sandbox -- onepush\"\n  putStrLn \"  cabal run sandbox -- onepush --ship\"\n  putStrLn \"  cabal run sandbox -- onepush --init-from-dir <directory>\"\n  putStrLn \"  cabal run sandbox -- onepush --ship --init-from-dir <directory>\"\n  putStrLn \"  cabal run sandbox -- land <patch.json>\"\n  putStrLn \"\"\n  putStrLn \"sandbox.json fields:\"\n  putStrLn \"  tool_root: trusted tooling root containing the generated access buttons\"\n  putStrLn \"  button: target button stem, e.g. lambda-script-edd\"\n  pure code\n",
+        "encoding": "utf-8",
+        "op": "upsert",
+        "path": "projects/lambda-script/src/lambda-script/sandbox/Main.hs"
+      },
+      {
+        "content": "# Sandbox access surface\n\nThe sandbox is the agent-facing entry point for target work. An agent working inside a sandbox directory should use only:\n\n```bat\ncabal run sandbox -- onepush\ncabal run sandbox -- onepush --ship\ncabal run sandbox -- onepush --init-from-dir \"C:\\path\\to\\source\"\ncabal run sandbox -- onepush --ship --init-from-dir \"C:\\path\\to\\source\"\ncabal run sandbox -- land \"C:\\path\\to\\patch.json\"\n```\n\nThe sandbox directory contains two files:\n\n```text\ncabal.project\nsandbox.json\n```\n\n`cabal.project` exposes the package that provides the `sandbox` executable. `sandbox.json` names the trusted tooling root and the target button stem. Example:\n\n```json\n{\n  \"tool_root\": \"C:\\\\Users\\\\guyas\\\\Desktop\\\\codebase\\\\7\\\\ollama.wires\\\\foreign-language\\\\lambda-script\",\n  \"button\": \"lambda-script-edd\"\n}\n```\n\nThe target button stem is produced by the targeted-button generator. For agent `edd` on `lambda-script/lambda-script`, the stem is `lambda-script-edd`.\n\nThe sandbox intentionally exposes only folder checkpoint, shipping, first materialisation from a directory, and JSON patch landing. The patch landing route resolves author and target from the patch payload itself. Target-specific landing buttons may exist as visual labels, but the canonical landing route is the patch-routed landing entry point.\n\nA typical sandbox folder for the LambdaScript Haskell migration can use this `cabal.project` content, adjusted to the local absolute path:\n\n```cabal\npackages: C:\\Users\\guyas\\Desktop\\codebase\\7\\ollama.wires\\projects\\lambda-script\\src\\lambda-script\n```\n\nThen run commands from inside that sandbox folder. Success output should be one short line; failure output should name the failed stage and keep only the diagnostic core.\n",
+        "encoding": "utf-8",
+        "op": "upsert",
+        "path": "projects/lambda-script/docs/forks/sandbox.md"
+      },
+      {
+        "content": "# Sandbox folder template\n\nCopy this folder outside the implementation tree and edit the placeholders. The local agent should work from the copied sandbox directory and use only `cabal run sandbox -- ...`.\n\nFiles to create in the copied sandbox:\n\n```text\ncabal.project\nsandbox.json\n```\n\nExample commands after configuration:\n\n```bat\ncabal run sandbox -- onepush\ncabal run sandbox -- onepush --ship\ncabal run sandbox -- land \"C:\\Users\\guyas\\Downloads\\patch.json\"\n```\n",
+        "encoding": "utf-8",
+        "op": "upsert",
+        "path": "projects/lambda-script/sandbox-template/README.md"
+      },
+      {
+        "content": "packages: <absolute-path-to-ollama.wires>/projects/lambda-script/src/lambda-script\n",
+        "encoding": "utf-8",
+        "op": "upsert",
+        "path": "projects/lambda-script/sandbox-template/cabal.project.template"
+      },
+      {
+        "content": "{\n  \"tool_root\": \"<absolute-path-to-ollama.wires>/foreign-language/lambda-script\",\n  \"button\": \"lambda-script-edd\"\n}\n",
+        "encoding": "utf-8",
+        "op": "upsert",
+        "path": "projects/lambda-script/sandbox-template/sandbox.json.template"
+      }
+    ],
+    "format": "LS_FORK_JSON_PATCH_V1",
+    "target": {
+      "gadget": "lambda-script",
+      "gizmo": "lambda-script",
+      "kind": "gadget"
+    },
+    "title": "Add sandbox executable facade"
+  }
+}
