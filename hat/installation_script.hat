@@ -1,4 +1,3 @@
-# hat-sha256: pending
-hat-script version 0
-
-say hat build source
+# hat-hash: c48cd949d3b5dbd3
+hat 0
+install-copy hat bin
