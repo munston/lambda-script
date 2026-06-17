@@ -897,15 +897,76 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Add explicit amalgamate wrappers and repository agent folder submission"
+    },
+    {
+      "agent": "edd",
+      "created_at": "2026-06-17T03:26:21.448019+00:00",
+      "file_count": 6,
+      "file_fingerprints": [
+        {
+          "content_length": 4774,
+          "content_sha256": "898851788a1fbc4dff7bdcafd3a2d661bd774331831440d598829d4e595b9e50",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/process_result.py"
+        },
+        {
+          "content_length": 6091,
+          "content_sha256": "7527bbf1eb6ac0c0ad755a54a282a107d621649eb30f979051fb85bfdfb474c1",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/gadget_creation_agent.py"
+        },
+        {
+          "content_length": 2936,
+          "content_sha256": "38dcb584393fb6ba9a83c0acf1724904d20b82ef880099b85316a3b85b53d9d2",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/gadget_amalgamate_agent.py"
+        },
+        {
+          "content_length": 3195,
+          "content_sha256": "69a6d435f7f46e0a34ad4e589dc4dc820657317391fc9a339dffed320dc1f42f",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/agent_amalgamate_agent.py"
+        },
+        {
+          "content_length": 1562,
+          "content_sha256": "1d4cac353761f53b002fc483e08e277c10165248ed27b71529a933aae5eb39cd",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "docs/forks/process-output-contract.md"
+        },
+        {
+          "content_length": 4865,
+          "content_sha256": "c83992aff7ba15ae68e1d3961e13e6ecbb818b4070ecdc36454b75e79475d52b",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "examples/gizmos/lambdascript.gizmo.json"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "ae21e31ea92c2ff3a36b2f8ee5609f8c433c29d5a2fa58bc3a6857842711ebf6",
+      "payload_path": "forks/replay-ledger/payloads/ae/ae21e31ea92c2ff3a36b2f8ee5609f8c433c29d5a2fa58bc3a6857842711ebf6.json",
+      "sequence": 22,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Add pruned process-result summaries to core wrappers"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 22,
+  "next_sequence": 23,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-17T03:12:32.921253+00:00"
+  "updated_at": "2026-06-17T03:26:21.448042+00:00"
 }

@@ -11,19 +11,17 @@ amalgamating the wrong gadget. Verification is transport-only by default.
 from __future__ import annotations
 
 import argparse
-import subprocess
 import sys
 from pathlib import Path
 
 import forks
+import process_result
 
 VALID_AGENTS = set(forks.AGENTS)
 
 
 def quote_arg(value: str) -> str:
-    if any(ch.isspace() for ch in value) or '"' in value:
-        return '"' + value.replace('"', '\\"') + '"'
-    return value
+    return process_result.quote_arg(value)
 
 
 def safe_amalgamate_script(root: Path) -> Path:
@@ -78,9 +76,9 @@ def main(argv: list[str]) -> int:
     print(f"  gizmo/gadget: {args.gizmo}/{args.gadget}")
     print(f"  mode: {'plan' if args.plan else 'apply'}")
     print(f"  verify-command: {args.verify_command if args.verify_command else '<none; transport-only>'}")
-    print("> " + " ".join(quote_arg(x) for x in cmd))
-    proc = subprocess.run(cmd, cwd=str(root))
-    return int(proc.returncode)
+    result = process_result.run_process("safe gadget amalgamation", cmd, root)
+    print(process_result.summarize(result))
+    return int(result.returncode)
 
 
 if __name__ == "__main__":

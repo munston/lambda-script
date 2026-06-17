@@ -14,11 +14,11 @@ branch.
 from __future__ import annotations
 
 import argparse
-import subprocess
 import sys
 from pathlib import Path
 
 import forks
+import process_result
 
 VALID_AGENTS = {"ed", "edd", "eddy", "guy"}
 
@@ -31,16 +31,14 @@ def repo_rel_or_default(root: Path, source: Path, gadget: str) -> str:
         return f"projects/{gadget}"
 
 
-def run(args: list[str], root: Path) -> int:
-    print("> " + " ".join(quote_arg(x) for x in args))
-    proc = subprocess.run(args, cwd=str(root), text=True)
-    return int(proc.returncode)
+def run_step(label: str, args: list[str], root: Path) -> int:
+    result = process_result.run_process(label, args, root)
+    print(process_result.summarize(result))
+    return result.returncode
 
 
 def quote_arg(value: str) -> str:
-    if any(ch.isspace() for ch in value) or '"' in value:
-        return '"' + value.replace('"', '\\"') + '"'
-    return value
+    return process_result.quote_arg(value)
 
 
 def ingest_script(root: Path) -> Path:
@@ -137,13 +135,13 @@ def main(argv: list[str]) -> int:
     for pattern in args.exclude:
         ingest.extend(["--exclude", pattern])
 
-    code = run(ingest, root)
+    code = run_step("gadget ingest", ingest, root)
     if code != 0:
         return code
 
     if not args.amalgamate:
-        print("ingest complete; amalgamation skipped by default")
-        print(f"run safe amalgamation explicitly when ready: python scripts\\forks\\gadget_amalgamate_safe.py --gadget {args.gizmo} {args.gadget} --agents {agent} --apply")
+        print("gadget creation: ok; amalgamation skipped by default.")
+        print(f"next: gadget-amalgamate-{agent}.bat {args.gizmo} {args.gadget}")
         return 0
 
     amalgamate = [
@@ -160,7 +158,7 @@ def main(argv: list[str]) -> int:
         amalgamate.extend(["--verify-command", verify])
     if args.skip_replay_audit:
         amalgamate.append("--skip-replay-audit")
-    return run(amalgamate, root)
+    return run_step("safe gadget amalgamation", amalgamate, root)
 
 
 if __name__ == "__main__":
