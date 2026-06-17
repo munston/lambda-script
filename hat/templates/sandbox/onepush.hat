@@ -1,0 +1,3 @@
+rem hat-hash: 2137546283a3be26
+rem hat 0
+cabal run sandbox -- onepush %*
