@@ -61,7 +61,12 @@ helpText =
     , "  cabal run sandbox -- onepush --ship --init-from-dir <directory>"
     , "  cabal run sandbox -- land <patch.json>"
     , ""
+    , "sandbox dispatch:"
+    , "  onepush -> tool_root/onepush-<button>.hat"
+    , "  land    -> tool_root/land-anything.hat"
+    , "  Hat is executed from tool_root/hat with `cabal run src/hat -- <script>.hat ...`."
+    , ""
     , "sandbox.json fields:"
-    , "  tool_root: trusted tooling root containing the generated access buttons"
+    , "  tool_root: trusted tooling root containing Hat and the Hat access scripts"
     , "  button: target button stem, e.g. lambda-script-edd"
     ]
