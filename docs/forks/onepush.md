@@ -1,32 +1,24 @@
 # Targeted onepush and land buttons
 
-`create-targeted-onepush.bat` creates a matched button pair from one target definition.
+A target button pair is generated from one target definition:
 
 ```bat
 create-targeted-onepush.bat <agent> <gizmo> <gadget> <source-dir> <dest-path>
 ```
 
-The button name is derived. For `edd lambda-script lambda-script`, the generated target name is:
+The button name is derived. If `<gizmo>` and `<gadget>` match, the name is:
 
 ```text
-lambda-script-edd
+<gadget>-<agent>
 ```
 
-so the generator writes:
+Otherwise the name is:
 
 ```text
-onepush-lambda-script-edd.bat
-land-lambda-script-edd.bat
+<gizmo>-<gadget>-<agent>
 ```
 
-For a distinct gizmo/gadget pair, the generated name includes both. For example `guy metrics text-metrics` produces:
-
-```text
-onepush-metrics-text-metrics-guy.bat
-land-metrics-text-metrics-guy.bat
-```
-
-## Create a target button pair
+For example:
 
 ```bat
 create-targeted-onepush.bat edd lambda-script lambda-script ^
@@ -34,55 +26,54 @@ create-targeted-onepush.bat edd lambda-script lambda-script ^
   "projects\lambda-script"
 ```
 
-This hardcodes the agent, gizmo, gadget, normal source directory, and destination path into the generated buttons.
+creates:
 
-## Use the folder button
+```bat
+onepush-lambda-script-edd.bat
+land-lambda-script-edd.bat
+```
 
-Submit the hardcoded source folder to the hardcoded gadget-agent lane:
+`onepush-<name>.bat` has two runtime controls:
+
+```bat
+--ship
+--init-from-dir <directory>
+```
+
+Plain invocation submits the hardcoded source folder to the hardcoded gadget-agent lane:
 
 ```bat
 onepush-lambda-script-edd.bat
 ```
 
-Submit and ship:
+`--ship` ships the current lane only. It does not re-submit the hardcoded folder first:
 
 ```bat
 onepush-lambda-script-edd.bat --ship
 ```
 
-First materialisation from a directory:
+`--init-from-dir` uses a supplied directory for first materialisation or re-materialisation:
 
 ```bat
 onepush-lambda-script-edd.bat --init-from-dir "C:\path\to\folder"
 ```
 
-First materialisation and ship:
+It may be combined with `--ship`:
 
 ```bat
 onepush-lambda-script-edd.bat --ship --init-from-dir "C:\path\to\folder"
 ```
 
-The generated onepush button accepts only:
-
-```text
---ship
---init-from-dir <directory>
-```
-
-## Use the JSON landing button
-
-Land a JSON patch to the same hardcoded gadget-agent lane:
+`land-<name>.bat` lands one JSON patch to the same hardcoded lane:
 
 ```bat
 land-lambda-script-edd.bat "C:\Users\guyas\Downloads\patch.json"
 ```
 
-The landing button does not ship. Shipping remains:
+Landing a JSON patch does not ship. Shipping remains explicit:
 
 ```bat
 onepush-lambda-script-edd.bat --ship
 ```
 
-This keeps folder checkpointing, JSON patch landing, and amalgamation distinct while sharing one target definition.
-
-The mutable lane may later be rewound by a successful ship. The durable unit is the captured submission/replay result, so prior onepush or land submissions must remain recoverable even when a later ship aligns lanes.
+The mutable lane may later be aligned by a successful ship. The durable unit is the captured submission/replay result, so submitted work remains recoverable even when a lane head is later aligned to integration.

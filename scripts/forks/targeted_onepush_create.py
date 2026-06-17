@@ -50,14 +50,6 @@ def quote_bat(value: str) -> str:
     return '"' + value.replace('"', '""') + '"'
 
 
-def gadget_target_ref(gizmo: str, gadget: str) -> str:
-    return f"origin/gadgets/{gizmo}/{gadget}/main"
-
-
-def gadget_lane_ref(gizmo: str, gadget: str, agent: str) -> str:
-    return f"gadget-agents/{gizmo}/{gadget}/{agent}"
-
-
 def write_onepush(root: Path, name: str, agent: str, gizmo: str, gadget: str, source: str, dest: str) -> Path:
     path = root / f"onepush-{name}.bat"
     content = "\r\n".join([
@@ -82,8 +74,6 @@ def write_onepush(root: Path, name: str, agent: str, gizmo: str, gadget: str, so
 
 def write_land(root: Path, name: str, agent: str, gizmo: str, gadget: str) -> Path:
     path = root / f"land-{name}.bat"
-    target_ref = gadget_target_ref(gizmo, gadget)
-    lane_ref = gadget_lane_ref(gizmo, gadget, agent)
     content = "\r\n".join([
         "@echo off",
         "setlocal",
@@ -92,15 +82,11 @@ def write_land(root: Path, name: str, agent: str, gizmo: str, gadget: str) -> Pa
         f"  echo usage: land-{name}.bat ^<patch.json^>",
         "  exit /b 2",
         ")",
-        "python scripts\\forks\\land_json_patch.py "
+        "python scripts\\forks\\targeted_land_agent.py "
         + " ".join([
-            "--require-file",
-            "--target-ref",
-            quote_bat(target_ref),
-            "--push-ref",
-            quote_bat(lane_ref),
-            "--no-sync",
             quote_bat(agent),
+            quote_bat(gizmo),
+            quote_bat(gadget),
             "\"%~1\"",
         ]),
         "exit /b %ERRORLEVEL%",

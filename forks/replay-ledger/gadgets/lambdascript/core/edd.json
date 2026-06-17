@@ -1148,15 +1148,69 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Derive targeted onepush names and generate land pair"
+    },
+    {
+      "agent": "edd",
+      "created_at": "2026-06-17T04:30:11.586629+00:00",
+      "file_count": 5,
+      "file_fingerprints": [
+        {
+          "content_length": 4656,
+          "content_sha256": "57a227585565bdc8a4d4c531103af8f79cc932f62e1000c32ab224b9999ff77c",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/onepush_agent.py"
+        },
+        {
+          "content_length": 2343,
+          "content_sha256": "7a0a7d50abd95ea28e09906ec47b14998edef95cb8a40991683ac411b811af1d",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/targeted_land_agent.py"
+        },
+        {
+          "content_length": 4481,
+          "content_sha256": "5972dd3a72f4154c186fb90eaf6fca002fbabda8fa96f1fbcaf640632a655218",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/targeted_onepush_create.py"
+        },
+        {
+          "content_length": 1756,
+          "content_sha256": "ad5dfc460e68f6800f243f2b9a1a64e8a5e8998d919d53bd4e1e230c8adaad51",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "docs/forks/onepush.md"
+        },
+        {
+          "content_length": 5390,
+          "content_sha256": "b8871002d989f7f437afbdb5b35356a4dd04624fe7645877e52ccea26f6c2030",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "examples/gizmos/lambdascript.gizmo.json"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "5645fe6178168a88f00227ecd3d47a7bbcc8c15ee388de201712e42b6f8a5e72",
+      "payload_path": "forks/replay-ledger/payloads/56/5645fe6178168a88f00227ecd3d47a7bbcc8c15ee388de201712e42b6f8a5e72.json",
+      "sequence": 26,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Fix targeted onepush ship semantics and quiet landing"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 26,
+  "next_sequence": 27,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-17T04:14:34.367015+00:00"
+  "updated_at": "2026-06-17T04:30:11.586657+00:00"
 }

@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """Target-backed onepush button implementation.
 
-This script is intentionally used behind generated batch files. The generated
-``onepush-<name>.bat`` hardcodes agent, gizmo, gadget, source directory, and
-destination path. Runtime users get only two controls:
+The generated onepush button hardcodes agent, gizmo, gadget, source directory,
+and destination path. Runtime users get only two controls:
 
     --ship
     --init-from-dir <directory>
 
-No target, destination, verifier, replace flag, or message flag is exposed at
-button-use time.
+Plain invocation submits the hardcoded folder to the hardcoded lane.  --ship
+ships the current lane without re-submitting the hardcoded folder.  If
+--init-from-dir is supplied, that directory is submitted first; with --ship it
+is then shipped in the same call.
 """
 
 from __future__ import annotations
@@ -39,8 +40,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("gadget")
     parser.add_argument("source")
     parser.add_argument("dest")
-    parser.add_argument("--ship", action="store_true", help="after submission, amalgamate and sync")
-    parser.add_argument("--init-from-dir", metavar="DIR", help="initialise the target from DIR before normal submission")
+    parser.add_argument("--ship", action="store_true", help="amalgamate and sync the current lane")
+    parser.add_argument("--init-from-dir", metavar="DIR", help="initialise/submit from DIR before optional shipping")
     return parser
 
 
@@ -96,32 +97,49 @@ def ship(root: Path, args: argparse.Namespace) -> int:
     )
 
 
+def require_source(path_text: str) -> Path:
+    source = Path(path_text).expanduser().resolve()
+    if not source.exists() or not source.is_dir():
+        raise RuntimeError(f"source folder does not exist: {source}")
+    return source
+
+
 def main(argv: list[str]) -> int:
     args = build_parser().parse_args(argv)
     args.agent = forks.normalize_agent(args.agent)
     if args.agent not in forks.AGENTS:
         raise RuntimeError(f"unsupported agent {args.agent!r}; expected one of {', '.join(forks.AGENTS)}")
     root = forks.repo_root()
-    source = Path(args.init_from_dir or args.source).expanduser().resolve()
-    if not source.exists() or not source.is_dir():
-        raise RuntimeError(f"source folder does not exist: {source}")
+
+    submit_before_ship = bool(args.init_from_dir) or not args.ship
+    source = require_source(args.init_from_dir or args.source) if submit_before_ship else None
 
     print(f"onepush {args.agent} {args.gizmo}/{args.gadget}")
-    print(f"  source: {source}")
+    if source is None:
+        print("  source: <not submitted during --ship>")
+    else:
+        print(f"  source: {source}")
     print(f"  dest: {args.dest}")
     print(f"  initialise: {'yes' if args.init_from_dir else 'no'}")
     print(f"  ship: {'yes' if args.ship else 'no'}")
 
-    code = ingest(root, args, source, initialise=bool(args.init_from_dir))
-    if code != 0:
-        print("ship: skipped because lane submission failed.")
-        return code
-    if not args.ship:
-        print("done: lane submitted; ship omitted.")
-        return 0
+    if submit_before_ship:
+        code = ingest(root, args, source, initialise=bool(args.init_from_dir))
+        if code != 0:
+            print("ship: skipped because lane submission failed.")
+            return code
+        if not args.ship:
+            print("done: lane submitted; ship omitted.")
+            return 0
+    else:
+        print("lane submission: skipped; shipping existing lane.")
+
     code = ship(root, args)
     if code == 0:
-        print("done: submitted, shipped, and synced.")
+        if submit_before_ship:
+            print("done: submitted, shipped, and synced.")
+        else:
+            print("done: shipped and synced.")
     return code
 
 
