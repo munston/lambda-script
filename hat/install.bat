@@ -2,4 +2,4 @@
 setlocal
 
 cd /d "%~dp0"
-cabal run installation_script.hs
+cabal run src/hat -- installation_script.hat
