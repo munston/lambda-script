@@ -1,0 +1,4 @@
+rem hat-hash: db488d6c71415b42
+rem hat 0
+cd projects/lambda-script/src/lambda-script
+cabal run lambda-script -- forks status
