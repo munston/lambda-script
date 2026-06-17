@@ -12,23 +12,21 @@ module LambdaScript.Forks.Land
 
 import Control.Monad (forM_, unless, when)
 import System.Directory (doesDirectoryExist, removePathForcibly)
+import System.Exit (ExitCode(..))
+import System.Process (CreateProcess(..), readCreateProcessWithExitCode, shell)
 
 import Data.List (isPrefixOf)
 
 import LambdaScript.Forks.Git
 import LambdaScript.Forks.Patch
-import LambdaScript.Forks.ProcessResult (printProcessResult, processExitCode, runShellPruned)
 import LambdaScript.Forks.ReplayLedger (appendEntry)
 import LambdaScript.Forks.Submission (writeSubmission)
 
--- | Run a shell command in a directory; print a pruned process summary and return
--- the exit code. Successful inner output is collapsed to one status line; failing
--- output is reduced to actionable diagnostics.
+-- | Run a shell command in a directory; return its exit code.
 shellIn :: FilePath -> String -> IO Int
 shellIn dir cmd = do
-  result <- runShellPruned dir cmd
-  printProcessResult result
-  pure (processExitCode result)
+  (code, _, _) <- readCreateProcessWithExitCode (shell cmd) { cwd = Just dir } ""
+  pure (case code of { ExitSuccess -> 0; ExitFailure c -> c })
 
 -- | Remove a candidate/promotion worktree if present.
 removeWorktree :: FilePath -> FilePath -> IO ()
