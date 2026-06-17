@@ -1,3 +1,4 @@
-# hat-hash: c48cd949d3b5dbd3
-hat 0
-install-copy hat bin
+rem hat-hash: 175e91a35c156ac2
+rem hat 0
+mkdir bin
+cabal install exe:hat --install-method=copy --overwrite-policy=always --installdir=bin
