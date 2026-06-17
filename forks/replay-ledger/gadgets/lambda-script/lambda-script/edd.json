@@ -1,0 +1,55 @@
+{
+  "agent": "edd",
+  "created_at": "2026-06-17T03:30:31.660319+00:00",
+  "entries": [
+    {
+      "agent": "edd",
+      "created_at": "2026-06-17T03:30:31.660357+00:00",
+      "file_count": 3,
+      "file_fingerprints": [
+        {
+          "content_length": 3967,
+          "content_sha256": "7b3d87ec7e32255f6a91313d85f79340ed9e416c1be8284cea25fa0aff330566",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "projects/lambda-script/src/lambda-script/lib/LambdaScript/Forks/ProcessResult.hs"
+        },
+        {
+          "content_length": 5498,
+          "content_sha256": "65af6d08070c33eecdd9a592518f016b5c75f47485805ca7405978a2433f09af",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "projects/lambda-script/src/lambda-script/lib/LambdaScript/Forks/Land.hs"
+        },
+        {
+          "content_length": 1981,
+          "content_sha256": "1cb5816eaaeefb8f24026cf52b8071e7bcb695966c9425a33f8f9d33a26b1127",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "projects/lambda-script/src/lambda-script/lambda-script.cabal"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "ce5b23c9854bc801b6120b784c1d5479a506d686885cb3702a261ff439b2475b",
+      "payload_path": "forks/replay-ledger/payloads/ce/ce5b23c9854bc801b6120b784c1d5479a506d686885cb3702a261ff439b2475b.json",
+      "sequence": 1,
+      "target": {
+        "gadget": "lambda-script",
+        "gizmo": "lambda-script",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambda-script/lambda-script/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambda-script/lambda-script/main",
+      "title": "Add Haskell process-result pruning layer"
+    }
+  ],
+  "format": "LS_FORK_REPLAY_LEDGER_V1",
+  "next_sequence": 2,
+  "target": {
+    "gadget": "lambda-script",
+    "gizmo": "lambda-script",
+    "kind": "gadget",
+    "target_ref": "origin/gadgets/lambda-script/lambda-script/main"
+  },
+  "updated_at": "2026-06-17T03:30:31.660363+00:00"
+}
