@@ -4,8 +4,6 @@
 The generated land button hardcodes agent, gizmo, and gadget. Runtime use is:
 
     land-<target>.bat <patch.json>
-
-The patch is landed to the same lane that the paired onepush button ships.
 """
 
 from __future__ import annotations
@@ -33,6 +31,12 @@ def lane_ref(gizmo: str, gadget: str, agent: str) -> str:
     return f"gadget-agents/{gizmo}/{gadget}/{agent}"
 
 
+def target_name(agent: str, gizmo: str, gadget: str) -> str:
+    if gizmo == gadget:
+        return f"{gadget}-{agent}"
+    return f"{gizmo}-{gadget}-{agent}"
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="land-targeted",
@@ -54,11 +58,9 @@ def main(argv: list[str]) -> int:
     if not patch.exists() or not patch.is_file():
         raise RuntimeError(f"patch file does not exist: {patch}")
     root = forks.repo_root()
+    name = target_name(args.agent, args.gizmo, args.gadget)
 
-    print(f"land {args.agent} {args.gizmo}/{args.gadget}")
-    print(f"  patch: {patch}")
-
-    return process_result.run_step(
+    code = process_result.run_step(
         "json landing",
         [
             sys.executable,
@@ -73,7 +75,11 @@ def main(argv: list[str]) -> int:
             str(patch),
         ],
         root,
+        failure_label=f"land-{name}: failed",
     )
+    if code == 0:
+        print(f"land-{name}: landed.")
+    return code
 
 
 if __name__ == "__main__":
