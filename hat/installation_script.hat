@@ -1,0 +1,4 @@
+# hat-sha256: pending
+hat-script version 0
+
+say hat build source
