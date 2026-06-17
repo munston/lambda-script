@@ -1115,15 +1115,48 @@
       },
       "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
       "title": "Correct targeted onepush buttons"
+    },
+    {
+      "agent": "edd",
+      "created_at": "2026-06-17T04:14:34.366989+00:00",
+      "file_count": 2,
+      "file_fingerprints": [
+        {
+          "content_length": 4924,
+          "content_sha256": "db1d22acb01332bc70e86d3497d13b48803a936e10daeeecee02eaad27ea561f",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "scripts/forks/targeted_onepush_create.py"
+        },
+        {
+          "content_length": 2109,
+          "content_sha256": "5ca7aef4decfe32e56b40208ec69aae77ee8a2946526f458671dbc2626ccc7f2",
+          "encoding": "utf-8",
+          "op": "upsert",
+          "path": "docs/forks/onepush.md"
+        }
+      ],
+      "format": "LS_FORK_REPLAY_LEDGER_ENTRY_V1",
+      "json_patch_sha256": "aed65c6e38ee17499e34a6351350e45dbc43de173431ed04893d1e6312ca2604",
+      "payload_path": "forks/replay-ledger/payloads/ae/aed65c6e38ee17499e34a6351350e45dbc43de173431ed04893d1e6312ca2604.json",
+      "sequence": 25,
+      "target": {
+        "gadget": "core",
+        "gizmo": "lambdascript",
+        "kind": "gadget",
+        "target_ref": "origin/gadgets/lambdascript/core/main"
+      },
+      "target_ref_at_capture": "origin/gadgets/lambdascript/core/main",
+      "title": "Derive targeted onepush names and generate land pair"
     }
   ],
   "format": "LS_FORK_REPLAY_LEDGER_V1",
-  "next_sequence": 25,
+  "next_sequence": 26,
   "target": {
     "gadget": "core",
     "gizmo": "lambdascript",
     "kind": "gadget",
     "target_ref": "origin/gadgets/lambdascript/core/main"
   },
-  "updated_at": "2026-06-17T04:04:05.097413+00:00"
+  "updated_at": "2026-06-17T04:14:34.367015+00:00"
 }
